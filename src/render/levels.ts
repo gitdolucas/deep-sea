@@ -1,5 +1,6 @@
 import firstTrench from "../../data/maps/first_trench.json";
 import trenchGate from "../../data/maps/trench_gate.json";
+import hydraConvergence from "../../data/maps/hydra_convergence.json";
 import type { MapDocument } from "../game/map-types.js";
 
 export type LevelEntry = {
@@ -17,4 +18,5 @@ function entryFromJson(raw: unknown): LevelEntry {
 export const LEVELS: readonly LevelEntry[] = [
   entryFromJson(firstTrench),
   entryFromJson(trenchGate),
+  entryFromJson(hydraConvergence),
 ];

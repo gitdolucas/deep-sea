@@ -1,0 +1,38 @@
+---
+description: Deep Sea — docs/ is source of truth; converge code toward specs (no assumed parity)
+alwaysApply: true
+---
+
+# Deep Sea — spec compliance
+
+**`docs/` defines what the game should do** — behavior, balance tables, schema, and acceptance criteria. **Do not assume the current codebase already matches those docs.** Some tunables (enemy speeds, armor, leak damage, per-enemy shell drops, Colossus mechanics, etc.) may still lag `docs/combat.md`, `docs/economy.md`, or enemy pages until explicitly aligned.
+
+**Your job when you touch behavior:** verify against the relevant doc, implement or fix code to match the spec, and add tests where the doc pins numbers. Do not leave new work “close enough” or copy undocumented magic numbers from existing code if the doc says otherwise.
+
+## Authoritative references (non-exhaustive)
+
+| Topic | Document |
+|-------|----------|
+| MVP scope, pinned numbers, acceptance | `docs/prd-mvp.md` |
+| Map JSON + waves + save fields | `docs/map-schema.md` |
+| Damage, armor, chains, leaks, enemy attack values, Colossus rules | `docs/combat.md` |
+| Shell rewards, currency behavior | `docs/economy.md` |
+| Per-enemy role, stats labels, drops, behavior | `docs/enemies/*.md` |
+| Waves pacing / composition intent | `docs/waves.md` |
+| Pixel palette / sprite rules (when doing art or placeholders) | `docs/style-bible.md` |
+
+Keep `src/game/map-types.ts`, `src/game/types.ts`, and `data/maps/*.json` aligned with `docs/map-schema.md` when the schema changes.
+
+## Rules for agents
+
+1. **Converge implementation toward the spec** — Open the doc table, compare to `src/game` (and render adapters). Enemy armor, leak damage, move speeds vs role, kill rewards, tower stats: code should match after your change. Centralize numbers in named constants (`enemy-stats.ts`, resolver tables, etc.) and **cite the doc section** when the behavior is non-obvious.
+2. **No silent drift** — If implementation disagrees with `docs/`, either update the code to match the doc or stop and treat it as a documentation change that needs explicit product/decision agreement before the doc is edited. Do not “fix” docs in passing to match buggy code unless the user asked to change the spec.
+3. **Conflicts between docs** — If two docs disagree (e.g. narrative “slow” vs a pinned tiles/s in the PRD), prefer **explicit MVP pins in `docs/prd-mvp.md`** for that slice, and surface the inconsistency rather than guessing.
+4. **Tests** — When behavior is specified in docs, add or update **Vitest** tests that lock it (damage, leaks, schema load, etc.).
+
+## Anti-patterns
+
+- **Trusting the repo over the doc** — “it’s already in `enemy-stats.ts` so it must be right.” Check the spec.
+- Hardcoding balance that contradicts `docs/combat.md` or `docs/prd-mvp.md`.
+- One global kill reward or single stat block for all enemy types when `docs/economy.md` / `docs/combat.md` define per-type values.
+- New mechanics in `src/game/` that are not reflected in any doc — add the spec first, then implement.

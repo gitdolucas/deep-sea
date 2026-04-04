@@ -12,6 +12,7 @@ import {
   CHAIN_FX_DURATION,
   DAMAGE_POP_DURATION_SEC,
 } from "./constants.js";
+import { createEnemyVisual } from "./enemy-visuals.js";
 
 type BarBillboard = {
   group: THREE.Group;
@@ -495,19 +496,14 @@ export class GameApp {
       const w = worldFromGrid(pos[0], pos[1], this.doc, 0.28);
       let vis = this.enemyObjects.get(id);
       if (!vis) {
-        const root = new THREE.Group();
-        const body = new THREE.Mesh(
-          new THREE.BoxGeometry(0.45, 0.35, 0.45),
-          new THREE.MeshStandardMaterial({ color: COLORS.stoneclaw }),
-        );
-        root.add(body);
+        const { root, hpBarY } = createEnemyVisual(e.enemyType);
         const bar = makeBarBillboard(
           0.52,
           0.072,
           COLORS.enemyHpBarBg,
           COLORS.enemyHpBarFill,
         );
-        bar.group.position.set(0, 0.32, 0);
+        bar.group.position.set(0, hpBarY, 0);
         root.add(bar.group);
         this.scene.add(root);
         vis = { root, bar };

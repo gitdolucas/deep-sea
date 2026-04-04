@@ -27,7 +27,7 @@ test("sidebar shows armory and send wave", async ({ page }) => {
 
 test("main menu lists levels and starts selected map", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator('input[name="levelId"]')).toHaveCount(2);
+  await expect(page.locator('input[name="levelId"]')).toHaveCount(3);
   await expect(
     page.locator('input[name="levelId"][value="first_trench"]'),
   ).toBeChecked();
@@ -36,6 +36,18 @@ test("main menu lists levels and starts selected map", async ({ page }) => {
   await expect(page.locator("#gameScreen")).toHaveAttribute(
     "data-active-map",
     "trench_gate",
+  );
+});
+
+test("main menu can start hydra convergence map", async ({ page }) => {
+  await page.goto("/");
+  await page
+    .locator('input[name="levelId"][value="hydra_convergence"]')
+    .click();
+  await page.locator("#btnPlay").click();
+  await expect(page.locator("#gameScreen")).toHaveAttribute(
+    "data-active-map",
+    "hydra_convergence",
   );
 });
 

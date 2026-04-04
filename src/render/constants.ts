@@ -19,7 +19,15 @@ export const COLORS = {
   spawn: 0x0a0a14,
   castle: 0x112f55,
   crystal: 0x00d4ff,
+  /** docs/style-bible.md — Stoneclaw */
   stoneclaw: 0x8b4513,
+  stoneclawShell: 0xc0a060,
+  /** docs/style-bible.md — Razoreel */
+  razoreelBody: 0x1a6e8a,
+  razoreelAccent: 0x00ffcc,
+  /** docs/style-bible.md — Abyssal Colossus */
+  abyssalColossusBody: 0x2a0a4a,
+  abyssalColossusVein: 0xff3366,
   tower: 0xaa66ff,
   chain: 0x00ffcc,
   gridMajor: 0x2a4a6c,
