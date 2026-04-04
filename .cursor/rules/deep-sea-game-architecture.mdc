@@ -1,0 +1,42 @@
+---
+description: Deep Sea headless game architecture in src/game and TDD with Vitest
+alwaysApply: true
+---
+
+# Deep Sea — game architecture and TDD
+
+## Where logic lives
+
+- **Gameplay and simulation** belong in `src/game/`. Do not put tower defense rules, waves, economy, or combat in Three.js setup, React, or ad-hoc scripts unless they are thin adapters that call `src/game`.
+- **Docs/schema** in `docs/map-schema.md` are the source of truth for map JSON; keep `map-types.ts` / `types.ts` aligned when the schema changes.
+
+## Module responsibilities (respect boundaries)
+
+| Area | Use |
+|------|-----|
+| `MapController` | Static layout, paths, build slots, **mutable** placed defenses list |
+| `EconomyController` | Shells, earn vs refund, lifetime earned |
+| `CastleController` | Citadel HP |
+| `EnemyController` | One enemy — path progress, movement, HP |
+| `DefenseController` | One tower snapshot — upgrades, Arc Spine chain math |
+| `WaveDirector` | Prep/active wave time budgets, spawn pacing per group |
+| `spawnEnemyFromWaveGroup` | Map + wave group → `EnemyController` |
+| `TargetingSystem` | `targetMode` selection only |
+| `DamageResolver` | One attack resolution (incl. chains), kill loot |
+| `GameSession` | **Single orchestration** — `tick` order: waves → enemies/movement/leaks → tower fire → wave advance |
+
+- Add **new systems** as focused modules under `src/game/` and **wire them from `GameSession`** (or another clear orchestrator), not by scattering timers across the codebase.
+- **Exports**: add public API to `src/game/index.ts` when introducing new user-facing types or classes.
+
+## Testing (TDD preferred)
+
+- **Default workflow:** when adding or changing behavior, write or update a **Vitest** test first when practical (red → green → refactor). Run `npm test` before finishing.
+- Tests live in `tests/**/*.test.ts`; exercise **headless** `src/game` code without requiring WebGL.
+- Prefer **fast unit tests** on pure helpers and controllers; use **small fixtures** or `data/maps/*.json` where integration adds value.
+- **White-box tests** may use a typed test-only interface and `as unknown as …` to call `private` methods (see existing tests); if you change private helpers, update those tests.
+
+## Anti-patterns
+
+- Duplicating wave timing, targeting, or damage rules outside `WaveDirector` / `TargetingSystem` / `DamageResolver`.
+- `GameSession.tick` order forks (e.g. towers firing before movement) without a deliberate, documented reason.
+- Magic numbers for balance scattered everywhere — prefer named constants (e.g. `enemy-stats.ts`, tuning near `DamageResolver`) and tests that lock intended behavior.
