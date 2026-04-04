@@ -38,7 +38,7 @@ describe("DefenseController", () => {
     });
 
     it("arcSearchRadius grows with level", () => {
-      expect(priv(arcSpine(1)).arcSearchRadius()).toBe(2.5);
+      expect(priv(arcSpine(1)).arcSearchRadius()).toBe(2);
       expect(priv(arcSpine(2)).arcSearchRadius()).toBe(3.25);
       expect(priv(arcSpine(3)).arcSearchRadius()).toBe(4);
     });

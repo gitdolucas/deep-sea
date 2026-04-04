@@ -1,7 +1,7 @@
 import type { EnemyInstanceInput, EnemyTypeKey, GridPos } from "./types.js";
 
 const BASE_SPEED_TILES_PER_SEC: Record<EnemyTypeKey, number> = {
-  stoneclaw: 0.55,
+  stoneclaw: 1.5,
   razoreel: 1.1,
   abyssal_colossus: 0.35,
 };

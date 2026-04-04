@@ -12,3 +12,10 @@ export const ENEMY_LEAK_DAMAGE: Record<EnemyTypeKey, number> = {
   razoreel: 2,
   abyssal_colossus: 5,
 };
+
+/** Armor subtracted before damage floor (docs/prd-mvp.md Stoneclaw = 2). */
+export const ENEMY_ARMOR: Record<EnemyTypeKey, number> = {
+  stoneclaw: 2,
+  razoreel: 0,
+  abyssal_colossus: 0,
+};

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deep Abyss TD</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: system-ui, sans-serif;
+        background: #050d1a;
+      }
+      #hud {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        color: #e8f4ff;
+        pointer-events: none;
+        z-index: 10;
+        text-shadow: 0 1px 2px #000;
+      }
+      #hud span {
+        pointer-events: none;
+      }
+      #panel {
+        position: fixed;
+        bottom: 88px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(10, 22, 40, 0.92);
+        border: 1px solid #00d4ff44;
+        padding: 12px 16px;
+        border-radius: 8px;
+        color: #e8f4ff;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 11;
+        min-width: 200px;
+      }
+      #panel.visible {
+        display: flex;
+      }
+      #panel button {
+        pointer-events: auto;
+        cursor: pointer;
+        background: #112f55;
+        color: #00d4ff;
+        border: 1px solid #00d4ff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+      }
+      #panel button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      #sendWave {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 11;
+        pointer-events: auto;
+        cursor: pointer;
+        background: #112f55;
+        color: #00d4ff;
+        border: 1px solid #00d4ff;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: 700;
+      }
+      #sendWave:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      #overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(5, 13, 26, 0.88);
+        color: #e8f4ff;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+        font-size: clamp(1.25rem, 4vw, 2rem);
+        text-align: center;
+        padding: 24px;
+      }
+      #overlay.visible {
+        display: flex;
+      }
+      #damageLayer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9;
+      }
+      .damage-pop {
+        position: absolute;
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        text-shadow: 0 0 4px #000;
+        animation: floatUp 0.9s ease-out forwards;
+      }
+      .damage-pop.armor {
+        color: #bbb;
+      }
+      @keyframes floatUp {
+        to {
+          opacity: 0;
+          transform: translateY(-28px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hud">
+      <span id="shells">🐚 50</span>
+      <span id="tide">TIDE 1</span>
+      <span id="castle">♥ 20/20</span>
+    </div>
+    <div id="panel">
+      <strong>Arc Spine</strong>
+      <span>Cost: 30 🐚</span>
+      <button type="button" id="buildBtn">BUILD</button>
+    </div>
+    <button type="button" id="sendWave">SEND WAVE ▶</button>
+    <div id="damageLayer" aria-hidden="true"></div>
+    <div id="overlay">
+      <p id="overlayTitle"></p>
+      <p id="overlaySub" style="font-size: 0.65em; opacity: 0.85"></p>
+    </div>
+    <script type="module" src="/src/render/main.ts"></script>
+  </body>
+</html>

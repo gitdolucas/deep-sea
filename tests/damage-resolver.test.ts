@@ -5,7 +5,7 @@ import { EnemyController } from "../src/game/enemy-controller.js";
 
 describe("DamageResolver", () => {
   it("primaryDamageFor scales by level", () => {
-    expect(primaryDamageFor("arc_spine", 1)).toBe(5);
+    expect(primaryDamageFor("arc_spine", 1)).toBe(8);
     expect(primaryDamageFor("arc_spine", 3)).toBe(11);
   });
 
@@ -21,7 +21,7 @@ describe("DamageResolver", () => {
         [1, 0],
       ],
       pathProgress: 0.5,
-      hp: 6,
+      hp: 4,
       maxHp: 12,
       speedMultiplier: 1,
     });

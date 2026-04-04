@@ -42,6 +42,11 @@ function minScoreEnemy(
   return best;
 }
 
+export type TargetingOptions = {
+  /** Euclidean tile distance from tower `position`; enemies farther are ignored. */
+  maxAttackRangeTiles?: number;
+};
+
 /**
  * Tower targeting modes (`targetMode` on map defenses).
  */
@@ -50,11 +55,18 @@ export class TargetingSystem {
     defense: DefenseController,
     enemies: readonly EnemyController[],
     mode: TargetMode,
+    options?: TargetingOptions,
   ): EnemyController | undefined {
-    const alive = enemies.filter((e) => e.isAlive());
-    if (alive.length === 0) return undefined;
-
     const pos = defense.position;
+    let alive = enemies.filter((e) => e.isAlive());
+    const cap = options?.maxAttackRangeTiles;
+    if (cap !== undefined) {
+      const rSq = cap * cap;
+      alive = alive.filter(
+        (e) => distSq(pos, e.getGridPosition()) <= rSq,
+      );
+    }
+    if (alive.length === 0) return undefined;
     switch (mode) {
       case "first":
         return maxScoreEnemy(alive, (e) => e.getPathProgress());

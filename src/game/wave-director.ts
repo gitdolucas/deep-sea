@@ -49,6 +49,11 @@ export class WaveDirector {
     return this.groupStates.every((s) => s.remainingToSpawn <= 0);
   }
 
+  /** Skip remaining prep time (e.g. "Send Wave"); next `tick` finishes prep if `dt` > 0. */
+  skipPrep(): void {
+    if (this.phase === "prep") this.prepRemaining = 0;
+  }
+
   tick(dt: number): void {
     if (this.phase === "completed" || dt <= 0) return;
 

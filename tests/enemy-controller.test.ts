@@ -66,7 +66,7 @@ describe("EnemyController", () => {
 
     it("effectiveSpeedTilesPerSec scales base speed by multiplier", () => {
       const e = makeStoneclaw({ speedMultiplier: 2 });
-      expect(priv(e).effectiveSpeedTilesPerSec()).toBeCloseTo(1.1, 5);
+      expect(priv(e).effectiveSpeedTilesPerSec()).toBeCloseTo(3, 5);
     });
   });
 

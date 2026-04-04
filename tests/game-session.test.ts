@@ -67,9 +67,19 @@ describe("GameSession", () => {
 
     expect(session.getLivingEnemyCount()).toBe(0);
     expect(session.castle.maxHp).toBe(20);
-    session.waveDirector.tryAdvanceWaveIfCleared(session.getLivingEnemyCount());
     expect(session.waveDirector.getPhase()).toBe("completed");
+    expect(session.getOutcome()).toBe("win");
     expect(session.economy.getShells()).toBeGreaterThan(0);
+  });
+
+  it("starts with MVP shells and can place Arc Spine L1", () => {
+    const doc = combatMap();
+    doc.defenses = [];
+    const session = new GameSession(doc);
+    expect(session.economy.getShells()).toBe(50);
+    expect(session.tryPurchaseArcSpineL1("t1", [2, 2])).toBe(true);
+    expect(session.economy.getShells()).toBe(20);
+    expect(session.map.getDefenses()).toHaveLength(1);
   });
 
   it("applies leak damage when an enemy finishes the path", () => {

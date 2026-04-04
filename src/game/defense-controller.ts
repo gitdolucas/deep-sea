@@ -92,10 +92,10 @@ export class DefenseController {
 
   private arcSearchRadius(): number {
     if (this.type !== "arc_spine") return 0;
-    // Tuned for grid play: L1 shorter arcs, L3 reaches farther clusters.
+    // MVP L1: 2 tiles from previous target (docs/prd-mvp.md); higher tiers keep legacy tuning.
     switch (this.level) {
       case 1:
-        return 2.5;
+        return 2;
       case 2:
         return 3.25;
       case 3:
