@@ -33,6 +33,14 @@ import {
   updateBubblePopRings,
   type BubblePopRing,
 } from "./bubble-attack-fx.js";
+import {
+  disposeCannonAttackFxShared,
+  ensureCannonProjectilePool,
+  spawnCannonBlastDecals,
+  syncCannonProjectileMeshes,
+  updateCannonBlastDecals,
+  type CannonBlastDecal,
+} from "./cannon-attack-fx.js";
 import { createArcSpineLightningLine } from "./arc-spine-chain-fx.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
 import { GAMEPLAY_TIPS } from "./gameplay-tips.js";
@@ -154,6 +162,9 @@ export class GameApp {
   private readonly bubbleProjectileGroup = new THREE.Group();
   private bubbleProjectilePool: THREE.Mesh[] = [];
   private bubblePopRings: BubblePopRing[] = [];
+  private readonly cannonProjectileGroup = new THREE.Group();
+  private cannonProjectilePool: THREE.Mesh[] = [];
+  private cannonBlastDecals: CannonBlastDecal[] = [];
   private nextDefenseId = 1;
   private readonly mount: HTMLElement;
   private readonly orbitControls: OrbitControls;
@@ -204,6 +215,7 @@ export class GameApp {
     this.scene.add(grid);
 
     this.scene.add(this.bubbleProjectileGroup);
+    this.scene.add(this.cannonProjectileGroup);
 
     this.camera = new THREE.PerspectiveCamera(
       50,
@@ -337,6 +349,20 @@ export class GameApp {
     }
     this.bubbleProjectilePool.length = 0;
     disposeBubbleAttackFxShared();
+    this.scene.remove(this.cannonProjectileGroup);
+    for (const m of this.cannonProjectilePool) {
+      m.geometry.dispose();
+      (m.material as THREE.Material).dispose();
+    }
+    this.cannonProjectilePool.length = 0;
+    for (let i = this.cannonBlastDecals.length - 1; i >= 0; i--) {
+      const d = this.cannonBlastDecals[i]!;
+      this.scene.remove(d.mesh);
+      d.mesh.geometry.dispose();
+      d.mat.dispose();
+    }
+    this.cannonBlastDecals.length = 0;
+    disposeCannonAttackFxShared();
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry?.dispose();
@@ -751,6 +777,7 @@ export class GameApp {
     this.syncEnemies();
     this.syncBubbleAttackFx(dt);
     this.applyCombatVfx();
+    this.syncCannonAttackFx(dt);
     this.updateChainFx(dt);
     this.updateHud();
     this.syncWaveProgress();
@@ -873,7 +900,29 @@ export class GameApp {
     updateBubblePopRings(this.bubblePopRings, dt, this.scene);
   }
 
+  private syncCannonAttackFx(dt: number): void {
+    const projs = this.session.getCannonProjectiles();
+    ensureCannonProjectilePool(
+      this.cannonProjectileGroup,
+      this.cannonProjectilePool,
+      projs.length,
+    );
+    syncCannonProjectileMeshes(
+      this.cannonProjectilePool,
+      projs,
+      this.doc,
+      this.clock.elapsedTime,
+    );
+    updateCannonBlastDecals(
+      this.cannonBlastDecals,
+      dt,
+      this.scene,
+      this.clock.elapsedTime,
+    );
+  }
+
   private applyCombatVfx(): void {
+    const cannonBlasts: { gx: number; gz: number; radiusTiles: number }[] = [];
     for (const evt of this.session.consumeCombatEvents()) {
       const snap = this.session.map
         .getDefenses()
@@ -892,7 +941,18 @@ export class GameApp {
         );
         this.spawnDamagePopup(h.damage, h.position[0], h.position[1]);
       }
-      if (pts.length >= 2) this.addChain(pts);
+      if (evt.chainLightningVfx === true && pts.length >= 2) {
+        this.addChain(pts);
+      }
+      if (evt.cannonBlast) cannonBlasts.push(evt.cannonBlast);
+    }
+    if (cannonBlasts.length > 0) {
+      spawnCannonBlastDecals(
+        cannonBlasts,
+        this.doc,
+        this.scene,
+        this.cannonBlastDecals,
+      );
     }
   }
 

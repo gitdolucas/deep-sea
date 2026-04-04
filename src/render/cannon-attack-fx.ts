@@ -7,26 +7,105 @@ const BOLT_LENGTH = 0.42;
 const BOLT_R_BOT = 0.055;
 const BOLT_R_TOP = 0.02;
 
-const CANNON_BOLT_MAT = new THREE.MeshBasicMaterial({
-  color: 0x44ddff,
-  transparent: true,
-  opacity: 0.92,
-  depthWrite: false,
-});
+const boltVertexShader = `
+varying vec3 vLocalPos;
+varying float vAxial;
 
-const CANNON_BOLT_MAT_L3 = new THREE.MeshBasicMaterial({
-  color: 0xffcc66,
-  transparent: true,
-  opacity: 0.95,
-  depthWrite: false,
-});
+void main() {
+  vLocalPos = position;
+  vAxial = position.y / ${BOLT_LENGTH.toFixed(4)} + 0.5;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const boltFragmentShader = `
+uniform float uTime;
+uniform float uLevel;
+uniform float uScroll;
+
+varying vec3 vLocalPos;
+varying float vAxial;
+
+const vec3 COL_DEEP = vec3(0.0, 0.12, 0.28);
+const vec3 COL_CYAN = vec3(0.0, 0.831, 1.0);
+const vec3 COL_HIGH = vec3(0.55, 0.98, 1.0);
+
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise2(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+void main() {
+  float tAx = clamp(vAxial, 0.0, 1.0);
+  float rMax = mix(${BOLT_R_BOT.toFixed(5)}, ${BOLT_R_TOP.toFixed(5)}, tAx);
+  float rNorm = length(vLocalPos.xz) / max(rMax, 0.0001);
+  float ang = atan(vLocalPos.z, vLocalPos.x);
+
+  float lv = clamp(uLevel, 1.0, 3.0);
+  float swirl = ang * (1.8 + 0.35 * lv) + uTime * (1.1 + 0.45 * lv);
+  float axialFlow = tAx * (7.0 + lv) + uScroll;
+
+  float co1 = noise2(vec2(axialFlow, swirl * 0.65));
+  float co2 = noise2(vec2(axialFlow * 1.9 - uTime * 0.9, swirl * 1.4 + uScroll * 1.2));
+  float co3 = noise2(vec2(axialFlow * 3.2, ang * 2.5 - uTime * 1.6 + uScroll * 0.5));
+  float stream = co1 * 0.5 + co2 * 0.35 + co3 * 0.28;
+
+  float rim = 1.0 - smoothstep(0.62, 1.08, rNorm);
+  rim = pow(max(rim, 0.0), 1.6);
+
+  float caps = smoothstep(0.0, 0.14, tAx) * smoothstep(1.0, 0.86, tAx);
+  float coreBoost = smoothstep(0.95, 0.2, rNorm) * (0.15 + 0.2 * lv);
+
+  float body = stream * (0.45 + 0.12 * lv) + rim * (0.35 + 0.08 * lv) + coreBoost;
+
+  vec3 col = mix(COL_DEEP, COL_CYAN, clamp(body * 1.1, 0.0, 1.0));
+  col = mix(col, COL_HIGH, rim * (0.35 + 0.1 * lv));
+  if (lv >= 2.5) {
+    col = mix(col, vec3(0.92, 0.88, 0.42), coreBoost * 0.55);
+  }
+
+  float pulse = 0.9 + 0.1 * sin(uTime * 16.0 - tAx * 9.0 + ang * 3.0);
+  col *= pulse;
+
+  float alpha = body * (0.32 + 0.12 * lv) + rim * (0.42 + 0.08 * lv);
+  alpha *= caps;
+  alpha = clamp(alpha, 0.0, 0.78);
+
+  gl_FragColor = vec4(col, alpha);
+}
+`;
+
+function createCannonBoltMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uLevel: { value: 1 },
+      uScroll: { value: 0 },
+    },
+    vertexShader: boltVertexShader,
+    fragmentShader: boltFragmentShader,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
+}
 
 const _fwd = new THREE.Vector3();
 const _axis = new THREE.Vector3(0, 1, 0);
 
 const BLAST_DURATION = 0.62;
 
-/* Radial distance from mesh origin; CircleGeometry lives in local XY before rotation. */
 const blastVertexShader = `
 varying vec2 vLocalXY;
 void main() {
@@ -36,8 +115,7 @@ void main() {
 `;
 
 /**
- * Expanding pressure-ring blast: hot core, leading shockwall, violet caustic crawl,
- * trailing ripples (style-bible cyan / violet / warm accents).
+ * Hydraulic pressure-ring: shockwall, trailing wakes, reduced "electric" band vs prior.
  */
 const blastFragmentShader = `
 uniform float uTime;
@@ -68,16 +146,16 @@ void main() {
 
   float caust = sin(r * 38.0 - uTime * 10.0 + p * 6.28) * 0.5 + 0.5;
   float ionBand = smoothstep(0.55, 0.95, r) * (1.0 - smoothstep(0.98, 1.05, r));
-  ionBand *= caust * (0.35 + shock * 0.85);
+  ionBand *= caust * (0.35 + shock * 0.85) * 0.42;
 
   float haze = (1.0 - smoothstep(0.0, 0.45, r)) * exp(-p * 2.2) * 0.22;
 
   float alpha =
-    (shock + shock2 + wakeA + wakeB + coreFlash + ionBand * 0.9 + haze) * uFade;
+    (shock + shock2 + wakeA + wakeB + coreFlash + ionBand * 0.55 + haze) * uFade;
 
   vec3 col = COL_DEEP * (0.35 + haze * 2.5);
   col = mix(col, COL_CYAN, clamp(shock * 1.15 + shock2 * 0.8 + wakeA * 1.2, 0.0, 1.0));
-  col = mix(col, COL_VIOLET, ionBand * 0.95);
+  col = mix(col, COL_VIOLET, ionBand * 0.55);
   col = mix(col, COL_MINT, shock * r * 0.35 + wakeB * 0.5);
   col = mix(col, COL_CORE, coreFlash * 1.25);
 
@@ -109,7 +187,7 @@ export function ensureCannonProjectilePool(
       1,
       false,
     );
-    const mesh = new THREE.Mesh(geom, CANNON_BOLT_MAT);
+    const mesh = new THREE.Mesh(geom, createCannonBoltMaterial());
     mesh.renderOrder = 3;
     parent.add(mesh);
     pool.push(mesh);
@@ -127,13 +205,19 @@ export function syncCannonProjectileMeshes(
     if (i < projectiles.length) {
       const p = projectiles[i]!;
       mesh.visible = true;
-      mesh.material = p.level >= 3 ? CANNON_BOLT_MAT_L3 : CANNON_BOLT_MAT;
+      const mat = mesh.material as THREE.ShaderMaterial;
+      mat.uniforms.uTime.value = timeSec;
+      mat.uniforms.uLevel.value = p.level;
+      mat.uniforms.uScroll.value = p.traveled * 2.4;
       const dirLen = Math.hypot(p.vgx, p.vgz) || 1;
       _fwd.set(p.vgx / dirLen, 0, p.vgz / dirLen);
       mesh.quaternion.setFromUnitVectors(_axis, _fwd);
-      const bob = 0.48 + 0.04 * Math.sin(timeSec * 14 + i * 0.7 + p.traveled * 2.8);
+      const bob =
+        0.48 + 0.04 * Math.sin(timeSec * 14 + i * 0.7 + p.traveled * 2.8);
       mesh.position.copy(worldFromGrid(p.gx, p.gz, doc, bob));
-      const sc = (p.level >= 3 ? 1.12 : 1) * (1 + 0.05 * Math.sin(timeSec * 11 + p.traveled * 4));
+      const sc =
+        (p.level >= 3 ? 1.12 : 1) *
+        (1 + 0.05 * Math.sin(timeSec * 11 + p.traveled * 4));
       mesh.scale.set(sc, sc * (0.95 + p.level * 0.04), sc);
     } else {
       mesh.visible = false;
@@ -195,7 +279,5 @@ export function updateCannonBlastDecals(
   }
 }
 
-export function disposeCannonAttackFxShared(): void {
-  CANNON_BOLT_MAT.dispose();
-  CANNON_BOLT_MAT_L3.dispose();
-}
+/** No shared bolt materials (each pool mesh owns its ShaderMaterial). */
+export function disposeCannonAttackFxShared(): void {}
