@@ -4,12 +4,13 @@ export {
   KILL_SHELL_REWARD,
   CHAIN_DAMAGE_FALLOFF,
   attackRangeTiles,
-  damageAfterArmor,
   fireIntervalFor,
   primaryDamageFor,
+  type CombatResolveContext,
   type TowerAttackResult,
   type TowerHitRecord,
 } from "./damage-resolver.js";
+export { damageAfterArmorEffective } from "./combat-damage.js";
 export { DefenseController, type ChainEnemyRef } from "./defense-controller.js";
 export { EconomyController, type EconomyInitialState } from "./economy-controller.js";
 export { EnemyController } from "./enemy-controller.js";
@@ -20,6 +21,11 @@ export {
 } from "./enemy-stats.js";
 export { spawnEnemyFromWaveGroup } from "./enemy-spawner.js";
 export { GameSession, type GameOutcome } from "./game-session.js";
+export {
+  ARMORY_DEFENSE_ORDER,
+  DEFENSE_BUILD_COST_L1,
+  buildCostL1,
+} from "./defense-build-costs.js";
 export { MVP_ARC_SPINE_BUILD_COST, MVP_STARTING_SHELLS } from "./mvp-constants.js";
 export { MapController } from "./map-controller.js";
 export {
@@ -30,7 +36,11 @@ export {
   pathCellVisualKind,
   type PathCellVisualKind,
 } from "./path-cells.js";
-export { TargetingSystem, type TargetingOptions } from "./targeting-system.js";
+export {
+  TargetingSystem,
+  type TargetingContext,
+  type TargetingOptions,
+} from "./targeting-system.js";
 export { WaveDirector, type WaveDirectorHooks } from "./wave-director.js";
 export type { WavePhase } from "./wave-types.js";
 export type {

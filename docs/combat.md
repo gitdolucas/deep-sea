@@ -51,7 +51,7 @@ Every tower follows this loop:
 | Tower           | L1     | L2     | L3     |
 |-----------------|--------|--------|--------|
 | Tideheart Laser | 0.1s (continuous beam, DPS tick rate) | 0.1s | 0.08s |
-| Bubble Shotgun  | 1.8s   | 1.3s   | 0.9s   |
+| Bubble Shotgun  | 1.5s   | 1.1s   | 0.75s  |
 | Vibration Zone  | 0.5s (tick rate for slow reapply) | 0.5s | 0.3s (tick rate for slow + DoT) |
 | Current Cannon  | 2.5s   | 2.0s   | 1.5s   |
 | Ink Veil        | 3.0s (cloud redeploy) | 3.0s | Persistent (no cooldown) |
@@ -126,8 +126,8 @@ This means a Colossus inside an L3 Ink Veil drops from 8 armor to 3 — every to
 | Tower           | L1  | L2  | L3  |
 |-----------------|-----|-----|-----|
 | Tideheart Laser | 4/tick | 5/tick | 6/tick (×3 beams) |
-| Bubble Shotgun  | 3/bubble | 4/bubble | 5/bubble + 2 splash |
-| Vibration Zone  | 0 | 0 | 1/tick (DoT) |
+| Bubble Shotgun  | 25/bubble | 30/bubble | 35/bubble + 15 splash |
+| Vibration Zone  | 0 | 0 | 2/tick (DoT) |
 | Current Cannon  | 6 | 10 | 14 + stun |
 | Ink Veil        | 0 | 0 | 0 (utility only) |
 | Arc Spine       | 8 (primary) | 10 (primary) | 12 (primary) + 2/tick burn |
@@ -169,9 +169,9 @@ Towers can apply effects beyond raw damage. Effects have a **source** and a **du
 
 | Vibration Zone Level | Slow Amount |
 |----------------------|-------------|
-| L1                   | 20%         |
-| L2                   | 40%         |
-| L3                   | 60%         |
+| L1                   | 30%         |
+| L2                   | 50%         |
+| L3                   | 70%         |
 
 Slow does **not** stack from multiple Vibration Zones — only the strongest applies.
 
@@ -205,7 +205,7 @@ Vibration Zone slows enemies, keeping them inside the Laser's beam longer. More 
 Extra ticks = (slow_percentage / 100) × base_ticks_in_range
 ```
 
-A Razoreel that normally crosses a Laser's range in 5 ticks at full speed will take **8 ticks** inside a L2 Vibration Zone (40% slow). That's 60% more damage dealt.
+A Razoreel that normally crosses a Laser's range in 5 ticks at full speed will take **10 ticks** inside a L2 Vibration Zone (50% slow). That's 100% more damage dealt.
 
 **Best against:** Razoreels (negates their speed advantage)
 
@@ -220,7 +220,7 @@ Ink Veil L3 shreds 5 armor. Every other tower's damage against armored targets i
 | Tideheart Laser L1 (4/tick) | max(1, 4-8) = 1 | max(1, 4-3) = 1            |
 | Tideheart Laser L3 (6/tick) | max(1, 6-8) = 1 | max(1, 6-3) = 3            |
 | Arc Spine L3 (12)           | max(1, 12-8) = 4 | max(1, 12-3) = 9           |
-| Bubble Shotgun L3 (5/bubble) | max(1, 5-8) = 1 | max(1, 5-3) = 2           |
+| Bubble Shotgun L3 (35/bubble) | max(1, 35-8) = 27 | max(1, 35-3) = 32        |
 
 **Best against:** Abyssal Colossus (turns armor from near-immunity into vulnerability)
 
@@ -239,7 +239,7 @@ Current Cannon knocks enemies back into (or through) a Vibration Zone, forcing t
 Both apply DoT. They stack because they are different effect types (Burn vs. Vibration DoT).
 
 ```
-Combined DoT = Vibration DoT (1/tick) + Burn DoT (2/tick) = 3/tick
+Combined DoT = Vibration DoT (2/tick) + Burn DoT (2/tick) = 4/tick
 ```
 
 Over a 3-second window against a Stoneclaw group: each crab takes chain hit + 9 damage from stacked DoTs. Clears swarms without needing direct hits on every target.

@@ -3,16 +3,39 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameSession } from "../game/game-session.js";
 import { arcSpineChainSearchRadius } from "../game/defense-controller.js";
-import { attackRangeTiles, fireIntervalFor } from "../game/damage-resolver.js";
-import { MVP_ARC_SPINE_BUILD_COST } from "../game/mvp-constants.js";
-import type { DefenseTypeKey } from "../game/types.js";
+import {
+  attackRangeTiles,
+  auraRadiusTiles,
+  fireIntervalFor,
+} from "../game/damage-resolver.js";
+import { buildPlacedDefenseTooltipSpec } from "../game/placed-defense-tooltip.js";
+import { mountTowerHoverTip } from "./tower-hover-dom.js";
+import {
+  ARMORY_DEFENSE_ORDER,
+  buildCostL1,
+} from "../game/defense-build-costs.js";
+import type {
+  DefenseLevel,
+  DefenseSnapshot,
+  DefenseTypeKey,
+} from "../game/types.js";
 import { buildMapBoard, worldFromGrid } from "./board.js";
 import {
   COLORS,
   CHAIN_FX_DURATION,
   DAMAGE_POP_DURATION_SEC,
 } from "./constants.js";
+import {
+  disposeBubbleAttackFxShared,
+  ensureBubbleProjectilePool,
+  spawnBubblePopRings,
+  syncBubbleProjectileMeshes,
+  updateBubblePopRings,
+  type BubblePopRing,
+} from "./bubble-attack-fx.js";
+import { createArcSpineLightningLine } from "./arc-spine-chain-fx.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
+import { GAMEPLAY_TIPS } from "./gameplay-tips.js";
 
 type BarBillboard = {
   group: THREE.Group;
@@ -73,6 +96,16 @@ function disposeObject3DTree(root: THREE.Object3D): void {
   });
 }
 
+/** Placeholder tower tint per defense (until sprites). */
+const DEFENSE_TOWER_COLOR: Record<DefenseTypeKey, number> = {
+  arc_spine: COLORS.tower,
+  tideheart_laser: 0x00b8e6,
+  bubble_shotgun: 0x66ccff,
+  vibration_zone: 0x39ff6e,
+  current_cannon: 0xffaa44,
+  ink_veil: 0x7b2fff,
+};
+
 function makeRangeRingMesh(
   innerR: number,
   outerR: number,
@@ -104,6 +137,9 @@ export class GameApp {
   private cellPickEntries: { mesh: THREE.Mesh; gx: number; gz: number }[] =
     [];
   private readonly rangePreviewGroup = new THREE.Group();
+  /** Attack radius while hovering an existing tower (tile space, matches {@link attackRangeTiles}). */
+  private readonly towerHoverRangeGroup = new THREE.Group();
+  private towerHoverRangeCacheKey: string | null = null;
   private placementType: DefenseTypeKey | null = null;
   private enemyObjects = new Map<
     string,
@@ -113,7 +149,11 @@ export class GameApp {
     string,
     { root: THREE.Group; tower: THREE.Mesh; bar: BarBillboard }
   >();
-  private chainLines: { obj: THREE.Line; t: number }[] = [];
+  private chainLines: { obj: THREE.LineSegments; t: number; mat: THREE.ShaderMaterial }[] =
+    [];
+  private readonly bubbleProjectileGroup = new THREE.Group();
+  private bubbleProjectilePool: THREE.Mesh[] = [];
+  private bubblePopRings: BubblePopRing[] = [];
   private nextDefenseId = 1;
   private readonly mount: HTMLElement;
   private readonly orbitControls: OrbitControls;
@@ -121,6 +161,9 @@ export class GameApp {
   private slotPointerStart: { x: number; y: number } | null = null;
   /** For shell stat row flash when balance changes. */
   private prevShells: number | null = null;
+  private lastTowerTipDefenseId: string | null = null;
+  private gameplayTipsTimer: ReturnType<typeof setInterval> | null = null;
+  private gameplayTipIndex = 0;
 
   constructor(doc: MapDocument, mount?: HTMLElement) {
     this.doc = doc;
@@ -143,24 +186,11 @@ export class GameApp {
     this.scene.add(root);
     this.cellPickEntries = cells;
 
-    const attackR = attackRangeTiles("arc_spine", 1);
-    const chainR = arcSpineChainSearchRadius(1);
-    const primaryRing = makeRangeRingMesh(
-      Math.max(0.04, attackR - 0.1),
-      attackR + 0.1,
-      COLORS.rangePreviewPrimary,
-      0.45,
-    );
-    const chainRing = makeRangeRingMesh(
-      Math.max(0.04, chainR - 0.08),
-      chainR + 0.08,
-      COLORS.rangePreviewChain,
-      0.35,
-    );
-    this.rangePreviewGroup.add(chainRing);
-    this.rangePreviewGroup.add(primaryRing);
     this.rangePreviewGroup.visible = false;
     this.scene.add(this.rangePreviewGroup);
+
+    this.towerHoverRangeGroup.visible = false;
+    this.scene.add(this.towerHoverRangeGroup);
 
     const [gw, gd] = doc.gridSize;
     const gridExtent = Math.max(gw, gd) + 2;
@@ -173,22 +203,22 @@ export class GameApp {
     grid.position.y = 0.02;
     this.scene.add(grid);
 
-    const cx = (gw - 1) / 2;
-    const cz = (gd - 1) / 2;
+    this.scene.add(this.bubbleProjectileGroup);
+
     this.camera = new THREE.PerspectiveCamera(
       50,
       window.innerWidth / window.innerHeight,
       0.1,
       200,
     );
-    this.camera.position.set(cx + 6, 14, cz + 12);
-    this.camera.lookAt(cx, 0, cz);
+    this.camera.position.set(6, 14, 12);
+    this.camera.lookAt(0, 0, 0);
 
     this.orbitControls = new OrbitControls(
       this.camera,
       this.renderer.domElement,
     );
-    this.orbitControls.target.set(cx, 0, cz);
+    this.orbitControls.target.set(0, 0, 0);
     this.orbitControls.enableDamping = true;
     this.orbitControls.dampingFactor = 0.08;
     this.orbitControls.maxPolarAngle = Math.PI / 2 - 0.06;
@@ -214,6 +244,11 @@ export class GameApp {
       (ev) => this.onCanvasPointerMove(ev),
       ac,
     );
+    this.renderer.domElement.addEventListener(
+      "pointerleave",
+      () => this.hideTowerHoverTip(),
+      ac,
+    );
     window.addEventListener("pointerup", (ev) => this.onSlotPointerUp(ev), ac);
     window.addEventListener(
       "pointercancel",
@@ -228,9 +263,22 @@ export class GameApp {
       () => this.onSendWave(),
       ac,
     );
-    document.getElementById("invArcSpine")?.addEventListener(
+    document.getElementById("section-armory")?.addEventListener(
       "click",
-      () => this.onInventoryArcSpineClick(),
+      (ev) => {
+        const t = (ev.target as HTMLElement | null)?.closest?.(
+          "[data-defense]",
+        ) as HTMLElement | null;
+        const key = t?.dataset?.defense as DefenseTypeKey | undefined;
+        if (
+          key &&
+          ARMORY_DEFENSE_ORDER.includes(key) &&
+          t?.classList.contains("pick")
+        ) {
+          ev.preventDefault();
+          this.onArmoryDefenseClick(key);
+        }
+      },
       ac,
     );
     document.getElementById("invCancel")?.addEventListener(
@@ -238,11 +286,28 @@ export class GameApp {
       () => this.clearPlacementMode(),
       ac,
     );
+    document.getElementById("gameplayTipsPrev")?.addEventListener(
+      "click",
+      (ev) => {
+        ev.preventDefault();
+        this.stepGameplayTip(-1);
+      },
+      ac,
+    );
+    document.getElementById("gameplayTipsNext")?.addEventListener(
+      "click",
+      (ev) => {
+        ev.preventDefault();
+        this.stepGameplayTip(1);
+      },
+      ac,
+    );
     this.refreshInventoryUi();
   }
 
   start(): void {
     this.clock.start();
+    this.startGameplayTips();
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
@@ -250,15 +315,28 @@ export class GameApp {
    * Stop the render loop, release WebGL and Three.js resources, and remove listeners.
    */
   dispose(): void {
+    this.stopGameplayTips();
     this.abortController.abort();
     this.renderer.setAnimationLoop(null);
     this.orbitControls.dispose();
     for (const c of this.chainLines) {
       this.scene.remove(c.obj);
       c.obj.geometry.dispose();
-      (c.obj.material as THREE.Material).dispose();
+      c.mat.dispose();
     }
     this.chainLines = [];
+    for (const r of this.bubblePopRings) {
+      this.scene.remove(r.mesh);
+      r.mesh.geometry.dispose();
+      (r.mesh.material as THREE.Material).dispose();
+    }
+    this.bubblePopRings.length = 0;
+    this.scene.remove(this.bubbleProjectileGroup);
+    for (const m of this.bubbleProjectilePool) {
+      m.geometry.dispose();
+    }
+    this.bubbleProjectilePool.length = 0;
+    disposeBubbleAttackFxShared();
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry?.dispose();
@@ -278,6 +356,55 @@ export class GameApp {
     }
   }
 
+  private startGameplayTips(): void {
+    this.stopGameplayTips();
+    const wrap = document.getElementById("gameplayTips");
+    if (!wrap) return;
+    wrap.removeAttribute("hidden");
+    this.gameplayTipIndex = Math.floor(Math.random() * GAMEPLAY_TIPS.length);
+    this.renderGameplayTip();
+    this.restartGameplayTipsAutoAdvance();
+  }
+
+  private stopGameplayTips(): void {
+    if (this.gameplayTipsTimer !== null) {
+      clearInterval(this.gameplayTipsTimer);
+      this.gameplayTipsTimer = null;
+    }
+    document.getElementById("gameplayTips")?.setAttribute("hidden", "");
+  }
+
+  private renderGameplayTip(): void {
+    const text = document.getElementById("gameplayTipsText");
+    const meta = document.getElementById("gameplayTipsMeta");
+    const n = GAMEPLAY_TIPS.length;
+    const idx =
+      ((this.gameplayTipIndex % n) + n) % n;
+    if (text) text.textContent = GAMEPLAY_TIPS[idx];
+    if (meta)
+      meta.textContent = `${idx + 1} / ${n}`;
+  }
+
+  private restartGameplayTipsAutoAdvance(): void {
+    if (this.gameplayTipsTimer !== null) {
+      clearInterval(this.gameplayTipsTimer);
+    }
+    const TIP_SEC = 13;
+    this.gameplayTipsTimer = window.setInterval(() => {
+      this.gameplayTipIndex++;
+      this.renderGameplayTip();
+    }, TIP_SEC * 1000);
+  }
+
+  private stepGameplayTip(delta: number): void {
+    const wrap = document.getElementById("gameplayTips");
+    if (!wrap || wrap.hasAttribute("hidden")) return;
+    const n = GAMEPLAY_TIPS.length;
+    this.gameplayTipIndex = (this.gameplayTipIndex + delta + n) % n;
+    this.renderGameplayTip();
+    this.restartGameplayTipsAutoAdvance();
+  }
+
   private onResize(): void {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -292,24 +419,93 @@ export class GameApp {
     }
   }
 
-  private onInventoryArcSpineClick(): void {
+  private onArmoryDefenseClick(type: DefenseTypeKey): void {
     if (this.session.getOutcome() !== "playing") return;
+    const cost = buildCostL1(type);
     const shells = this.session.economy.getShells();
-    if (shells < MVP_ARC_SPINE_BUILD_COST) return;
-    if (this.placementType === "arc_spine") {
+    if (this.placementType === type) {
       this.clearPlacementMode();
-    } else {
-      this.placementType = "arc_spine";
-      this.syncOrbitWithPlacement();
-      this.refreshInventoryUi();
+      return;
     }
+    if (shells < cost) return;
+    this.placementType = type;
+    this.rebuildPlacementRangeRings();
+    this.syncOrbitWithPlacement();
+    this.refreshInventoryUi();
   }
 
   private clearPlacementMode(): void {
     this.placementType = null;
     this.rangePreviewGroup.visible = false;
+    this.rebuildPlacementRangeRings();
     this.syncOrbitWithPlacement();
     this.refreshInventoryUi();
+  }
+
+  private clearRangePreviewMeshes(group: THREE.Group): void {
+    for (const c of [...group.children]) {
+      group.remove(c);
+      if (c instanceof THREE.Mesh) {
+        c.geometry.dispose();
+        (c.material as THREE.Material).dispose();
+      }
+    }
+  }
+
+  /**
+   * Primary engagement ring + Arc Spine chain ring when applicable.
+   * Mutates `group`; caller must clear first if replacing.
+   */
+  private fillAttackRangePreview(
+    group: THREE.Group,
+    type: DefenseTypeKey,
+    level: DefenseLevel,
+  ): void {
+    const attackR =
+      type === "vibration_zone" || type === "ink_veil"
+        ? auraRadiusTiles(type, level)
+        : attackRangeTiles(type, level);
+    const primaryRing = makeRangeRingMesh(
+      Math.max(0.04, attackR - 0.1),
+      attackR + 0.1,
+      COLORS.rangePreviewPrimary,
+      0.45,
+    );
+    group.add(primaryRing);
+    if (type === "arc_spine") {
+      const chainR = arcSpineChainSearchRadius(level);
+      const chainRing = makeRangeRingMesh(
+        Math.max(0.04, chainR - 0.08),
+        chainR + 0.08,
+        COLORS.rangePreviewChain,
+        0.35,
+      );
+      group.add(chainRing);
+    }
+  }
+
+  private rebuildPlacementRangeRings(): void {
+    this.clearRangePreviewMeshes(this.rangePreviewGroup);
+    const t = this.placementType;
+    if (!t) return;
+    this.fillAttackRangePreview(this.rangePreviewGroup, t, 1);
+  }
+
+  private syncTowerHoverAttackRange(snap: DefenseSnapshot | null): void {
+    if (!snap) {
+      this.towerHoverRangeGroup.visible = false;
+      this.towerHoverRangeCacheKey = null;
+      return;
+    }
+    const key = `${snap.id}:${snap.type}:${snap.level}`;
+    if (key !== this.towerHoverRangeCacheKey) {
+      this.towerHoverRangeCacheKey = key;
+      this.clearRangePreviewMeshes(this.towerHoverRangeGroup);
+      this.fillAttackRangePreview(this.towerHoverRangeGroup, snap.type, snap.level);
+    }
+    const w = worldFromGrid(snap.position[0], snap.position[1], this.doc, 0.14);
+    this.towerHoverRangeGroup.position.set(w.x, w.y, w.z);
+    this.towerHoverRangeGroup.visible = true;
   }
 
   /** Left-click places towers; pause orbit rotate so clicks register immediately. */
@@ -341,22 +537,94 @@ export class GameApp {
     return { gx: m.userData.gx as number, gz: m.userData.gz as number };
   }
 
+  private pickHoveredDefenseId(e: PointerEvent): string | null {
+    this.setPointerNDC(e);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const meshes = [...this.defenseObjects.values()].map((v) => v.tower);
+    if (meshes.length === 0) return null;
+    const hits = this.raycaster.intersectObjects(meshes, false);
+    if (hits.length === 0) return null;
+    const id = (hits[0]!.object as THREE.Mesh).userData.defenseId as
+      | string
+      | undefined;
+    return typeof id === "string" ? id : null;
+  }
+
+  private hideTowerHoverTip(): void {
+    this.syncTowerHoverAttackRange(null);
+    this.lastTowerTipDefenseId = null;
+    const tip = document.getElementById("towerHoverTip");
+    if (!tip) return;
+    tip.classList.remove("tower-hover-tip--pulse");
+    tip.hidden = true;
+    tip.setAttribute("aria-hidden", "true");
+    tip.removeAttribute("data-defense");
+    tip.removeAttribute("aria-labelledby");
+  }
+
+  private updateTowerHoverTip(e: PointerEvent): void {
+    const tip = document.getElementById("towerHoverTip");
+    if (!tip) return;
+    const id = this.pickHoveredDefenseId(e);
+    if (!id) {
+      this.hideTowerHoverTip();
+      return;
+    }
+    const snap = this.session.map.getDefenses().find((d) => d.id === id);
+    if (!snap) {
+      this.hideTowerHoverTip();
+      return;
+    }
+    if (id !== this.lastTowerTipDefenseId) {
+      this.lastTowerTipDefenseId = id;
+      const spec = buildPlacedDefenseTooltipSpec(snap);
+      mountTowerHoverTip(tip, spec);
+      tip.classList.remove("tower-hover-tip--pulse");
+      void tip.offsetWidth;
+      tip.classList.add("tower-hover-tip--pulse");
+    }
+    tip.hidden = false;
+    tip.setAttribute("aria-hidden", "false");
+
+    this.syncTowerHoverAttackRange(snap);
+
+    const pad = 16;
+    const rect = tip.getBoundingClientRect();
+    let left = e.clientX + pad;
+    let top = e.clientY + pad;
+    if (left + rect.width > window.innerWidth - 8) {
+      left = e.clientX - rect.width - pad;
+    }
+    if (top + rect.height > window.innerHeight - 8) {
+      top = e.clientY - rect.height - pad;
+    }
+    tip.style.left = `${Math.max(8, left)}px`;
+    tip.style.top = `${Math.max(8, top)}px`;
+  }
+
   private onCanvasPointerMove(e: PointerEvent): void {
+    const el = this.renderer.domElement;
+    const r = el.getBoundingClientRect();
+    const insideCanvas =
+      e.clientX >= r.left &&
+      e.clientX <= r.right &&
+      e.clientY >= r.top &&
+      e.clientY <= r.bottom;
+
+    if (insideCanvas && this.session.getOutcome() === "playing") {
+      this.updateTowerHoverTip(e);
+    } else {
+      this.hideTowerHoverTip();
+    }
+
     if (
-      this.placementType !== "arc_spine" ||
+      this.placementType === null ||
       this.session.getOutcome() !== "playing"
     ) {
       this.rangePreviewGroup.visible = false;
       return;
     }
-    const el = this.renderer.domElement;
-    const r = el.getBoundingClientRect();
-    if (
-      e.clientX < r.left ||
-      e.clientX > r.right ||
-      e.clientY < r.top ||
-      e.clientY > r.bottom
-    ) {
+    if (!insideCanvas) {
       this.rangePreviewGroup.visible = false;
       return;
     }
@@ -399,14 +667,15 @@ export class GameApp {
     const dy = e.clientY - start.y;
     if (dx * dx + dy * dy > 25) return;
 
-    if (this.placementType !== "arc_spine") return;
+    const placing = this.placementType;
+    if (placing === null) return;
 
     const cell = this.pickGridCell(e);
     if (!cell) return;
     if (!this.canPlaceTower(cell.gx, cell.gz)) return;
 
     const id = `def_${this.nextDefenseId++}`;
-    const ok = this.session.tryPurchaseArcSpineL1(id, [
+    const ok = this.session.tryPurchaseDefenseL1(placing, id, [
       cell.gx,
       cell.gz,
     ]);
@@ -423,49 +692,52 @@ export class GameApp {
   private refreshInventoryUi(): void {
     const playing = this.session.getOutcome() === "playing";
     const shells = this.session.economy.getShells();
-    const canAfford = shells >= MVP_ARC_SPINE_BUILD_COST;
-    const selected = this.placementType === "arc_spine";
-    const btn = document.getElementById(
-      "invArcSpine",
-    ) as HTMLButtonElement | null;
-    if (btn) {
-      // Stay enabled while selected so player can deselect even if shells dropped below cost.
-      btn.disabled = !playing || (!canAfford && !selected);
-      btn.textContent = selected ? "Selected" : "Select";
-      btn.setAttribute("aria-pressed", selected ? "true" : "false");
-    }
-    const card = document.querySelector(
-      "[data-defense-card=\"arc_spine\"]",
-    );
-    if (card) {
-      card.classList.toggle("selected", selected);
-      card.classList.toggle(
-        "defense-card--affordable",
-        playing && canAfford && !selected,
-      );
-      card.classList.toggle(
-        "defense-card--blocked",
-        playing && !canAfford && !selected,
-      );
-    }
+    const selectedType = this.placementType;
 
-    const statusEl = document.getElementById("arcSpineStatus");
-    let statusText: string;
-    if (!playing) {
-      statusText = "Match ended";
-    } else if (selected) {
-      statusText = `Click map to place (${MVP_ARC_SPINE_BUILD_COST} shells)`;
-    } else if (canAfford) {
-      statusText = `Available · ${MVP_ARC_SPINE_BUILD_COST} shells`;
-    } else {
-      statusText = `Need ${MVP_ARC_SPINE_BUILD_COST - shells} more shells`;
+    for (const type of ARMORY_DEFENSE_ORDER) {
+      const cost = buildCostL1(type);
+      const canAfford = shells >= cost;
+      const selected = selectedType === type;
+      const btn = document.querySelector(
+        `[data-defense="${type}"].pick`,
+      ) as HTMLButtonElement | null;
+      const card = document.querySelector(`[data-defense-card="${type}"]`);
+      const statusEl = card?.querySelector("[data-defense-status]");
+
+      if (btn) {
+        btn.disabled = !playing || (!canAfford && !selected);
+        btn.textContent = selected ? "Selected" : "Select";
+        btn.setAttribute("aria-pressed", selected ? "true" : "false");
+      }
+      if (card) {
+        card.classList.toggle("selected", selected);
+        card.classList.toggle(
+          "defense-card--affordable",
+          playing && canAfford && !selected,
+        );
+        card.classList.toggle(
+          "defense-card--blocked",
+          playing && !canAfford && !selected,
+        );
+      }
+
+      let statusText: string;
+      if (!playing) {
+        statusText = "Match ended";
+      } else if (selected) {
+        statusText = `Click map to place (${cost} shells)`;
+      } else if (canAfford) {
+        statusText = `Available · ${cost} shells`;
+      } else {
+        statusText = `Need ${cost - shells} more shells`;
+      }
+      if (statusEl) statusEl.textContent = statusText;
+      if (btn) btn.title = statusText;
     }
-    if (statusEl) statusEl.textContent = statusText;
-    if (btn) btn.title = statusText;
 
     const hint = document.getElementById("placementHint");
     const cancel = document.getElementById("invCancel");
-    const placing = this.placementType === "arc_spine";
+    const placing = selectedType !== null;
     hint?.classList.toggle("visible", placing);
     cancel?.classList.toggle("visible", placing);
   }
@@ -477,12 +749,16 @@ export class GameApp {
     }
     this.syncDefenses();
     this.syncEnemies();
+    this.syncBubbleAttackFx(dt);
     this.applyCombatVfx();
     this.updateChainFx(dt);
     this.updateHud();
     this.syncWaveProgress();
     this.refreshInventoryUi();
     this.updateUiState();
+    if (this.session.getOutcome() !== "playing") {
+      this.hideTowerHoverTip();
+    }
     this.orbitControls.update();
     this.renderer.render(this.scene, this.camera);
   }
@@ -531,14 +807,17 @@ export class GameApp {
       let vis = this.defenseObjects.get(d.id);
       if (!vis) {
         const root = new THREE.Group();
+        const tint = DEFENSE_TOWER_COLOR[d.type];
         const tower = new THREE.Mesh(
           new THREE.CylinderGeometry(0.22, 0.28, 0.55, 10),
           new THREE.MeshStandardMaterial({
-            color: COLORS.tower,
-            emissive: COLORS.tower,
+            color: tint,
+            emissive: tint,
             emissiveIntensity: 0.2,
           }),
         );
+        tower.userData.kind = "defense_tower";
+        tower.userData.defenseId = d.id;
         root.add(tower);
         const bar = makeBarBillboard(
           0.44,
@@ -553,7 +832,8 @@ export class GameApp {
         this.defenseObjects.set(d.id, vis);
       }
       vis.root.position.set(w.x, w.y, w.z);
-      const interval = fireIntervalFor(d.type);
+      vis.tower.userData.defenseId = d.id;
+      const interval = fireIntervalFor(d.type, d.level);
       const remaining = this.session.getDefenseCooldownRemaining(d.id);
       const cdRatio = interval > 0 ? remaining / interval : 0;
       vis.bar.setFillRatio(cdRatio);
@@ -569,6 +849,28 @@ export class GameApp {
         this.defenseObjects.delete(id);
       }
     }
+  }
+
+  private syncBubbleAttackFx(dt: number): void {
+    const projs = this.session.getBubbleProjectiles();
+    ensureBubbleProjectilePool(
+      this.bubbleProjectileGroup,
+      this.bubbleProjectilePool,
+      projs.length,
+    );
+    syncBubbleProjectileMeshes(
+      this.bubbleProjectilePool,
+      projs,
+      this.doc,
+      this.clock.elapsedTime,
+    );
+    spawnBubblePopRings(
+      this.session.consumeBubblePopFx(),
+      this.doc,
+      this.scene,
+      this.bubblePopRings,
+    );
+    updateBubblePopRings(this.bubblePopRings, dt, this.scene);
   }
 
   private applyCombatVfx(): void {
@@ -595,20 +897,29 @@ export class GameApp {
   }
 
   private addChain(points: THREE.Vector3[]): void {
-    const geom = new THREE.BufferGeometry().setFromPoints(points);
-    const mat = new THREE.LineBasicMaterial({ color: COLORS.chain });
-    const line = new THREE.Line(geom, mat);
+    const line = createArcSpineLightningLine(
+      points,
+      COLORS.chainLightningPrimary,
+      COLORS.chainLightningBounce,
+    );
+    const mat = line.material as THREE.ShaderMaterial;
+    mat.uniforms.uFade.value = 1;
     this.scene.add(line);
-    this.chainLines.push({ obj: line, t: CHAIN_FX_DURATION });
+    this.chainLines.push({ obj: line, t: CHAIN_FX_DURATION, mat });
   }
 
   private updateChainFx(dt: number): void {
     this.chainLines = this.chainLines.filter((c) => {
       c.t -= dt;
+      c.mat.uniforms.uTime.value = this.clock.elapsedTime;
+      c.mat.uniforms.uFade.value = Math.max(
+        0,
+        CHAIN_FX_DURATION > 0 ? c.t / CHAIN_FX_DURATION : 0,
+      );
       if (c.t <= 0) {
         this.scene.remove(c.obj);
         c.obj.geometry.dispose();
-        (c.obj.material as THREE.Material).dispose();
+        c.mat.dispose();
         return false;
       }
       return true;

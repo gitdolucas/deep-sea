@@ -29,7 +29,11 @@ export const COLORS = {
   abyssalColossusBody: 0x2a0a4a,
   abyssalColossusVein: 0xff3366,
   tower: 0xaa66ff,
-  chain: 0x00ffcc,
+  /** Arc Spine — main strike (electric blue). */
+  chainLightningPrimary: 0x3399ff,
+  /** Chain hops — slightly lighter / desaturated blue-violet. */
+  chainLightningBounce: 0x7aa8ff,
+  chain: 0x3399ff,
   gridMajor: 0x2a4a6c,
   gridMinor: 0x132535,
   /** Primary attack range ring (placement preview). */

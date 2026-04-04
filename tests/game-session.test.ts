@@ -83,6 +83,19 @@ describe("GameSession", () => {
     expect(session.map.getDefenses()).toHaveLength(1);
   });
 
+  it("can place other defense types at their L1 shell cost", () => {
+    const doc = combatMap();
+    doc.defenses = [];
+    const session = new GameSession(doc);
+    expect(session.tryPurchaseDefenseL1("bubble_shotgun", "b1", [2, 2])).toBe(
+      true,
+    );
+    expect(session.economy.getShells()).toBe(50 - 28);
+    const d = session.map.getDefenses()[0];
+    expect(d?.type).toBe("bubble_shotgun");
+    expect(d?.level).toBe(1);
+  });
+
   it("exposes per-defense cooldown remaining for UI", () => {
     const doc = combatMap();
     doc.defenses = [

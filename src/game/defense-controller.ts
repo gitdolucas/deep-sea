@@ -11,6 +11,23 @@ export interface ChainEnemyRef {
   alive: boolean;
 }
 
+/**
+ * Max enemies struck in one Arc Spine discharge (chain array length in
+ * {@link DefenseController.computeArcChainHits}).
+ */
+export function arcSpineMaxEnemiesPerDischarge(level: DefenseLevel): number {
+  switch (level) {
+    case 1:
+      return 2;
+    case 2:
+      return 4;
+    case 3:
+      return 6;
+    default:
+      return 0;
+  }
+}
+
 /** Euclidean tile radius for Arc Spine chain hops (L1 per docs/prd-mvp.md). */
 export function arcSpineChainSearchRadius(level: DefenseLevel): number {
   switch (level) {
@@ -92,16 +109,7 @@ export class DefenseController {
 
   private maxArcJumps(): number {
     if (this.type !== "arc_spine") return 0;
-    switch (this.level) {
-      case 1:
-        return 2;
-      case 2:
-        return 4;
-      case 3:
-        return 6;
-      default:
-        return 0;
-    }
+    return arcSpineMaxEnemiesPerDischarge(this.level);
   }
 
   private arcSearchRadius(): number {

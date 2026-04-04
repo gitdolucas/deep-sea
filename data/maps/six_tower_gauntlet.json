@@ -1,0 +1,331 @@
+{
+  "id": "six_tower_gauntlet",
+  "name": "Six-Tower Gauntlet (test)",
+  "difficulty": "normal",
+  "gridSize": [36, 26],
+  "castle": {
+    "position": [17, 25],
+    "hp": 400,
+    "size": [2, 1]
+  },
+  "spawnPoints": [
+    { "id": "spawn_arc", "position": [2, 0], "pathIds": ["path_arc"] },
+    { "id": "spawn_bubble", "position": [8, 0], "pathIds": ["path_bubble"] },
+    { "id": "spawn_current", "position": [14, 0], "pathIds": ["path_current"] },
+    { "id": "spawn_ink", "position": [20, 0], "pathIds": ["path_ink"] },
+    { "id": "spawn_tideheart", "position": [26, 0], "pathIds": ["path_tideheart"] },
+    { "id": "spawn_vibration", "position": [32, 0], "pathIds": ["path_vibration"] }
+  ],
+  "paths": [
+    {
+      "id": "path_arc",
+      "waypoints": [
+        [2, 0],
+        [2, 20],
+        [17, 20],
+        [17, 25]
+      ]
+    },
+    {
+      "id": "path_bubble",
+      "waypoints": [
+        [8, 0],
+        [8, 20],
+        [17, 20],
+        [17, 25]
+      ]
+    },
+    {
+      "id": "path_current",
+      "waypoints": [
+        [14, 0],
+        [14, 20],
+        [17, 20],
+        [17, 25]
+      ]
+    },
+    {
+      "id": "path_ink",
+      "waypoints": [
+        [20, 0],
+        [20, 20],
+        [17, 20],
+        [17, 25]
+      ]
+    },
+    {
+      "id": "path_tideheart",
+      "waypoints": [
+        [26, 0],
+        [26, 20],
+        [17, 20],
+        [17, 25]
+      ]
+    },
+    {
+      "id": "path_vibration",
+      "waypoints": [
+        [32, 0],
+        [32, 20],
+        [17, 20],
+        [17, 25]
+      ]
+    }
+  ],
+  "buildSlots": [
+    { "position": [1, 12], "type": "standard" },
+    { "position": [9, 12], "type": "standard" },
+    { "position": [15, 12], "type": "standard" },
+    { "position": [21, 12], "type": "standard" },
+    { "position": [27, 12], "type": "standard" },
+    { "position": [34, 12], "type": "standard" }
+  ],
+  "defenses": [
+    {
+      "id": "def_arc_spine",
+      "type": "arc_spine",
+      "position": [1, 12],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_bubble_shotgun",
+      "type": "bubble_shotgun",
+      "position": [9, 12],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_current_cannon",
+      "type": "current_cannon",
+      "position": [15, 12],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_ink_veil",
+      "type": "ink_veil",
+      "position": [21, 12],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_tideheart_laser",
+      "type": "tideheart_laser",
+      "position": [27, 12],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_vibration_zone",
+      "type": "vibration_zone",
+      "position": [34, 12],
+      "level": 1,
+      "targetMode": "closest"
+    }
+  ],
+  "waves": [
+    {
+      "wave": 1,
+      "prepTime": 35,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 28,
+          "spawnId": "spawn_arc",
+          "pathId": "path_arc",
+          "interval": 0.4,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 28,
+          "spawnId": "spawn_bubble",
+          "pathId": "path_bubble",
+          "interval": 0.4,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 28,
+          "spawnId": "spawn_current",
+          "pathId": "path_current",
+          "interval": 0.4,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 28,
+          "spawnId": "spawn_ink",
+          "pathId": "path_ink",
+          "interval": 0.4,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 28,
+          "spawnId": "spawn_tideheart",
+          "pathId": "path_tideheart",
+          "interval": 0.4,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 28,
+          "spawnId": "spawn_vibration",
+          "pathId": "path_vibration",
+          "interval": 0.4,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "prepTime": 30,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "razoreel",
+          "count": 14,
+          "spawnId": "spawn_arc",
+          "pathId": "path_arc",
+          "interval": 0.55,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 14,
+          "spawnId": "spawn_bubble",
+          "pathId": "path_bubble",
+          "interval": 0.55,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 14,
+          "spawnId": "spawn_current",
+          "pathId": "path_current",
+          "interval": 0.55,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 14,
+          "spawnId": "spawn_ink",
+          "pathId": "path_ink",
+          "interval": 0.55,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 14,
+          "spawnId": "spawn_tideheart",
+          "pathId": "path_tideheart",
+          "interval": 0.55,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 14,
+          "spawnId": "spawn_vibration",
+          "pathId": "path_vibration",
+          "interval": 0.55,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        }
+      ]
+    },
+    {
+      "wave": 3,
+      "prepTime": 30,
+      "isBoss": true,
+      "groups": [
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 2,
+          "spawnId": "spawn_arc",
+          "pathId": "path_arc",
+          "interval": 2.0,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 2,
+          "spawnId": "spawn_bubble",
+          "pathId": "path_bubble",
+          "interval": 2.0,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 2,
+          "spawnId": "spawn_current",
+          "pathId": "path_current",
+          "interval": 2.0,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 2,
+          "spawnId": "spawn_ink",
+          "pathId": "path_ink",
+          "interval": 2.0,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 2,
+          "spawnId": "spawn_tideheart",
+          "pathId": "path_tideheart",
+          "interval": 2.0,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 2,
+          "spawnId": "spawn_vibration",
+          "pathId": "path_vibration",
+          "interval": 2.0,
+          "delay": 0,
+          "hpMultiplier": 1.0,
+          "speedMultiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "decorations": []
+}

@@ -697,6 +697,307 @@
         }
       }
 
+      #towerHoverTip {
+        --tower-tip-accent: var(--biolume);
+        --tower-tip-glow: rgba(62, 232, 255, 0.22);
+        position: fixed;
+        z-index: 12;
+        max-width: min(340px, calc(100vw - 24px));
+        pointer-events: none;
+        color: #dce8f0;
+        filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.55));
+      }
+
+      #towerHoverTip[data-defense="arc_spine"] {
+        --tower-tip-accent: #3ee8ff;
+        --tower-tip-glow: rgba(62, 232, 255, 0.28);
+      }
+
+      #towerHoverTip[data-defense="tideheart_laser"] {
+        --tower-tip-accent: #5ee0ff;
+        --tower-tip-glow: rgba(94, 224, 255, 0.25);
+      }
+
+      #towerHoverTip[data-defense="bubble_shotgun"] {
+        --tower-tip-accent: #7af8d2;
+        --tower-tip-glow: rgba(122, 248, 210, 0.22);
+      }
+
+      #towerHoverTip[data-defense="vibration_zone"] {
+        --tower-tip-accent: #39ff6e;
+        --tower-tip-glow: rgba(57, 255, 110, 0.2);
+      }
+
+      #towerHoverTip[data-defense="current_cannon"] {
+        --tower-tip-accent: #ffaa44;
+        --tower-tip-glow: rgba(255, 170, 68, 0.22);
+      }
+
+      #towerHoverTip[data-defense="ink_veil"] {
+        --tower-tip-accent: #a78bfa;
+        --tower-tip-glow: rgba(167, 139, 250, 0.25);
+      }
+
+      #towerHoverTip[hidden] {
+        display: none !important;
+      }
+
+      .tower-hover {
+        position: relative;
+        padding: 14px 16px 12px;
+        border-radius: calc(var(--radius) + 2px);
+        background: linear-gradient(
+          165deg,
+          rgba(4, 14, 28, 0.97) 0%,
+          rgba(6, 20, 42, 0.94) 45%,
+          rgba(3, 10, 22, 0.96) 100%
+        );
+        border: 1px solid color-mix(in srgb, var(--tower-tip-accent) 42%, transparent);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.35),
+          0 0 36px var(--tower-tip-glow);
+        backdrop-filter: blur(14px) saturate(1.2);
+        -webkit-backdrop-filter: blur(14px) saturate(1.2);
+        overflow: hidden;
+      }
+
+      .tower-hover::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          90% 70% at 100% 0%,
+          color-mix(in srgb, var(--tower-tip-accent) 12%, transparent),
+          transparent 62%
+        );
+        pointer-events: none;
+      }
+
+      .tower-hover::after {
+        content: "";
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        top: 8px;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--tower-tip-accent),
+          transparent
+        );
+        opacity: 0.35;
+        pointer-events: none;
+      }
+
+      .tower-hover__scan {
+        position: absolute;
+        inset: -40% -20%;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 3px,
+          rgba(62, 232, 255, 0.03) 3px,
+          rgba(62, 232, 255, 0.03) 4px
+        );
+        animation: towerHoverScan 4.5s linear infinite;
+        pointer-events: none;
+        opacity: 0.45;
+        mix-blend-mode: soft-light;
+      }
+
+      @keyframes towerHoverScan {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(12px);
+        }
+      }
+
+      .tower-hover__head {
+        position: relative;
+        margin-bottom: 12px;
+      }
+
+      .tower-hover__eyebrow {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: color-mix(in srgb, var(--tower-tip-accent) 65%, var(--mist));
+        opacity: 0.95;
+        margin-bottom: 6px;
+      }
+
+      .tower-hover__title-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .tower-hover__title {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #f0f7ff;
+        text-shadow: 0 0 28px var(--tower-tip-glow);
+      }
+
+      .tower-hover__level-chip {
+        flex-shrink: 0;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        padding: 4px 8px;
+        border-radius: 6px;
+        color: var(--abyss);
+        background: linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--tower-tip-accent) 92%, white),
+          var(--tower-tip-accent)
+        );
+        box-shadow: 0 0 16px var(--tower-tip-glow);
+      }
+
+      .tower-hover__stats {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(5.2em, auto) 1fr;
+        gap: 6px 14px;
+        margin: 0 0 12px;
+        font-size: 0.72rem;
+        line-height: 1.35;
+      }
+
+      .tower-hover__k {
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.58rem;
+        color: var(--mist);
+        opacity: 0.88;
+      }
+
+      .tower-hover__v {
+        margin: 0;
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+        color: #e2ecf5;
+      }
+
+      .tower-hover__v--accent {
+        color: var(--tower-tip-accent);
+        text-shadow: 0 0 12px var(--tower-tip-glow);
+      }
+
+      .tower-hover__v--muted {
+        color: #9eb0c0;
+      }
+
+      .tower-hover__mech-label {
+        position: relative;
+        margin: 0 0 6px;
+        font-family: var(--font-mono);
+        font-size: 0.55rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: color-mix(in srgb, var(--tower-tip-accent) 55%, var(--mist));
+      }
+
+      .tower-hover__mech {
+        position: relative;
+        margin: 0 0 12px;
+        padding: 10px 12px 10px 28px;
+        list-style: none;
+        font-size: 0.68rem;
+        line-height: 1.5;
+        color: #c5d4e2;
+        background: rgba(0, 0, 0, 0.22);
+        border-left: 2px solid var(--tower-tip-accent);
+        border-radius: 0 8px 8px 0;
+      }
+
+      .tower-hover__mech li {
+        position: relative;
+      }
+
+      .tower-hover__mech li::before {
+        content: "◆";
+        position: absolute;
+        left: -16px;
+        top: 0.05em;
+        font-size: 0.45rem;
+        color: var(--tower-tip-accent);
+        opacity: 0.75;
+      }
+
+      .tower-hover__mech li + li {
+        margin-top: 6px;
+      }
+
+      .tower-hover__foot {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 10px;
+        margin-top: 2px;
+        border-top: 1px solid rgba(62, 232, 255, 0.12);
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--mist);
+      }
+
+      .tower-hover__coord {
+        letter-spacing: 0.06em;
+        color: color-mix(in srgb, var(--tower-tip-accent) 45%, var(--mist));
+      }
+
+      .tower-hover__id {
+        max-width: 52%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: 0.85;
+      }
+
+      #towerHoverTip.tower-hover-tip--pulse .tower-hover {
+        animation: towerHoverPop 0.22s ease-out;
+      }
+
+      @keyframes towerHoverPop {
+        from {
+          opacity: 0.65;
+          transform: translateY(6px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .tower-hover__scan {
+          animation: none;
+        }
+
+        #towerHoverTip.tower-hover-tip--pulse .tower-hover {
+          animation: none;
+        }
+      }
+
       /* ——— Main menu & navigation ——— */
       .screen {
         box-sizing: border-box;
@@ -1070,6 +1371,147 @@
       .quit-dialog__actions button:active {
         transform: scale(0.98);
       }
+
+      /* ——— Floating gameplay tips (mission only) ——— */
+      #gameplayTips {
+        position: fixed;
+        z-index: 10;
+        bottom: 22px;
+        left: 22px;
+        right: calc(var(--sidebar-w) + 28px);
+        max-width: min(720px, calc(100vw - var(--sidebar-w) - 48px));
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 16px 14px;
+        font-family: var(--font-ui);
+        border-radius: calc(var(--radius) + 2px);
+        background: linear-gradient(
+          165deg,
+          rgba(4, 14, 28, 0.92) 0%,
+          rgba(6, 22, 44, 0.88) 100%
+        );
+        border: 1px solid rgba(62, 232, 255, 0.2);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        animation: gameplayTipsFloat 8s ease-in-out infinite;
+      }
+
+      #gameplayTips[hidden] {
+        display: none !important;
+      }
+
+      @keyframes gameplayTipsFloat {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-4px);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #gameplayTips {
+          animation: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        #gameplayTips {
+          left: 12px;
+          right: 12px;
+          max-width: none;
+          bottom: 14px;
+        }
+      }
+
+      .gameplay-tips__label {
+        flex-shrink: 0;
+        margin-top: 2px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.55rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--abyss);
+        background: linear-gradient(180deg, var(--pulse) 0%, #4ad4b8 100%);
+        box-shadow: 0 0 14px rgba(122, 248, 210, 0.25);
+      }
+
+      .gameplay-tips__body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .gameplay-tips__text {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 500;
+        line-height: 1.5;
+        color: #d6e6f0;
+      }
+
+      .gameplay-tips__meta {
+        margin: 0;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        color: var(--mist);
+        opacity: 0.88;
+      }
+
+      .gameplay-tips__nav {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: stretch;
+        margin-top: 1px;
+      }
+
+      .gameplay-tips__btn {
+        pointer-events: auto;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 30px;
+        padding: 0;
+        border-radius: 8px;
+        border: 1px solid rgba(62, 232, 255, 0.35);
+        background: rgba(8, 24, 48, 0.72);
+        color: var(--biolume);
+        font-family: var(--font-ui);
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      }
+
+      .gameplay-tips__btn:hover {
+        border-color: var(--biolume);
+        background: rgba(12, 40, 72, 0.85);
+        color: var(--pulse);
+      }
+
+      .gameplay-tips__btn:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .gameplay-tips__btn:active {
+        transform: scale(0.96);
+      }
     </style>
   </head>
   <body>
@@ -1215,136 +1657,98 @@
             <li class="defense-card defense-card--affordable" data-defense-card="arc_spine">
               <div class="defense-card__header">
                 <div class="defense-card__icon" aria-hidden="true">
-                  <svg
-                    class="icon-svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                  >
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
                     <path d="M12 2v6M9 8l3-4 3 4" />
-                    <path
-                      d="M8 22V10h8v12M8 14h8M10 18h4"
-                    />
+                    <path d="M8 22V10h8v12M8 14h8M10 18h4" />
                   </svg>
                 </div>
                 <div class="defense-card__titles">
                   <div class="name">Arc Spine</div>
-                  <div class="meta">Chain lightning · build 30 shells</div>
+                  <div class="meta">Chain lightning · L1</div>
                 </div>
               </div>
-              <p id="arcSpineStatus" class="defense-card__status">
-                Available · 30 shells
-              </p>
-              <button type="button" class="pick" id="invArcSpine" data-defense="arc_spine">
-                Select
-              </button>
+              <p class="defense-card__status" data-defense-status="arc_spine">Available · 30 shells</p>
+              <button type="button" class="pick" id="invArcSpine" data-defense="arc_spine">Select</button>
             </li>
-            <li class="defense-card locked">
+            <li class="defense-card defense-card--affordable" data-defense-card="tideheart_laser">
               <div class="defense-card__header">
-                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
-                  <svg
-                    class="icon-svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                  >
-                    <rect x="5" y="11" width="14" height="10" rx="2" />
-                    <path d="M8 11V8a4 4 0 018 0v3" />
+                <div class="defense-card__icon" aria-hidden="true">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
                   </svg>
                 </div>
                 <div class="defense-card__titles">
                   <div class="name">Tideheart Laser</div>
-                  <div class="meta">Locked · coming soon</div>
+                  <div class="meta">Single-target beam · L1</div>
                 </div>
               </div>
+              <p class="defense-card__status" data-defense-status="tideheart_laser">—</p>
+              <button type="button" class="pick" data-defense="tideheart_laser">Select</button>
             </li>
-            <li class="defense-card locked">
+            <li class="defense-card defense-card--affordable" data-defense-card="bubble_shotgun">
               <div class="defense-card__header">
-                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
-                  <svg
-                    class="icon-svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                  >
-                    <rect x="5" y="11" width="14" height="10" rx="2" />
-                    <path d="M8 11V8a4 4 0 018 0v3" />
+                <div class="defense-card__icon" aria-hidden="true">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                    <circle cx="9" cy="12" r="2" /><circle cx="15" cy="10" r="2" /><circle cx="14" cy="15" r="2" />
+                    <path d="M4 12h3M18 11l2 1-2 1" />
                   </svg>
                 </div>
                 <div class="defense-card__titles">
                   <div class="name">Bubble Shotgun</div>
-                  <div class="meta">Locked · coming soon</div>
+                  <div class="meta">Spread contact · L1</div>
                 </div>
               </div>
+              <p class="defense-card__status" data-defense-status="bubble_shotgun">—</p>
+              <button type="button" class="pick" data-defense="bubble_shotgun">Select</button>
             </li>
-            <li class="defense-card locked">
+            <li class="defense-card defense-card--affordable" data-defense-card="vibration_zone">
               <div class="defense-card__header">
-                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
-                  <svg
-                    class="icon-svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                  >
-                    <rect x="5" y="11" width="14" height="10" rx="2" />
-                    <path d="M8 11V8a4 4 0 018 0v3" />
+                <div class="defense-card__icon" aria-hidden="true">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                    <path d="M4 12c2-4 5-6 8-6s6 2 8 6c-2 4-5 6-8 6s-6-2-8-6z" />
+                    <path d="M8 12h8" opacity="0.5" />
                   </svg>
                 </div>
                 <div class="defense-card__titles">
                   <div class="name">Vibration Zone</div>
-                  <div class="meta">Locked · coming soon</div>
+                  <div class="meta">Aura slow · L1</div>
                 </div>
               </div>
+              <p class="defense-card__status" data-defense-status="vibration_zone">—</p>
+              <button type="button" class="pick" data-defense="vibration_zone">Select</button>
             </li>
-            <li class="defense-card locked">
+            <li class="defense-card defense-card--affordable" data-defense-card="current_cannon">
               <div class="defense-card__header">
-                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
-                  <svg
-                    class="icon-svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                  >
-                    <rect x="5" y="11" width="14" height="10" rx="2" />
-                    <path d="M8 11V8a4 4 0 018 0v3" />
+                <div class="defense-card__icon" aria-hidden="true">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                    <path d="M4 14h8l4-3 4 3v2H4z" />
+                    <path d="M12 10V7l3-2 3 2v3" />
                   </svg>
                 </div>
                 <div class="defense-card__titles">
                   <div class="name">Current Cannon</div>
-                  <div class="meta">Locked · coming soon</div>
+                  <div class="meta">Heavy shot · L1</div>
                 </div>
               </div>
+              <p class="defense-card__status" data-defense-status="current_cannon">—</p>
+              <button type="button" class="pick" data-defense="current_cannon">Select</button>
             </li>
-            <li class="defense-card locked">
+            <li class="defense-card defense-card--affordable" data-defense-card="ink_veil">
               <div class="defense-card__header">
-                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
-                  <svg
-                    class="icon-svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                  >
-                    <rect x="5" y="11" width="14" height="10" rx="2" />
-                    <path d="M8 11V8a4 4 0 018 0v3" />
+                <div class="defense-card__icon" aria-hidden="true">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                    <path d="M6 18c2-4 4-6 6-6s4 2 6 6" opacity="0.6" />
+                    <path d="M4 16c2-5 5-8 8-8s6 3 8 8" />
                   </svg>
                 </div>
                 <div class="defense-card__titles">
                   <div class="name">Ink Veil</div>
-                  <div class="meta">Locked · coming soon</div>
+                  <div class="meta">Utility cloud · L1</div>
                 </div>
               </div>
+              <p class="defense-card__status" data-defense-status="ink_veil">—</p>
+              <button type="button" class="pick" data-defense="ink_veil">Select</button>
             </li>
           </ul>
         </section>
@@ -1412,6 +1816,47 @@
     </aside>
 
     <div id="damageLayer" aria-hidden="true"></div>
+    <div id="towerHoverTip" hidden aria-hidden="true" role="tooltip"></div>
+    <div
+      id="gameplayTips"
+      class="gameplay-tips"
+      hidden
+      role="region"
+      aria-label="Gameplay tips"
+    >
+      <span class="gameplay-tips__label">Tip</span>
+      <div class="gameplay-tips__body">
+        <p
+          id="gameplayTipsText"
+          class="gameplay-tips__text"
+          aria-live="polite"
+          aria-atomic="true"
+        ></p>
+        <p id="gameplayTipsMeta" class="gameplay-tips__meta" aria-hidden="true">
+          —
+        </p>
+      </div>
+      <div class="gameplay-tips__nav" aria-label="Browse tips">
+        <button
+          type="button"
+          id="gameplayTipsPrev"
+          class="gameplay-tips__btn"
+          aria-label="Previous tip"
+          title="Previous tip"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          id="gameplayTipsNext"
+          class="gameplay-tips__btn"
+          aria-label="Next tip"
+          title="Next tip"
+        >
+          ›
+        </button>
+      </div>
+    </div>
     </div>
 
     <div

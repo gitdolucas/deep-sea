@@ -1,4 +1,16 @@
 import type { EnemyInstanceInput, EnemyTypeKey, GridPos } from "./types.js";
+import {
+  ARC_BURN_DAMAGE_PER_TICK,
+  ARC_BURN_DURATION,
+  ARC_BURN_TICK_INTERVAL,
+  INK_BLIND_LINGER_SEC,
+  VIBRATION_DOT_DAMAGE_PER_TICK,
+  VIBRATION_DOT_TICK,
+  VIBRATION_DOT_LINGER_SEC,
+} from "./combat-balance.js";
+
+const ARC_BURN_TICK_COUNT = Math.round(ARC_BURN_DURATION / ARC_BURN_TICK_INTERVAL);
+import { ENEMY_ARMOR } from "./enemy-stats.js";
 
 const BASE_SPEED_TILES_PER_SEC: Record<EnemyTypeKey, number> = {
   stoneclaw: 1.5,
@@ -7,7 +19,7 @@ const BASE_SPEED_TILES_PER_SEC: Record<EnemyTypeKey, number> = {
 };
 
 /**
- * Runtime enemy: path progress, HP, and movement along waypoint polylines.
+ * Runtime enemy: path progress, HP, movement, and combat debuffs (docs/combat.md §5).
  */
 export class EnemyController {
   readonly id: string;
@@ -19,6 +31,24 @@ export class EnemyController {
   hp: number;
   readonly maxHp: number;
   speedMultiplier: number;
+
+  private auraSlowFrac = 0;
+  private inInkCloud = false;
+  private inkArmorShredActive = 0;
+  private inkCitadelMultActive = 1;
+
+  private blindLingerSec = 0;
+  private blindMultDuringLinger = 1;
+  private wasInInkLastFrame = false;
+
+  private stunRemaining = 0;
+  /** Remaining Arc Spine L3 burn pulses (docs/combat.md §5). */
+  private burnTickCharges = 0;
+  private burnTickAccum = 0;
+
+  private inVibrationL3DotZone = false;
+  private vibrationDotLingerSec = 0;
+  private vibrationDotTickAccum = 0;
 
   constructor(input: EnemyInstanceInput) {
     this.id = input.id;
@@ -43,11 +73,119 @@ export class EnemyController {
     return this.positionFromProgress(this.pathProgress);
   }
 
-  /**
-   * Advance along the path in grid units/second (tiles/sec).
-   */
-  tick(deltaSeconds: number): void {
+  getInkArmorShred(): number {
+    return this.inInkCloud ? this.inkArmorShredActive : 0;
+  }
+
+  getCitadelLeakMultiplier(): number {
+    if (this.inInkCloud) return this.inkCitadelMultActive;
+    if (this.blindLingerSec > 0) return this.blindMultDuringLinger;
+    return 1;
+  }
+
+  resetAuraForTick(): void {
+    this.auraSlowFrac = 0;
+    this.inInkCloud = false;
+    this.inkArmorShredActive = 0;
+    this.inkCitadelMultActive = 1;
+    this.inVibrationL3DotZone = false;
+  }
+
+  applyVibrationAura(slowFrac: number, isL3Zone: boolean): void {
+    this.auraSlowFrac = Math.max(this.auraSlowFrac, slowFrac);
+    if (isL3Zone) this.inVibrationL3DotZone = true;
+  }
+
+  applyInkAura(citadelMult: number, armorShred: number): void {
+    this.inInkCloud = true;
+    this.inkCitadelMultActive = Math.min(
+      this.inkCitadelMultActive,
+      citadelMult,
+    );
+    this.inkArmorShredActive = Math.max(
+      this.inkArmorShredActive,
+      armorShred,
+    );
+  }
+
+  /** After scanning all auras: blind linger 0.5s after leaving ink (docs/combat.md §5). */
+  postAuraTick(dt: number): void {
+    if (this.inInkCloud) {
+      this.blindMultDuringLinger = this.inkCitadelMultActive;
+    } else if (this.wasInInkLastFrame) {
+      this.blindLingerSec = INK_BLIND_LINGER_SEC;
+    }
+    if (!this.inInkCloud && this.blindLingerSec > 0) {
+      this.blindLingerSec -= dt;
+    }
+    this.wasInInkLastFrame = this.inInkCloud;
+
+    if (this.inVibrationL3DotZone) {
+      this.vibrationDotLingerSec = VIBRATION_DOT_LINGER_SEC;
+    } else if (this.vibrationDotLingerSec > 0) {
+      this.vibrationDotLingerSec -= dt;
+    }
+  }
+
+  addStun(seconds: number): void {
+    this.stunRemaining = Math.max(this.stunRemaining, seconds);
+  }
+
+  refreshArcBurn(): void {
+    this.burnTickCharges = ARC_BURN_TICK_COUNT;
+  }
+
+  applyKnockbackTiles(tiles: number): void {
+    if (tiles <= 0) return;
+    const len = this.totalPathLength();
+    if (len <= 0) return;
+    const delta = tiles / len;
+    this.pathProgress = this.clamp(this.pathProgress - delta, 0, 1);
+  }
+
+  effectiveArmorValue(): number {
+    const base = ENEMY_ARMOR[this.enemyType];
+    return Math.max(0, base - this.getInkArmorShred());
+  }
+
+  tickDamageOverTime(
+    dt: number,
+    onDamage: (enemy: EnemyController, amount: number) => void,
+  ): void {
+    if (!this.isAlive()) return;
+    if (this.burnTickCharges > 0) {
+      this.burnTickAccum += dt;
+      while (
+        this.burnTickAccum >= ARC_BURN_TICK_INTERVAL &&
+        this.burnTickCharges > 0
+      ) {
+        this.burnTickAccum -= ARC_BURN_TICK_INTERVAL;
+        this.burnTickCharges -= 1;
+        onDamage(this, ARC_BURN_DAMAGE_PER_TICK);
+      }
+    } else {
+      this.burnTickAccum = 0;
+    }
+
+    const dotActive =
+      this.inVibrationL3DotZone || this.vibrationDotLingerSec > 0;
+    if (dotActive) {
+      this.vibrationDotTickAccum += dt;
+      while (this.vibrationDotTickAccum >= VIBRATION_DOT_TICK) {
+        this.vibrationDotTickAccum -= VIBRATION_DOT_TICK;
+        onDamage(this, VIBRATION_DOT_DAMAGE_PER_TICK);
+      }
+    } else {
+      this.vibrationDotTickAccum = 0;
+    }
+  }
+
+  tickMovement(deltaSeconds: number): void {
     if (!this.isAlive() || this.waypoints.length < 2) return;
+    if (this.stunRemaining > 0) {
+      this.stunRemaining -= deltaSeconds;
+      return;
+    }
     const length = this.totalPathLength();
     if (length <= 0) return;
     const speed = this.effectiveSpeedTilesPerSec();
@@ -65,12 +203,15 @@ export class EnemyController {
   }
 
   private effectiveSpeedTilesPerSec(): number {
+    const slow = this.clamp(1 - this.auraSlowFrac, 0, 1);
     return (
-      BASE_SPEED_TILES_PER_SEC[this.enemyType] * this.speedMultiplier
+      BASE_SPEED_TILES_PER_SEC[this.enemyType] *
+      this.speedMultiplier *
+      slow
     );
   }
 
-  private totalPathLength(): number {
+  totalPathLength(): number {
     if (this.waypoints.length < 2) return 0;
     let sum = 0;
     for (let i = 1; i < this.waypoints.length; i++) {

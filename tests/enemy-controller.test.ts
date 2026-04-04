@@ -74,7 +74,7 @@ describe("EnemyController", () => {
     it("tick advances pathProgress toward 1", () => {
       const e = makeStoneclaw();
       const before = e.getPathProgress();
-      e.tick(1);
+      e.tickMovement(1);
       expect(e.getPathProgress()).toBeGreaterThan(before);
       expect(e.getPathProgress()).toBeLessThanOrEqual(1);
     });
