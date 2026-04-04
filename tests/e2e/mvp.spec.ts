@@ -23,6 +23,20 @@ test("sidebar shows armory and send wave", async ({ page }) => {
   await expect(page.locator("#arcSpineStatus")).toContainText(/Available|shells/);
 });
 
+test("main menu lists levels and starts selected map", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('input[name="levelId"]')).toHaveCount(2);
+  await expect(
+    page.locator('input[name="levelId"][value="first_trench"]'),
+  ).toBeChecked();
+  await page.locator('input[name="levelId"][value="trench_gate"]').click();
+  await page.locator("#btnPlay").click();
+  await expect(page.locator("#gameScreen")).toHaveAttribute(
+    "data-active-map",
+    "trench_gate",
+  );
+});
+
 test("main menu and quit confirmation return to home", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#mainMenu")).toBeVisible();
@@ -37,4 +51,7 @@ test("main menu and quit confirmation return to home", async ({ page }) => {
   await page.locator("#quitConfirmYes").click();
   await expect(page.locator("#mainMenu")).toBeVisible();
   await expect(page.locator("#gameScreen")).toBeHidden();
+  await expect(page.locator("#gameScreen")).not.toHaveAttribute(
+    "data-active-map",
+  );
 });

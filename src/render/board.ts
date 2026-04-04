@@ -15,6 +15,13 @@ function gridXZ(gw: number, gd: number): THREE.Vector3 {
 
 const CELL_BOX = new THREE.BoxGeometry(0.96, 0.055, 0.96);
 
+/** Shared mesh assets for all map spawn portals (multi-spawn maps e.g. trench_gate). */
+const SPAWN_PORTAL_GEO = new THREE.CylinderGeometry(0.35, 0.45, 0.2, 16);
+const SPAWN_PORTAL_MAT = new THREE.MeshStandardMaterial({
+  color: COLORS.spawn,
+  roughness: 1,
+});
+
 const CELL_MATERIALS: Record<
   PathCellVisualKind | "empty",
   THREE.MeshStandardMaterial
@@ -59,7 +66,7 @@ function materialKeyForCell(
 }
 
 /**
- * Builds grid cells (raycast targets), spawn, castle. Towers may be placed on any off-path cell.
+ * Builds grid cells (raycast targets), spawn portal(s), castle. Towers may be placed on any off-path cell.
  */
 export function buildMapBoard(
   doc: MapDocument,
@@ -87,14 +94,10 @@ export function buildMapBoard(
     }
   }
 
-  const spawn = doc.spawnPoints[0];
-  if (spawn) {
+  for (const spawn of doc.spawnPoints) {
     const sx = spawn.position[0] - origin.x;
     const sz = spawn.position[1] - origin.z;
-    const hole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.45, 0.2, 16),
-      new THREE.MeshStandardMaterial({ color: COLORS.spawn, roughness: 1 }),
-    );
+    const hole = new THREE.Mesh(SPAWN_PORTAL_GEO, SPAWN_PORTAL_MAT);
     hole.position.set(sx, 0.1, sz);
     root.add(hole);
   }

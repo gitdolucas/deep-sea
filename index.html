@@ -659,12 +659,164 @@
       }
 
       .main-menu__tagline {
-        margin: 0 0 36px;
+        margin: 0 0 28px;
         max-width: 36ch;
         font-size: 0.95rem;
         font-weight: 500;
         line-height: 1.55;
         color: var(--mist);
+      }
+
+      .main-menu__section-label {
+        margin: 0 0 12px;
+        width: 100%;
+        max-width: 400px;
+        text-align: left;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--mist);
+        opacity: 0.92;
+      }
+
+      .level-select {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 0 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: left;
+      }
+
+      .level-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 0;
+        padding: 12px 14px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(62, 232, 255, 0.18);
+        background: var(--card);
+        cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .level-option__body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* CSS-only top-down map thumb (grid from map JSON) */
+      .level-overview {
+        flex-shrink: 0;
+        width: 92px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(62, 232, 255, 0.28);
+        box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.45),
+          0 4px 14px rgba(0, 0, 0, 0.35);
+        aspect-ratio: var(--map-gw, 10) / var(--map-gd, 12);
+        background: #050d1a;
+      }
+
+      .level-overview__grid {
+        display: grid;
+        grid-template-columns: repeat(var(--map-gw, 10), 1fr);
+        grid-template-rows: repeat(var(--map-gd, 12), 1fr);
+        width: 100%;
+        height: 100%;
+        gap: 1px;
+        background: rgba(0, 0, 0, 0.42);
+        box-sizing: border-box;
+      }
+
+      .level-overview__cell {
+        min-width: 0;
+        min-height: 0;
+        background: #0a1628;
+        box-sizing: border-box;
+      }
+
+      .level-overview__cell--path {
+        background: #1a3a2a;
+      }
+
+      .level-overview__cell--path.level-overview__cell--build {
+        background: linear-gradient(
+          145deg,
+          #214536 0%,
+          #1a3a2a 55%,
+          #183428 100%
+        );
+      }
+
+      .level-overview__cell--build:not(.level-overview__cell--path) {
+        background: rgba(62, 232, 255, 0.1);
+        box-shadow: inset 0 0 0 1px rgba(62, 232, 255, 0.22);
+      }
+
+      .level-overview__cell--castle {
+        background: #112f55;
+        box-shadow: inset 0 0 0 1px rgba(62, 232, 255, 0.4);
+      }
+
+      .level-overview__cell--castle.level-overview__cell--path {
+        background: linear-gradient(180deg, #153c6a 0%, #112f55 100%);
+      }
+
+      .level-overview__cell--spawn {
+        box-shadow: inset 0 0 0 2px #ff6b6b,
+          0 0 6px rgba(255, 107, 107, 0.35);
+      }
+
+      .level-option:has(input:focus-visible) {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .level-option:has(input:checked) {
+        border-color: var(--biolume);
+        box-shadow: 0 0 0 1px rgba(62, 232, 255, 0.35),
+          0 8px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      .level-option:hover {
+        border-color: rgba(62, 232, 255, 0.32);
+      }
+
+      .level-option input {
+        margin: 4px 0 0;
+        accent-color: var(--biolume);
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+      }
+
+      .level-option__text {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .level-option__name {
+        font-family: var(--font-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: #e8f4ff;
+      }
+
+      .level-option__meta {
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--mist);
+        text-transform: capitalize;
       }
 
       #btnPlay {
@@ -853,6 +1005,15 @@
         Hold the trench. Arc Spine towers chain lightning across the path — spend
         shells wisely and send each wave on your terms.
       </p>
+      <p class="main-menu__section-label" id="levelSelectLabel">
+        Choose mission
+      </p>
+      <div
+        id="levelSelectHost"
+        class="level-select"
+        role="radiogroup"
+        aria-labelledby="levelSelectLabel"
+      ></div>
       <button type="button" id="btnPlay">Begin mission</button>
     </main>
 
