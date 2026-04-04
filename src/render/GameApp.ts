@@ -43,6 +43,11 @@ import {
 } from "./cannon-attack-fx.js";
 import { createArcSpineLightningLine } from "./arc-spine-chain-fx.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
+import {
+  applyVibrationZoneAuraRadius,
+  createVibrationZoneAuraMesh,
+  updateVibrationZoneAuraMaterial,
+} from "./vibration-zone-aura.js";
 import { GAMEPLAY_TIPS } from "./gameplay-tips.js";
 
 type BarBillboard = {
@@ -155,7 +160,13 @@ export class GameApp {
   >();
   private defenseObjects = new Map<
     string,
-    { root: THREE.Group; tower: THREE.Mesh; bar: BarBillboard }
+    {
+      root: THREE.Group;
+      tower: THREE.Mesh;
+      bar: BarBillboard;
+      vibrationAura?: THREE.Mesh;
+      vibrationAuraKey?: string;
+    }
   >();
   private chainLines: { obj: THREE.LineSegments; t: number; mat: THREE.ShaderMaterial }[] =
     [];
@@ -868,6 +879,32 @@ export class GameApp {
       const mat = vis.tower.material as THREE.MeshStandardMaterial;
       const ready = interval > 0 ? 1 - remaining / interval : 1;
       mat.emissiveIntensity = 0.08 + 0.28 * Math.max(0, Math.min(1, ready));
+
+      if (d.type === "vibration_zone") {
+        const rTiles = auraRadiusTiles("vibration_zone", d.level);
+        const auraKey = `${d.level}:${rTiles}`;
+        if (!vis.vibrationAura) {
+          vis.vibrationAura = createVibrationZoneAuraMesh(d.level, rTiles);
+          vis.root.add(vis.vibrationAura);
+          vis.vibrationAuraKey = auraKey;
+        } else if (vis.vibrationAuraKey !== auraKey) {
+          applyVibrationZoneAuraRadius(vis.vibrationAura, rTiles);
+          vis.vibrationAuraKey = auraKey;
+        }
+        const floorY = 0.06;
+        vis.vibrationAura.position.set(0, floorY - w.y, 0);
+        updateVibrationZoneAuraMaterial(
+          vis.vibrationAura.material as THREE.ShaderMaterial,
+          this.clock.elapsedTime,
+          d.level,
+        );
+      } else if (vis.vibrationAura) {
+        vis.root.remove(vis.vibrationAura);
+        vis.vibrationAura.geometry.dispose();
+        (vis.vibrationAura.material as THREE.Material).dispose();
+        vis.vibrationAura = undefined;
+        vis.vibrationAuraKey = undefined;
+      }
     }
     for (const [id, vis] of [...this.defenseObjects]) {
       if (!wanted.has(id)) {
