@@ -24,6 +24,7 @@ import {
   COLORS,
   CHAIN_FX_DURATION,
   DAMAGE_POP_DURATION_SEC,
+  TIDEHEART_BEAM_FX_DURATION,
 } from "./constants.js";
 import {
   disposeBubbleAttackFxShared,
@@ -42,6 +43,11 @@ import {
   type CannonBlastDecal,
 } from "./cannon-attack-fx.js";
 import { createArcSpineLightningLine } from "./arc-spine-chain-fx.js";
+import {
+  alignTideheartLaserMesh,
+  beamWidthForTideheartLevel,
+  createTideheartLaserBeam,
+} from "./tideheart-laser-beam-fx.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
 import {
   applyVibrationZoneAuraRadius,
@@ -170,6 +176,14 @@ export class GameApp {
   >();
   private chainLines: { obj: THREE.LineSegments; t: number; mat: THREE.ShaderMaterial }[] =
     [];
+  private tideheartBeams: {
+    obj: THREE.Mesh;
+    t: number;
+    mat: THREE.ShaderMaterial;
+    start: THREE.Vector3;
+    end: THREE.Vector3;
+    width: number;
+  }[] = [];
   private readonly bubbleProjectileGroup = new THREE.Group();
   private bubbleProjectilePool: THREE.Mesh[] = [];
   private bubblePopRings: BubblePopRing[] = [];
@@ -348,6 +362,12 @@ export class GameApp {
       c.mat.dispose();
     }
     this.chainLines = [];
+    for (const b of this.tideheartBeams) {
+      this.scene.remove(b.obj);
+      b.obj.geometry.dispose();
+      b.mat.dispose();
+    }
+    this.tideheartBeams = [];
     for (const r of this.bubblePopRings) {
       this.scene.remove(r.mesh);
       r.mesh.geometry.dispose();
@@ -790,6 +810,7 @@ export class GameApp {
     this.applyCombatVfx();
     this.syncCannonAttackFx(dt);
     this.updateChainFx(dt);
+    this.updateTideheartBeamFx(dt);
     this.updateHud();
     this.syncWaveProgress();
     this.refreshInventoryUi();
@@ -981,6 +1002,33 @@ export class GameApp {
       if (evt.chainLightningVfx === true && pts.length >= 2) {
         this.addChain(pts);
       }
+      if (
+        snap.type === "tideheart_laser" &&
+        evt.hits.length > 0 &&
+        !evt.chainLightningVfx
+      ) {
+        const width = beamWidthForTideheartLevel(snap.level);
+        for (const h of evt.hits) {
+          const beamEnd = worldFromGrid(h.position[0], h.position[1], this.doc, 0.6);
+          const beam = createTideheartLaserBeam(
+            start,
+            beamEnd,
+            snap.level,
+            this.camera,
+          );
+          const mat = beam.material as THREE.ShaderMaterial;
+          mat.uniforms.uFade.value = 1;
+          this.scene.add(beam);
+          this.tideheartBeams.push({
+            obj: beam,
+            t: TIDEHEART_BEAM_FX_DURATION,
+            mat,
+            start: start.clone(),
+            end: beamEnd.clone(),
+            width,
+          });
+        }
+      }
       if (evt.cannonBlast) cannonBlasts.push(evt.cannonBlast);
     }
     if (cannonBlasts.length > 0) {
@@ -1017,6 +1065,23 @@ export class GameApp {
         this.scene.remove(c.obj);
         c.obj.geometry.dispose();
         c.mat.dispose();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  private updateTideheartBeamFx(dt: number): void {
+    const dur = TIDEHEART_BEAM_FX_DURATION;
+    this.tideheartBeams = this.tideheartBeams.filter((b) => {
+      b.t -= dt;
+      b.mat.uniforms.uTime.value = this.clock.elapsedTime;
+      b.mat.uniforms.uFade.value = Math.max(0, dur > 0 ? b.t / dur : 0);
+      alignTideheartLaserMesh(b.obj, b.start, b.end, b.width, this.camera);
+      if (b.t <= 0) {
+        this.scene.remove(b.obj);
+        b.obj.geometry.dispose();
+        b.mat.dispose();
         return false;
       }
       return true;
