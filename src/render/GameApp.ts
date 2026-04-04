@@ -19,7 +19,9 @@ export class GameApp {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private clock = new THREE.Clock();
-  private slotEntries: { mesh: THREE.Mesh; gx: number; gz: number }[] = [];
+  private cellPickEntries: { mesh: THREE.Mesh; gx: number; gz: number }[] =
+    [];
+  private readonly buildSelectionMarker = new THREE.Group();
   private selectedSlot: { gx: number; gz: number } | null = null;
   private enemyObjects = new Map<string, THREE.Mesh>();
   private defenseObjects = new Map<string, THREE.Mesh>();
@@ -46,9 +48,22 @@ export class GameApp {
     sun.position.set(8, 18, 10);
     this.scene.add(sun);
 
-    const { root, slots } = buildMapBoard(doc);
+    const { root, cells } = buildMapBoard(doc);
     this.scene.add(root);
-    this.slotEntries = slots;
+    this.cellPickEntries = cells;
+
+    const ringGeom = new THREE.RingGeometry(0.38, 0.48, 40);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: COLORS.slotSelected,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+    });
+    const ring = new THREE.Mesh(ringGeom, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    this.buildSelectionMarker.add(ring);
+    this.buildSelectionMarker.visible = false;
+    this.scene.add(this.buildSelectionMarker);
 
     const [gw, gd] = doc.gridSize;
     const gridExtent = Math.max(gw, gd) + 2;
@@ -145,24 +160,32 @@ export class GameApp {
     this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const meshes = this.slotEntries.map((s) => s.mesh);
+    const meshes = this.cellPickEntries.map((s) => s.mesh);
     const hits = this.raycaster.intersectObjects(meshes, false);
     if (hits.length === 0) return;
     const m = hits[0]!.object as THREE.Mesh;
-    this.selectedSlot = { gx: m.userData.gx as number, gz: m.userData.gz as number };
-    this.updateSlotHighlight();
+    const gx = m.userData.gx as number;
+    const gz = m.userData.gz as number;
+    if (!this.session.map.isBuildSlotPosition([gx, gz])) return;
+    this.selectedSlot = { gx, gz };
+    this.updateBuildSelectionMarker();
     document.getElementById("panel")?.classList.add("visible");
     this.refreshBuildButton();
   }
 
-  private updateSlotHighlight(): void {
-    for (const { mesh, gx, gz } of this.slotEntries) {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      const sel =
-        this.selectedSlot?.gx === gx && this.selectedSlot?.gz === gz;
-      mat.emissive.setHex(sel ? COLORS.slotSelected : COLORS.slot);
-      mat.emissiveIntensity = sel ? 0.55 : 0.25;
+  private updateBuildSelectionMarker(): void {
+    if (!this.selectedSlot) {
+      this.buildSelectionMarker.visible = false;
+      return;
     }
+    const w = worldFromGrid(
+      this.selectedSlot.gx,
+      this.selectedSlot.gz,
+      this.doc,
+      0.11,
+    );
+    this.buildSelectionMarker.position.set(w.x, w.y, w.z);
+    this.buildSelectionMarker.visible = true;
   }
 
   private onBuild(): void {
@@ -175,7 +198,7 @@ export class GameApp {
     if (ok) {
       document.getElementById("panel")?.classList.remove("visible");
       this.selectedSlot = null;
-      this.updateSlotHighlight();
+      this.updateBuildSelectionMarker();
     }
     this.refreshBuildButton();
     this.updateHud();

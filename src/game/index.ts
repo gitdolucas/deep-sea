@@ -22,6 +22,14 @@ export { spawnEnemyFromWaveGroup } from "./enemy-spawner.js";
 export { GameSession, type GameOutcome } from "./game-session.js";
 export { MVP_ARC_SPINE_BUILD_COST, MVP_STARTING_SHELLS } from "./mvp-constants.js";
 export { MapController } from "./map-controller.js";
+export {
+  cellsAlongSegment,
+  gridCellKey,
+  pathCellKeySet,
+  pathCellKeySetUnion,
+  pathCellVisualKind,
+  type PathCellVisualKind,
+} from "./path-cells.js";
 export { TargetingSystem, type TargetingOptions } from "./targeting-system.js";
 export { WaveDirector, type WaveDirectorHooks } from "./wave-director.js";
 export type { WavePhase } from "./wave-types.js";

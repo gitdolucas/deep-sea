@@ -8,6 +8,7 @@ import type {
   SpawnPointDefinition,
   WaveDefinition,
 } from "./map-types.js";
+import { pathCellKeySetUnion } from "./path-cells.js";
 import type { DefenseSnapshot, GridPos } from "./types.js";
 
 function cloneDefense(d: DefenseSnapshot): DefenseSnapshot {
@@ -31,7 +32,8 @@ export class MapController {
   private readonly spawnPoints: readonly SpawnPointDefinition[];
   private readonly pathsById: ReadonlyMap<string, PathDefinition>;
   private readonly buildSlots: readonly BuildSlotDefinition[];
-  private readonly buildSlotKeySet: ReadonlySet<string>;
+  /** Grid cells occupied by enemy paths; towers may not be built here. */
+  private readonly pathOccupiedCellKeys: ReadonlySet<string>;
   private defenses: DefenseSnapshot[];
   private readonly waves: readonly WaveDefinition[];
   private readonly decorations: readonly DecorationDefinition[];
@@ -45,9 +47,7 @@ export class MapController {
     this.spawnPoints = doc.spawnPoints;
     this.pathsById = new Map(doc.paths.map((p) => [p.id, p]));
     this.buildSlots = doc.buildSlots;
-    this.buildSlotKeySet = new Set(
-      doc.buildSlots.map((s) => this.posKeyFromGrid(s.position)),
-    );
+    this.pathOccupiedCellKeys = pathCellKeySetUnion(doc.paths);
     this.defenses = doc.defenses.map(cloneDefense);
     this.waves = doc.waves;
     this.decorations = doc.decorations;
@@ -96,8 +96,12 @@ export class MapController {
     return x >= 0 && z >= 0 && x < gw && z < gd;
   }
 
+  /**
+   * True for any in-bounds cell not on an enemy path (map `buildSlots` are hints only).
+   */
   isBuildSlotPosition(pos: GridPos): boolean {
-    return this.buildSlotKeySet.has(this.posKeyFromGrid(pos));
+    if (!this.positionInBounds(pos)) return false;
+    return !this.pathOccupiedCellKeys.has(this.posKeyFromGrid(pos));
   }
 
   getDefenseAt(pos: GridPos): DefenseSnapshot | undefined {
@@ -105,7 +109,7 @@ export class MapController {
   }
 
   /**
-   * Places a tower if the tile is a build slot and not occupied.
+   * Places a tower if the tile is off the path, in bounds, and not occupied.
    */
   placeDefense(snapshot: DefenseSnapshot): boolean {
     if (!this.isBuildSlotPosition(snapshot.position)) return false;

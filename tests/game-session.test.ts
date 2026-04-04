@@ -15,6 +15,7 @@ function combatMap(): MapDocument {
         id: "p1",
         waypoints: [
           [0, 0],
+          [4, 0],
           [4, 7],
         ],
       },

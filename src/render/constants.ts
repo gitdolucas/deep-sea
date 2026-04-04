@@ -2,6 +2,16 @@
 export const COLORS = {
   background: 0x050d1a,
   floor: 0x0a1628,
+  /** Off-path grid cell tile. */
+  cellEmpty: 0x0c1a2e,
+  /** Path segment (two opposite neighbors on path). */
+  pathCellStraight: 0x1a3a2a,
+  /** Path turn (two perpendicular neighbors). */
+  pathCellCorner: 0x2a6a4a,
+  /** Path endpoint on the graph (spawn leg, castle approach, or stub). */
+  pathCellEnd: 0x1e3048,
+  /** Three or four path neighbors (rare). */
+  pathCellJunction: 0x348c62,
   path: 0x1a3a2a,
   pathEdge: 0xff6b6b,
   slot: 0x00d4ff,

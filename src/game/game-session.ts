@@ -68,7 +68,7 @@ export class GameSession {
   }
 
   /**
-   * MVP: spend 30 shells and place Arc Spine L1 on a free build slot.
+   * MVP: spend 30 shells and place Arc Spine L1 on a free off-path tile.
    */
   tryPurchaseArcSpineL1(defenseId: string, position: GridPos): boolean {
     if (this.outcome !== "playing") return false;

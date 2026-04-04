@@ -32,13 +32,14 @@ function minimalMap(overrides: Partial<MapDocument> = {}): MapDocument {
         id: "p1",
         waypoints: [
           [0, 0],
+          [2, 0],
           [2, 3],
         ],
       },
     ],
     buildSlots: [
       { position: [1, 1], type: "standard" },
-      { position: [2, 1], type: "standard" },
+      { position: [3, 3], type: "standard" },
     ],
     defenses: [],
     waves: [
@@ -85,6 +86,7 @@ describe("MapController", () => {
       const m = new MapController(minimalMap());
       expect(m.getPathWaypoints("p1")).toEqual([
         [0, 0],
+        [2, 0],
         [2, 3],
       ]);
       expect(m.getPathWaypoints("missing")).toBeUndefined();
@@ -98,15 +100,17 @@ describe("MapController", () => {
       expect(m.positionInBounds([-1, 0])).toBe(false);
     });
 
-    it("isBuildSlotPosition matches buildSlots only", () => {
+    it("isBuildSlotPosition is true for any in-bounds cell off the path", () => {
       const m = new MapController(minimalMap());
       expect(m.isBuildSlotPosition([1, 1])).toBe(true);
+      expect(m.isBuildSlotPosition([3, 0])).toBe(true);
       expect(m.isBuildSlotPosition([0, 0])).toBe(false);
+      expect(m.isBuildSlotPosition([2, 1])).toBe(false);
     });
   });
 
   describe("defenses", () => {
-    it("placeDefense requires free build slot", () => {
+    it("placeDefense requires a free off-path tile", () => {
       const m = new MapController(minimalMap());
       const tower = {
         id: "d1",
@@ -120,7 +124,7 @@ describe("MapController", () => {
       expect(m.placeDefense({ ...tower, id: "d2" })).toBe(false);
     });
 
-    it("placeDefense rejects non-slots", () => {
+    it("placeDefense rejects on-path cells", () => {
       const m = new MapController(minimalMap());
       expect(
         m.placeDefense({
