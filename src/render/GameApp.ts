@@ -242,12 +242,10 @@ export class GameApp {
     this.scene.add(this.bubbleProjectileGroup);
     this.scene.add(this.cannonProjectileGroup);
 
-    this.camera = new THREE.PerspectiveCamera(
-      50,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      200,
-    );
+    const w0 = window.innerWidth;
+    const h0 = window.innerHeight;
+    const aspect0 = w0 / h0;
+    this.camera = new THREE.PerspectiveCamera(50, aspect0, 0.1, 200);
     this.camera.position.set(6, 14, 12);
     this.camera.lookAt(0, 0, 0);
 
@@ -258,6 +256,10 @@ export class GameApp {
     this.orbitControls.target.set(0, 0, 0);
     this.orbitControls.enableDamping = true;
     this.orbitControls.dampingFactor = 0.08;
+    this.orbitControls.enableRotate = false;
+    this.orbitControls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+    this.orbitControls.touches.ONE = THREE.TOUCH.PAN;
+    this.orbitControls.screenSpacePanning = true;
     this.orbitControls.maxPolarAngle = Math.PI / 2 - 0.06;
     this.orbitControls.minDistance = 4;
     this.orbitControls.maxDistance = 72;
@@ -565,10 +567,10 @@ export class GameApp {
     this.towerHoverRangeGroup.visible = true;
   }
 
-  /** Left-click places towers; pause orbit rotate so clicks register immediately. */
+  /** Left-click places towers; pause pan so clicks register immediately. */
   private syncOrbitWithPlacement(): void {
     const placing = this.placementType !== null;
-    this.orbitControls.enableRotate = !placing;
+    this.orbitControls.enablePan = !placing;
   }
 
   private canPlaceTower(gx: number, gz: number): boolean {
