@@ -456,6 +456,95 @@
         border-color: rgba(62, 232, 255, 0.4);
       }
 
+      .sidebar-section--selected-defense {
+        margin-bottom: 12px;
+      }
+
+      .selected-defense-panel {
+        padding: 12px;
+        background: var(--biolume-soft);
+        border: 1px solid rgba(62, 232, 255, 0.22);
+        border-radius: var(--radius);
+      }
+
+      .selected-defense-panel__title {
+        margin: 0 0 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--pulse);
+      }
+
+      .selected-defense-panel__meta {
+        margin: 0 0 8px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--biolume);
+      }
+
+      .selected-defense-panel__cost {
+        margin: 0 0 12px;
+        font-size: 0.72rem;
+        line-height: 1.4;
+        color: var(--mist);
+      }
+
+      .selected-defense-panel__actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .selected-defense-panel__upgrade {
+        pointer-events: auto;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: linear-gradient(180deg, #153a5c 0%, #0d2844 100%);
+        color: var(--biolume);
+        border: 1px solid var(--biolume);
+        padding: 10px 12px;
+        border-radius: 8px;
+      }
+
+      .selected-defense-panel__upgrade:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .selected-defense-panel__upgrade:hover:not(:disabled) {
+        background: linear-gradient(180deg, #1a4a72 0%, #102f4d 100%);
+      }
+
+      .selected-defense-panel__upgrade:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .selected-defense-panel__dismiss {
+        pointer-events: auto;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.68rem;
+        background: transparent;
+        color: var(--mist);
+        border: 1px solid rgba(138, 164, 184, 0.35);
+        padding: 8px 10px;
+        border-radius: 8px;
+      }
+
+      .selected-defense-panel__dismiss:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .selected-defense-panel__dismiss:hover {
+        color: var(--biolume);
+        border-color: rgba(62, 232, 255, 0.4);
+      }
+
       .wave-progress {
         pointer-events: none;
         margin-bottom: 14px;
@@ -1632,6 +1721,30 @@
           Placement active — orbit is paused. Point at a valid tile for range rings,
           then click to build. Press Esc or Cancel to rotate the map again.
         </p>
+
+        <section
+          class="sidebar-section sidebar-section--selected-defense"
+          id="section-selected-defense"
+          hidden
+          aria-labelledby="selected-defense-heading"
+        >
+          <h2 class="sidebar-section-title" id="selected-defense-heading">
+            Selected
+          </h2>
+          <div class="selected-defense-panel">
+            <p id="selectedDefenseTitle" class="selected-defense-panel__title">—</p>
+            <p id="selectedDefenseLevel" class="selected-defense-panel__meta">—</p>
+            <p id="selectedDefenseCost" class="selected-defense-panel__cost">—</p>
+            <div class="selected-defense-panel__actions">
+              <button type="button" id="selectedDefenseUpgrade" class="selected-defense-panel__upgrade">
+                Upgrade
+              </button>
+              <button type="button" id="selectedDefenseDeselect" class="selected-defense-panel__dismiss">
+                Deselect
+              </button>
+            </div>
+          </div>
+        </section>
 
         <section
           class="sidebar-section"

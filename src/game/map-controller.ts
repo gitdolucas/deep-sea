@@ -9,7 +9,7 @@ import type {
   WaveDefinition,
 } from "./map-types.js";
 import { gridCellKey, pathCellKeySetUnion } from "./path-cells.js";
-import type { DefenseSnapshot, GridPos } from "./types.js";
+import type { DefenseLevel, DefenseSnapshot, GridPos } from "./types.js";
 
 function cloneDefense(d: DefenseSnapshot): DefenseSnapshot {
   return {
@@ -144,6 +144,17 @@ export class MapController {
     const i = this.defenses.findIndex((d) => d.id === defenseId);
     if (i < 0) return false;
     this.defenses.splice(i, 1);
+    return true;
+  }
+
+  /**
+   * Increments defense tier (1→2→3) in place. Does nothing if missing or already L3.
+   */
+  tryIncrementDefenseLevel(defenseId: string): boolean {
+    const d = this.defenses.find((x) => x.id === defenseId);
+    if (!d || d.level >= 3) return false;
+    const next = (d.level + 1) as DefenseLevel;
+    d.level = next;
     return true;
   }
 

@@ -2,7 +2,10 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameSession } from "../game/game-session.js";
-import { arcSpineChainSearchRadius } from "../game/defense-controller.js";
+import {
+  arcSpineChainSearchRadius,
+  DefenseController,
+} from "../game/defense-controller.js";
 import {
   attackRangeTiles,
   auraRadiusTiles,
@@ -160,6 +163,9 @@ export class GameApp {
   /** Attack radius while hovering an existing tower (tile space, matches {@link attackRangeTiles}). */
   private readonly towerHoverRangeGroup = new THREE.Group();
   private towerHoverRangeCacheKey: string | null = null;
+  private readonly selectionRangeGroup = new THREE.Group();
+  private selectionRangeCacheKey: string | null = null;
+  private selectedDefenseId: string | null = null;
   private placementType: DefenseTypeKey | null = null;
   private enemyObjects = new Map<
     string,
@@ -229,6 +235,9 @@ export class GameApp {
 
     this.towerHoverRangeGroup.visible = false;
     this.scene.add(this.towerHoverRangeGroup);
+
+    this.selectionRangeGroup.visible = false;
+    this.scene.add(this.selectionRangeGroup);
 
     const [gw, gd] = doc.gridSize;
     const gridExtent = Math.max(gw, gd) + 2;
@@ -325,6 +334,27 @@ export class GameApp {
     document.getElementById("invCancel")?.addEventListener(
       "click",
       () => this.clearPlacementMode(),
+      ac,
+    );
+    document.getElementById("selectedDefenseUpgrade")?.addEventListener(
+      "click",
+      (ev) => {
+        ev.preventDefault();
+        const id = this.selectedDefenseId;
+        if (!id || this.session.getOutcome() !== "playing") return;
+        if (this.session.tryUpgradeDefense(id)) {
+          this.refreshInventoryUi();
+          this.updateHud();
+        }
+      },
+      ac,
+    );
+    document.getElementById("selectedDefenseDeselect")?.addEventListener(
+      "click",
+      (ev) => {
+        ev.preventDefault();
+        this.clearSelection();
+      },
       ac,
     );
     document.getElementById("gameplayTipsPrev")?.addEventListener(
@@ -476,7 +506,11 @@ export class GameApp {
 
   private onKeyDown(ev: KeyboardEvent): void {
     if (ev.key === "Escape") {
-      this.clearPlacementMode();
+      if (this.placementType !== null) {
+        this.clearPlacementMode();
+      } else {
+        this.clearSelection();
+      }
     }
   }
 
@@ -489,6 +523,7 @@ export class GameApp {
       return;
     }
     if (shells < cost) return;
+    this.clearSelection();
     this.placementType = type;
     this.rebuildPlacementRangeRings();
     this.syncOrbitWithPlacement();
@@ -575,6 +610,89 @@ export class GameApp {
     this.orbitControls.enablePan = !placing;
   }
 
+  private selectDefense(id: string): void {
+    this.clearPlacementMode();
+    this.selectedDefenseId = id;
+    this.refreshSelectedDefensePanel();
+  }
+
+  private clearSelection(): void {
+    this.selectedDefenseId = null;
+    this.selectionRangeCacheKey = null;
+    this.selectionRangeGroup.visible = false;
+    this.refreshSelectedDefensePanel();
+  }
+
+  private refreshSelectedDefensePanel(): void {
+    const section = document.getElementById("section-selected-defense");
+    const titleEl = document.getElementById("selectedDefenseTitle");
+    const levelEl = document.getElementById("selectedDefenseLevel");
+    const costEl = document.getElementById("selectedDefenseCost");
+    const upgradeBtn = document.getElementById(
+      "selectedDefenseUpgrade",
+    ) as HTMLButtonElement | null;
+    if (!section || !titleEl || !levelEl || !costEl || !upgradeBtn) return;
+
+    const sid = this.selectedDefenseId;
+    const playing = this.session.getOutcome() === "playing";
+    if (!sid || !playing) {
+      section.hidden = true;
+      return;
+    }
+    const snap = this.session.map.getDefenses().find((d) => d.id === sid);
+    if (!snap) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+    const spec = buildPlacedDefenseTooltipSpec(snap);
+    titleEl.textContent = spec.title;
+    levelEl.textContent = `Level ${snap.level} / 3`;
+    const shells = this.session.economy.getShells();
+    if (snap.level >= 3) {
+      costEl.textContent = "Max tier.";
+      upgradeBtn.disabled = true;
+      upgradeBtn.textContent = "Max level";
+    } else {
+      const base = buildCostL1(snap.type);
+      const cost = new DefenseController(snap).upgradeShellCost(base);
+      const c = cost ?? 0;
+      const canAfford = cost !== null && shells >= cost;
+      costEl.textContent =
+        cost !== null
+          ? `Next tier: ${cost} shells (${canAfford ? "ready" : `need ${Math.max(0, c - shells)} more`})`
+          : "—";
+      upgradeBtn.disabled = cost === null || !canAfford;
+      upgradeBtn.textContent = `Upgrade (${c} shells)`;
+    }
+  }
+
+  private updateSelectionRangeOverlay(): void {
+    const sid = this.selectedDefenseId;
+    if (!sid || this.session.getOutcome() !== "playing") {
+      this.selectionRangeGroup.visible = false;
+      this.selectionRangeCacheKey = null;
+      return;
+    }
+    const snap = this.session.map.getDefenses().find((d) => d.id === sid);
+    if (!snap) {
+      this.selectedDefenseId = null;
+      this.selectionRangeGroup.visible = false;
+      this.selectionRangeCacheKey = null;
+      this.refreshSelectedDefensePanel();
+      return;
+    }
+    const key = `sel:${snap.id}:${snap.type}:${snap.level}`;
+    if (key !== this.selectionRangeCacheKey) {
+      this.selectionRangeCacheKey = key;
+      this.clearRangePreviewMeshes(this.selectionRangeGroup);
+      this.fillAttackRangePreview(this.selectionRangeGroup, snap.type, snap.level);
+    }
+    const w = worldFromGrid(snap.position[0], snap.position[1], this.doc, 0.14);
+    this.selectionRangeGroup.position.set(w.x, w.y, w.z);
+    this.selectionRangeGroup.visible = true;
+  }
+
   private canPlaceTower(gx: number, gz: number): boolean {
     const pos = [gx, gz] as const;
     if (!this.session.map.isBuildSlotPosition(pos)) return false;
@@ -598,7 +716,7 @@ export class GameApp {
     return { gx: m.userData.gx as number, gz: m.userData.gz as number };
   }
 
-  private pickHoveredDefenseId(e: PointerEvent): string | null {
+  private pickDefenseTowerAt(e: PointerEvent): string | null {
     this.setPointerNDC(e);
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const meshes = [...this.defenseObjects.values()].map((v) => v.tower);
@@ -626,7 +744,7 @@ export class GameApp {
   private updateTowerHoverTip(e: PointerEvent): void {
     const tip = document.getElementById("towerHoverTip");
     if (!tip) return;
-    const id = this.pickHoveredDefenseId(e);
+    const id = this.pickDefenseTowerAt(e);
     if (!id) {
       this.hideTowerHoverTip();
       return;
@@ -728,8 +846,28 @@ export class GameApp {
     const dy = e.clientY - start.y;
     if (dx * dx + dy * dy > 25) return;
 
+    const el = this.renderer.domElement;
+    const r = el.getBoundingClientRect();
+    if (
+      e.clientX < r.left ||
+      e.clientX > r.right ||
+      e.clientY < r.top ||
+      e.clientY > r.bottom
+    ) {
+      return;
+    }
+
+    const clickedTower = this.pickDefenseTowerAt(e);
+    if (clickedTower) {
+      this.selectDefense(clickedTower);
+      return;
+    }
+
     const placing = this.placementType;
-    if (placing === null) return;
+    if (placing === null) {
+      this.clearSelection();
+      return;
+    }
 
     const cell = this.pickGridCell(e);
     if (!cell) return;
@@ -796,6 +934,8 @@ export class GameApp {
       if (btn) btn.title = statusText;
     }
 
+    this.refreshSelectedDefensePanel();
+
     const hint = document.getElementById("placementHint");
     const cancel = document.getElementById("invCancel");
     const placing = selectedType !== null;
@@ -809,6 +949,7 @@ export class GameApp {
       this.session.tick(dt);
     }
     this.syncDefenses();
+    this.updateSelectionRangeOverlay();
     this.syncEnemies();
     this.syncBubbleAttackFx(dt);
     this.applyCombatVfx();
@@ -903,7 +1044,9 @@ export class GameApp {
       vis.bar.group.quaternion.copy(this.camera.quaternion);
       const mat = vis.tower.material as THREE.MeshStandardMaterial;
       const ready = interval > 0 ? 1 - remaining / interval : 1;
-      mat.emissiveIntensity = 0.08 + 0.28 * Math.max(0, Math.min(1, ready));
+      const baseEmit = 0.08 + 0.28 * Math.max(0, Math.min(1, ready));
+      const selected = this.selectedDefenseId === d.id;
+      mat.emissiveIntensity = selected ? baseEmit + 0.32 : baseEmit;
 
       if (d.type === "vibration_zone") {
         const rTiles = auraRadiusTiles("vibration_zone", d.level);
@@ -1229,6 +1372,7 @@ export class GameApp {
       return;
     }
     this.clearPlacementMode();
+    this.clearSelection();
     overlay?.classList.add("visible");
     if (title && sub) {
       if (out === "win") {

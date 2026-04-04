@@ -17,6 +17,7 @@ export { EnemyController } from "./enemy-controller.js";
 export {
   ENEMY_ARMOR,
   ENEMY_BASE_MAX_HP,
+  ENEMY_GLOBAL_STRENGTH_MULT,
   ENEMY_LEAK_DAMAGE,
 } from "./enemy-stats.js";
 export { spawnEnemyFromWaveGroup } from "./enemy-spawner.js";

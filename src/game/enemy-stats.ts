@@ -1,5 +1,11 @@
 import type { EnemyTypeKey } from "./types.js";
 
+/**
+ * Scales spawn HP and citadel leak damage for all enemy types.
+ * Armor stays at baseline so per-hit damage from towers stays comparable to design docs.
+ */
+export const ENEMY_GLOBAL_STRENGTH_MULT = 3;
+
 /** Baseline tuning until per-enemy doc stats are wired. */
 export const ENEMY_BASE_MAX_HP: Record<EnemyTypeKey, number> = {
   stoneclaw: 12,

@@ -199,6 +199,23 @@ describe("MapController", () => {
       expect(m.removeDefense("nope")).toBe(false);
     });
 
+    it("tryIncrementDefenseLevel bumps tier up to L3", () => {
+      const m = new MapController(minimalMap());
+      m.placeDefense({
+        id: "d1",
+        type: "bubble_shotgun",
+        position: [1, 1],
+        level: 1,
+        targetMode: "first",
+      });
+      expect(m.tryIncrementDefenseLevel("d1")).toBe(true);
+      expect(m.getDefenses()[0]!.level).toBe(2);
+      expect(m.tryIncrementDefenseLevel("d1")).toBe(true);
+      expect(m.getDefenses()[0]!.level).toBe(3);
+      expect(m.tryIncrementDefenseLevel("d1")).toBe(false);
+      expect(m.tryIncrementDefenseLevel("missing")).toBe(false);
+    });
+
     it("snapshotDefenses clones so callers cannot mutate internal array", () => {
       const m = new MapController(minimalMap());
       m.placeDefense({

@@ -64,7 +64,7 @@ describe("spawnEnemyFromWaveGroup", () => {
       "e1",
     );
     expect(e).not.toBeNull();
-    expect(e!.maxHp).toBe(24);
+    expect(e!.maxHp).toBe(72);
     expect(e!.getPathProgress()).toBe(0);
   });
 });

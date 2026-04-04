@@ -13,12 +13,15 @@ import {
   KILL_SHELL_REWARD,
   type TowerAttackResult,
 } from "./damage-resolver.js";
-import { ENEMY_LEAK_DAMAGE } from "./enemy-stats.js";
+import {
+  ENEMY_GLOBAL_STRENGTH_MULT,
+  ENEMY_LEAK_DAMAGE,
+} from "./enemy-stats.js";
 import { buildCostL1 } from "./defense-build-costs.js";
+import { DefenseController } from "./defense-controller.js";
 import { MVP_STARTING_SHELLS } from "./mvp-constants.js";
 import type { DefenseTypeKey, GridPos } from "./types.js";
 import { applyAurasFromDefenses } from "./aura-system.js";
-import { DefenseController } from "./defense-controller.js";
 import {
   DIRECT_DAMAGE,
   FIRE_COOLDOWN_SEC,
@@ -150,6 +153,31 @@ export class GameSession {
     return this.tryPurchaseDefenseL1("arc_spine", defenseId, position);
   }
 
+  /**
+   * Spend shells and raise tier (uses {@link DefenseController.upgradeShellCost} × L1 build cost).
+   */
+  tryUpgradeDefense(defenseId: string): boolean {
+    if (this.outcome !== "playing") return false;
+    const before = this.map.getDefenses().find((d) => d.id === defenseId);
+    if (!before || before.level >= 3) return false;
+    const base = buildCostL1(before.type);
+    const cost = new DefenseController(before).upgradeShellCost(base);
+    if (cost === null || !this.economy.trySpend(cost)) return false;
+    if (!this.map.tryIncrementDefenseLevel(defenseId)) {
+      this.economy.refund(cost);
+      return false;
+    }
+    const after = this.map.getDefenses().find((d) => d.id === defenseId)!;
+    this.defenseCooldowns.set(
+      defenseId,
+      fireIntervalFor(after.type, after.level),
+    );
+    if (after.type === "tideheart_laser") {
+      this.laserBeamAccum.set(defenseId, 0);
+    }
+    return true;
+  }
+
   startWaveEarly(): void {
     if (this.outcome !== "playing") return;
     if (this.waveDirector.getPhase() !== "prep") return;
@@ -189,7 +217,9 @@ export class GameSession {
       if (enemy.getPathProgress() >= 1) {
         const base = ENEMY_LEAK_DAMAGE[enemy.enemyType];
         const mult = enemy.getCitadelLeakMultiplier();
-        this.castle.applyDamage(Math.max(0, Math.floor(base * mult)));
+        this.castle.applyDamage(
+          Math.max(0, Math.floor(base * ENEMY_GLOBAL_STRENGTH_MULT * mult)),
+        );
         this.enemies.delete(enemy.id);
       }
     }
