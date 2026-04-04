@@ -68,6 +68,8 @@ export interface MapDocument {
   id: string;
   name: string;
   difficulty: MapDifficulty;
+  /** Starting shell balance; defaults to `MVP_STARTING_SHELLS` when omitted. */
+  startingShells?: number;
   gridSize: readonly [number, number];
   castle: CastleDefinition;
   spawnPoints: readonly SpawnPointDefinition[];

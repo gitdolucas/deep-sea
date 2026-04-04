@@ -18,7 +18,7 @@ describe("hydra_convergence.json", () => {
     const m = new MapController(doc);
     expect(m.id).toBe("hydra_convergence");
     expect(m.gridSize).toEqual([22, 18]);
-    expect(m.getWaves()).toHaveLength(14);
+    expect(m.getWaves()).toHaveLength(8);
     expect(m.getSpawnPoints()).toHaveLength(4);
     expect(m.getPathWaypoints("path_alpha")?.[0]).toEqual([0, 0]);
     expect(m.getBuildSlots().length).toBe(54);

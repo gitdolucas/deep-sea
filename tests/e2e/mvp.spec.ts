@@ -9,7 +9,7 @@ test("MVP HUD shows starting shells and castle HP in sidebar", async ({
   page,
 }) => {
   await beginMission(page);
-  await expect(page.locator("#statShells")).toContainText("50");
+  await expect(page.locator("#statShells")).toContainText("88");
   await expect(page.locator("#statCastle")).toContainText("20");
   await expect(page.locator("#statCastle")).toContainText("/");
 });
@@ -17,7 +17,7 @@ test("MVP HUD shows starting shells and castle HP in sidebar", async ({
 test("sidebar shows armory and send wave", async ({ page }) => {
   await beginMission(page);
   await expect(page.locator("#inventory")).toBeVisible();
-  await expect(page.locator("#statShells")).toContainText("50");
+  await expect(page.locator("#statShells")).toContainText("88");
   await expect(page.locator("#invArcSpine")).toBeVisible();
   await expect(page.locator("#sendWave")).toBeVisible();
   await expect(
@@ -29,9 +29,9 @@ test("sidebar shows armory and send wave", async ({ page }) => {
 
 test("main menu lists levels and starts selected map", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator('input[name="levelId"]')).toHaveCount(3);
+  await expect(page.locator('input[name="levelId"]')).toHaveCount(5);
   await expect(
-    page.locator('input[name="levelId"][value="first_trench"]'),
+    page.locator('input[name="levelId"][value="tutorial_shallows"]'),
   ).toBeChecked();
   await page.locator('input[name="levelId"][value="trench_gate"]').click();
   await page.locator("#btnPlay").click();

@@ -8,7 +8,7 @@ import type { MapDocument } from "../src/game/map-types.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe("triple_convergence_test.json", () => {
-  it("has isolated vertical tracks per defense slot and mono-type flood waves per path", () => {
+  it("has three isolated vertical lanes, many build slots, and staggered lane waves", () => {
     const raw = readFileSync(
       join(__dirname, "../data/maps/triple_convergence_test.json"),
       "utf8",
@@ -16,6 +16,7 @@ describe("triple_convergence_test.json", () => {
     const doc = JSON.parse(raw) as MapDocument;
     const m = new MapController(doc);
     expect(m.id).toBe("triple_convergence_test");
+    expect(doc.startingShells).toBe(148);
     expect(m.getSpawnPoints()).toHaveLength(3);
     expect(doc.paths.map((p) => p.id).sort()).toEqual(["path_c", "path_l", "path_r"]);
 
@@ -32,18 +33,16 @@ describe("triple_convergence_test.json", () => {
       [12, 21],
     ]);
 
-    expect(m.getBuildSlots()).toHaveLength(3);
-    expect(m.getDefenses()).toHaveLength(3);
+    expect(m.getBuildSlots().length).toBe(14);
+    expect(m.getDefenses()).toHaveLength(0);
 
+    const pathSet = new Set(["path_l", "path_c", "path_r"]);
     for (const w of doc.waves) {
-      const types = new Set(w.groups.map((g) => g.enemyType));
-      expect(types.size, `wave ${w.wave} mixes enemy types`).toBe(1);
-      expect(w.groups).toHaveLength(3);
       const paths = new Set(w.groups.map((g) => g.pathId));
-      expect(paths).toEqual(new Set(["path_l", "path_c", "path_r"]));
-      for (const g of w.groups) {
-        expect(g.count).toBeGreaterThanOrEqual(8);
+      for (const pid of paths) {
+        expect(pathSet.has(pid)).toBe(true);
       }
+      expect(w.groups.length).toBeGreaterThanOrEqual(2);
     }
   });
 });

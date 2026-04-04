@@ -66,7 +66,8 @@ export class GameSession {
   ) {
     this.map = new MapController(doc);
     this.economy = new EconomyController({
-      shells: economy?.shells ?? MVP_STARTING_SHELLS,
+      shells:
+        economy?.shells ?? doc.startingShells ?? MVP_STARTING_SHELLS,
       totalShellsEarned: economy?.totalShellsEarned ?? 0,
     });
     this.castle = new CastleController(this.map.castle.hp);

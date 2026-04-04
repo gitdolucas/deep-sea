@@ -59,7 +59,7 @@ describe("vibration zone aura vs map placements", () => {
     expect(enemy.getPathProgress()).toBeLessThan(baseline.getPathProgress());
   });
 
-  it("slows enemies on six_tower path inside pre-placed vibration radius", () => {
+  it("slows enemies on six-spine gauntlet path inside vibration radius near merge", () => {
     const raw = readFileSync(
       join(__dirname, "../data/maps/six_tower_gauntlet.json"),
       "utf8",
@@ -67,14 +67,24 @@ describe("vibration zone aura vs map placements", () => {
     const doc = JSON.parse(raw) as MapDocument;
     const map = new MapController(doc);
 
-    const waypoints = map.getPathWaypoints("path_vibration")!;
-    /** Midpoint of vertical leg (32,0)→(32,20): stays 2 tiles from tower at [34,12]. */
-    const progress = 12 / 40;
+    const waypoints = map.getPathWaypoints("path_s6")!;
+    /** Along [22,0]→[22,9]→[11,9]…; ~mid first leg (22,4.5) inside aura at [19,5]. */
+    const progress = 4.5 / 28;
+
+    const vibeAtMerge = [
+      {
+        id: "vz",
+        type: "vibration_zone" as const,
+        position: [19, 5] as const,
+        level: 1 as const,
+        targetMode: "closest" as const,
+      },
+    ];
 
     const slowed = new EnemyController({
       id: "slow",
       enemyType: "stoneclaw",
-      pathId: "path_vibration",
+      pathId: "path_s6",
       waypoints,
       pathProgress: progress,
       hp: 50,
@@ -84,7 +94,7 @@ describe("vibration zone aura vs map placements", () => {
     const baseline = new EnemyController({
       id: "base",
       enemyType: "stoneclaw",
-      pathId: "path_vibration",
+      pathId: "path_s6",
       waypoints,
       pathProgress: progress,
       hp: 50,
@@ -94,7 +104,7 @@ describe("vibration zone aura vs map placements", () => {
 
     applyAurasFromDefenses(
       new Map([[slowed.id, slowed]]),
-      map.getDefenses(),
+      vibeAtMerge,
       0.016,
     );
     applyAurasFromDefenses(new Map([[baseline.id, baseline]]), [], 0.016);

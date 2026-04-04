@@ -1,4 +1,4 @@
-import firstTrench from "../../data/maps/first_trench.json";
+import tutorialShallows from "../../data/maps/tutorial_shallows.json";
 import trenchGate from "../../data/maps/trench_gate.json";
 import hydraConvergence from "../../data/maps/hydra_convergence.json";
 import tripleConvergenceTest from "../../data/maps/triple_convergence_test.json";
@@ -18,9 +18,9 @@ function entryFromJson(raw: unknown): LevelEntry {
 
 /** Playable maps, order = main menu order */
 export const LEVELS: readonly LevelEntry[] = [
-  entryFromJson(firstTrench),
+  entryFromJson(tutorialShallows),
   entryFromJson(trenchGate),
-  entryFromJson(hydraConvergence),
   entryFromJson(tripleConvergenceTest),
+  entryFromJson(hydraConvergence),
   entryFromJson(sixTowerGauntlet),
 ];
