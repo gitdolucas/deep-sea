@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameSession } from "../game/game-session.js";
 import { MVP_ARC_SPINE_BUILD_COST } from "../game/mvp-constants.js";
@@ -25,6 +26,8 @@ export class GameApp {
   private chainLines: { obj: THREE.Line; t: number }[] = [];
   private nextDefenseId = 1;
   private readonly mount: HTMLElement;
+  private readonly orbitControls: OrbitControls;
+  private slotPointerStart: { x: number; y: number } | null = null;
 
   constructor(doc: MapDocument, mount?: HTMLElement) {
     this.doc = doc;
@@ -69,10 +72,29 @@ export class GameApp {
     this.camera.position.set(cx + 6, 14, cz + 12);
     this.camera.lookAt(cx, 0, cz);
 
+    this.orbitControls = new OrbitControls(
+      this.camera,
+      this.renderer.domElement,
+    );
+    this.orbitControls.target.set(cx, 0, cz);
+    this.orbitControls.enableDamping = true;
+    this.orbitControls.dampingFactor = 0.08;
+    this.orbitControls.maxPolarAngle = Math.PI / 2 - 0.06;
+    this.orbitControls.minDistance = 4;
+    this.orbitControls.maxDistance = 72;
+    this.orbitControls.update();
+
+    this.renderer.domElement.addEventListener("contextmenu", (ev) =>
+      ev.preventDefault(),
+    );
     window.addEventListener("resize", () => this.onResize());
     this.renderer.domElement.addEventListener("pointerdown", (ev) =>
-      this.onPointerDown(ev),
+      this.onSlotPointerDown(ev),
     );
+    window.addEventListener("pointerup", (ev) => this.onSlotPointerUp(ev));
+    window.addEventListener("pointercancel", () => {
+      this.slotPointerStart = null;
+    });
     document.getElementById("buildBtn")?.addEventListener("click", () =>
       this.onBuild(),
     );
@@ -94,8 +116,31 @@ export class GameApp {
     this.renderer.setSize(w, h);
   }
 
-  private onPointerDown(e: PointerEvent): void {
+  private onSlotPointerDown(e: PointerEvent): void {
+    if (e.button !== 0) return;
     if (this.session.getOutcome() !== "playing") return;
+    const el = this.renderer.domElement;
+    const r = el.getBoundingClientRect();
+    if (
+      e.clientX < r.left ||
+      e.clientX > r.right ||
+      e.clientY < r.top ||
+      e.clientY > r.bottom
+    ) {
+      return;
+    }
+    this.slotPointerStart = { x: e.clientX, y: e.clientY };
+  }
+
+  private onSlotPointerUp(e: PointerEvent): void {
+    if (e.button !== 0) return;
+    const start = this.slotPointerStart;
+    this.slotPointerStart = null;
+    if (!start || this.session.getOutcome() !== "playing") return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (dx * dx + dy * dy > 25) return;
+
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -159,6 +204,7 @@ export class GameApp {
     this.updateChainFx(dt);
     this.updateHud();
     this.updateUiState();
+    this.orbitControls.update();
     this.renderer.render(this.scene, this.camera);
   }
 

@@ -39,7 +39,7 @@ describe("TargetingSystem", () => {
     ).toBe("b");
   });
 
-  it("closest picks minimum distance to tower", () => {
+  it("ignores targetMode: prefers path leader over spatially closer enemy", () => {
     const defense = new DefenseController({
       id: "d",
       type: "arc_spine",
@@ -47,20 +47,20 @@ describe("TargetingSystem", () => {
       level: 1,
       targetMode: "closest",
     });
-    const near = new EnemyController({
+    const spatiallyClose = new EnemyController({
       id: "n",
       enemyType: "stoneclaw",
       pathId: "p",
       waypoints: [
-        [0, 0],
+        [1, 0],
         [2, 0],
       ],
-      pathProgress: 0.5,
+      pathProgress: 0.1,
       hp: 5,
       maxHp: 5,
       speedMultiplier: 1,
     });
-    const far = new EnemyController({
+    const pathLeader = new EnemyController({
       id: "f",
       enemyType: "stoneclaw",
       pathId: "p",
@@ -68,13 +68,14 @@ describe("TargetingSystem", () => {
         [8, 0],
         [10, 0],
       ],
-      pathProgress: 0.5,
+      pathProgress: 0.95,
       hp: 5,
       maxHp: 5,
       speedMultiplier: 1,
     });
     expect(
-      TargetingSystem.selectTarget(defense, [far, near], "closest")?.id,
-    ).toBe("n");
+      TargetingSystem.selectTarget(defense, [pathLeader, spatiallyClose], "closest")
+        ?.id,
+    ).toBe("f");
   });
 });

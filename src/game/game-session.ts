@@ -68,7 +68,7 @@ export class GameSession {
   }
 
   /**
-   * MVP: spend 30 shells and place Arc Spine L1 (`closest`) on a free build slot.
+   * MVP: spend 30 shells and place Arc Spine L1 on a free build slot.
    */
   tryPurchaseArcSpineL1(defenseId: string, position: GridPos): boolean {
     if (this.outcome !== "playing") return false;
@@ -78,7 +78,7 @@ export class GameSession {
       type: "arc_spine",
       position: [position[0], position[1]],
       level: 1,
-      targetMode: "closest",
+      targetMode: "first",
     });
     if (!placed) {
       this.economy.refund(MVP_ARC_SPINE_BUILD_COST);
