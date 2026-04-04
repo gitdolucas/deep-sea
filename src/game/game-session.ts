@@ -26,6 +26,7 @@ import {
 } from "./combat-balance.js";
 import { damageAfterArmorEffective } from "./combat-damage.js";
 import { TargetingSystem, type TargetingContext } from "./targeting-system.js";
+import { tileDistanceSq } from "./spatial.js";
 import {
   spawnBubbleVolley,
   tickBubbleProjectiles,
@@ -307,8 +308,14 @@ export class GameSession {
 
       if (snap.type === "bubble_shotgun") {
         const alive = [...this.enemies.values()].filter((e) => e.isAlive());
-        if (alive.length > 0) {
-          const range = attackRangeTiles(snap.type, snap.level);
+        const range = attackRangeTiles(snap.type, snap.level);
+        const rSq = range * range;
+        const hasInRange =
+          alive.length > 0 &&
+          alive.some(
+            (e) => tileDistanceSq(snap.position, e.getGridPosition()) <= rSq,
+          );
+        if (hasInRange) {
           const aim = TargetingSystem.selectBubbleAimTile(
             snap.position,
             alive,

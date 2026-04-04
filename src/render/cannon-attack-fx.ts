@@ -24,32 +24,67 @@ const CANNON_BOLT_MAT_L3 = new THREE.MeshBasicMaterial({
 const _fwd = new THREE.Vector3();
 const _axis = new THREE.Vector3(0, 1, 0);
 
-const BLAST_DURATION = 0.55;
+const BLAST_DURATION = 0.62;
 
+/* Radial distance from mesh origin; CircleGeometry lives in local XY before rotation. */
 const blastVertexShader = `
-varying vec2 vUv;
+varying vec2 vLocalXY;
 void main() {
-  vUv = uv;
+  vLocalXY = position.xy;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
 `;
 
+/**
+ * Expanding pressure-ring blast: hot core, leading shockwall, violet caustic crawl,
+ * trailing ripples (style-bible cyan / violet / warm accents).
+ */
 const blastFragmentShader = `
 uniform float uTime;
+uniform float uProgress;
+uniform float uRadius;
 uniform float uFade;
-varying vec2 vUv;
+varying vec2 vLocalXY;
+
+const vec3 COL_CYAN = vec3(0.0, 0.831, 1.0);
+const vec3 COL_DEEP = vec3(0.008, 0.22, 0.42);
+const vec3 COL_VIOLET = vec3(0.482, 0.184, 1.0);
+const vec3 COL_CORE = vec3(1.0, 0.65, 0.25);
+const vec3 COL_MINT = vec3(0.0, 1.0, 0.8);
 
 void main() {
-  vec2 c = vUv - 0.5;
-  float rInner = length(c) * 2.0;
-  float fill = smoothstep(0.0, 0.22, rInner) * (1.0 - smoothstep(0.55, 1.0, rInner));
-  float rip = 0.5 + 0.5 * sin(-uTime * 14.0 + rInner * 11.0);
-  float edge = smoothstep(0.65, 0.95, rInner) * (1.0 - smoothstep(0.95, 1.0, rInner));
-  float a = (fill * 0.55 + edge * 0.95 * rip) * uFade;
-  vec3 cyan = vec3(0.0, 0.82, 1.0);
-  vec3 warm = vec3(1.0, 0.58, 0.15);
-  vec3 col = mix(cyan, warm, clamp(rInner * 0.85, 0.0, 1.0));
-  gl_FragColor = vec4(col, a * 0.78);
+  float len = length(vLocalXY);
+  float r = clamp(len / max(uRadius, 0.001), 0.0, 1.2);
+  float p = clamp(uProgress, 0.0, 1.0);
+
+  float front = p * 1.08;
+  float shock = exp(-pow((r - front) * 14.0, 2.0));
+  float shock2 = exp(-pow((r - front * 0.92) * 9.0, 2.0)) * 0.55;
+
+  float wakeA = exp(-pow((r - p * 0.5) * 7.0, 2.0)) * (1.0 - p) * 0.4;
+  float wakeB = exp(-pow((r - p * 0.72) * 12.0, 2.0)) * (1.0 - smoothstep(0.35, 1.0, p)) * 0.35;
+
+  float coreFlash = (1.0 - smoothstep(0.0, 0.18, r)) * exp(-p * 5.5);
+
+  float caust = sin(r * 38.0 - uTime * 10.0 + p * 6.28) * 0.5 + 0.5;
+  float ionBand = smoothstep(0.55, 0.95, r) * (1.0 - smoothstep(0.98, 1.05, r));
+  ionBand *= caust * (0.35 + shock * 0.85);
+
+  float haze = (1.0 - smoothstep(0.0, 0.45, r)) * exp(-p * 2.2) * 0.22;
+
+  float alpha =
+    (shock + shock2 + wakeA + wakeB + coreFlash + ionBand * 0.9 + haze) * uFade;
+
+  vec3 col = COL_DEEP * (0.35 + haze * 2.5);
+  col = mix(col, COL_CYAN, clamp(shock * 1.15 + shock2 * 0.8 + wakeA * 1.2, 0.0, 1.0));
+  col = mix(col, COL_VIOLET, ionBand * 0.95);
+  col = mix(col, COL_MINT, shock * r * 0.35 + wakeB * 0.5);
+  col = mix(col, COL_CORE, coreFlash * 1.25);
+
+  float pulse = 0.92 + 0.08 * sin(uTime * 22.0 - r * 30.0);
+  col *= pulse;
+
+  gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.94));
 }
 `;
 
@@ -118,12 +153,15 @@ export function spawnCannonBlastDecals(
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
+        uProgress: { value: 0 },
+        uRadius: { value: rWorld },
         uFade: { value: 1 },
       },
       vertexShader: blastVertexShader,
       fragmentShader: blastFragmentShader,
       transparent: true,
       depthWrite: false,
+      blending: THREE.NormalBlending,
     });
     const mesh = new THREE.Mesh(geom, mat);
     mesh.rotation.x = -Math.PI / 2;
@@ -145,6 +183,7 @@ export function updateCannonBlastDecals(
     d.age += dt;
     const k = d.age / d.duration;
     d.mat.uniforms.uTime.value = timeSec;
+    d.mat.uniforms.uProgress.value = k;
     if (k >= 1) {
       scene.remove(d.mesh);
       d.mesh.geometry.dispose();
@@ -152,7 +191,7 @@ export function updateCannonBlastDecals(
       decals.splice(i, 1);
       continue;
     }
-    d.mat.uniforms.uFade.value = 1 - k * k;
+    d.mat.uniforms.uFade.value = 1.0 - k * k * k;
   }
 }
 

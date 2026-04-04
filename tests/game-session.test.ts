@@ -96,6 +96,54 @@ describe("GameSession", () => {
     expect(d?.level).toBe(1);
   });
 
+  it("bubble shotgun does not spawn projectiles when no enemy is in attack range", () => {
+    const doc = combatMap();
+    doc.spawnPoints = [{ id: "far", position: [10, 0], pathIds: ["p_far"] }];
+    doc.paths = [
+      {
+        id: "p_far",
+        waypoints: [
+          [10, 0],
+          [10, 7],
+          [4, 7],
+        ],
+      },
+    ];
+    doc.defenses = [
+      {
+        id: "bub",
+        type: "bubble_shotgun",
+        position: [2, 2],
+        level: 1,
+        targetMode: "first",
+      },
+    ];
+    doc.waves = [
+      {
+        wave: 1,
+        prepTime: 0,
+        isBoss: false,
+        groups: [
+          {
+            enemyType: "stoneclaw",
+            count: 1,
+            spawnId: "far",
+            pathId: "p_far",
+            interval: 0,
+            delay: 0,
+            hpMultiplier: 1,
+            speedMultiplier: 0,
+          },
+        ],
+      },
+    ];
+    const session = new GameSession(doc);
+    session.tick(0.01);
+    expect(session.getLivingEnemyCount()).toBe(1);
+    for (let i = 0; i < 30; i++) session.tick(0.2);
+    expect(session.getBubbleProjectiles().length).toBe(0);
+  });
+
   it("exposes per-defense cooldown remaining for UI", () => {
     const doc = combatMap();
     doc.defenses = [
