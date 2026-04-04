@@ -3,6 +3,7 @@ import trenchGate from "../../data/maps/trench_gate.json";
 import hydraConvergence from "../../data/maps/hydra_convergence.json";
 import tripleConvergenceTest from "../../data/maps/triple_convergence_test.json";
 import sixTowerGauntlet from "../../data/maps/six_tower_gauntlet.json";
+import funnelCrush from "../../data/maps/funnel_crush.json";
 import type { MapDocument } from "../game/map-types.js";
 
 export type LevelEntry = {
@@ -22,5 +23,6 @@ export const LEVELS: readonly LevelEntry[] = [
   entryFromJson(trenchGate),
   entryFromJson(tripleConvergenceTest),
   entryFromJson(hydraConvergence),
+  entryFromJson(funnelCrush),
   entryFromJson(sixTowerGauntlet),
 ];

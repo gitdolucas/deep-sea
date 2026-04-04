@@ -14,7 +14,16 @@ export default defineConfig({
     strictPort: true,
     open: false,
   },
-  build: { outDir: "dist", sourcemap: true },
+  build: {
+    outDir: "dist",
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: path.join(rootDir, "index.html"),
+        mapBuilder: path.join(rootDir, "map-builder.html"),
+      },
+    },
+  },
   resolve: {
     alias: {
       "@game": path.join(rootDir, "src/game"),
