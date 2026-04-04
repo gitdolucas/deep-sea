@@ -30,6 +30,11 @@ export {
 export { MVP_ARC_SPINE_BUILD_COST, MVP_STARTING_SHELLS } from "./mvp-constants.js";
 export { MapController } from "./map-controller.js";
 export {
+  isValidMapDocument,
+  validateMapDocument,
+  type MapValidationIssue,
+} from "./map-validation.js";
+export {
   cellsAlongSegment,
   gridCellKey,
   pathCellKeySet,

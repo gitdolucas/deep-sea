@@ -67,6 +67,8 @@ export interface DecorationDefinition {
 export interface MapDocument {
   id: string;
   name: string;
+  /** Player-facing blurb for main menu cards; omit if unused. */
+  description?: string;
   difficulty: MapDifficulty;
   /** Starting shell balance; defaults to `MVP_STARTING_SHELLS` when omitted. */
   startingShells?: number;

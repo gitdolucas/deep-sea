@@ -1,7 +1,25 @@
+import { validateMapDocument } from "../game/map-validation.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameApp } from "./GameApp.js";
 import { LEVELS } from "./levels.js";
 import { createMapOverviewElement } from "./map-overview.js";
+
+const PLAYTEST_SESSION_KEY = "deepSeaPlaytestMap";
+
+function takePlaytestDocument(): MapDocument | null {
+  try {
+    const params = new URLSearchParams(location.search);
+    if (params.get("playtest") !== "1") return null;
+    const raw = localStorage.getItem(PLAYTEST_SESSION_KEY);
+    if (!raw) return null;
+    localStorage.removeItem(PLAYTEST_SESSION_KEY);
+    const parsed = JSON.parse(raw) as unknown;
+    if (validateMapDocument(parsed).length > 0) return null;
+    return parsed as MapDocument;
+  } catch {
+    return null;
+  }
+}
 
 const mainMenu = document.getElementById("mainMenu");
 const gameScreen = document.getElementById("gameScreen");
@@ -38,23 +56,39 @@ function renderLevelSelect(): void {
     });
     const body = document.createElement("div");
     body.className = "level-option__body";
-    body.append(createMapOverviewElement(level.document));
-    const textWrap = document.createElement("span");
-    textWrap.className = "level-option__text";
+    const thumb = document.createElement("div");
+    thumb.className = "level-option__thumb";
+    thumb.append(createMapOverviewElement(level.document));
+    const content = document.createElement("div");
+    content.className = "level-option__content";
     const nameEl = document.createElement("span");
     nameEl.className = "level-option__name";
     nameEl.textContent = level.name;
-    const meta = document.createElement("span");
-    meta.className = "level-option__meta";
-    meta.textContent = `${level.document.difficulty} · ${level.document.gridSize[0]}×${level.document.gridSize[1]}`;
-    textWrap.append(nameEl, meta);
-    body.append(textWrap);
+    const diffEl = document.createElement("span");
+    diffEl.className = "level-option__meta";
+    diffEl.textContent = level.document.difficulty;
+    const waveCount = level.document.waves.length;
+    const wavesEl = document.createElement("p");
+    wavesEl.className = "level-option__waves";
+    wavesEl.textContent =
+      waveCount === 1 ? "1 wave" : `${waveCount} waves`;
+    content.append(nameEl, diffEl, wavesEl);
+    const blurb = level.document.description;
+    if (blurb) {
+      const descEl = document.createElement("p");
+      descEl.className = "level-option__desc";
+      descEl.textContent = blurb;
+      content.append(descEl);
+    }
+    body.append(thumb, content);
     label.append(input, body);
     levelSelectHost.append(label);
   }
 }
 
 renderLevelSelect();
+
+const playtestDocument = takePlaytestDocument();
 
 function showMainMenu(): void {
   if (app) {
@@ -120,3 +154,11 @@ window.addEventListener(
   },
   true,
 );
+
+if (playtestDocument && gameMount) {
+  mainMenu?.classList.remove("visible");
+  gameScreen?.removeAttribute("hidden");
+  gameScreen?.setAttribute("data-active-map", playtestDocument.id);
+  app = new GameApp(playtestDocument, gameMount);
+  app.start();
+}

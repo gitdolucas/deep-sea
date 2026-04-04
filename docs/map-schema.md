@@ -16,6 +16,7 @@ data/maps/{map_id}.json
 {
   "id": "string",           // unique map identifier
   "name": "string",         // display name
+  "description": "string",  // optional; main-menu card blurb (non-empty when present)
   "difficulty": "string",   // "normal" | "hard" | "nightmare"
   "gridSize": [x, z],       // map dimensions in tiles
   "castle": { ... },        // citadel placement & state

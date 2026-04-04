@@ -1,12 +1,13 @@
 {
   "id": "trench_gate",
   "name": "The Trench Gate",
+  "description": "Twin spawns and converging routes — divide attention or get flanked at the gate.",
   "difficulty": "normal",
   "startingShells": 120,
   "gridSize": [12, 10],
 
   "castle": {
-    "position": [6, 9],
+    "position": [6, 8],
     "hp": 20,
     "size": [3, 2]
   },

@@ -1098,10 +1098,13 @@
         z-index: 40;
         display: none;
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
         justify-content: center;
-        padding: 32px 24px;
+        padding: 24px 24px 20px;
         text-align: center;
+        overflow: hidden;
+        max-height: 100dvh;
+        box-sizing: border-box;
         background: radial-gradient(
             ellipse 120% 80% at 50% 20%,
             rgba(62, 232, 255, 0.08) 0%,
@@ -1127,7 +1130,7 @@
       }
 
       .main-menu__tagline {
-        margin: 0 0 28px;
+        margin: 0 auto 18px;
         max-width: 36ch;
         font-size: 0.95rem;
         font-weight: 500;
@@ -1136,9 +1139,9 @@
       }
 
       .main-menu__section-label {
-        margin: 0 0 12px;
+        margin: 0 0 10px;
         width: 100%;
-        max-width: 400px;
+        max-width: none;
         text-align: left;
         font-size: 0.65rem;
         font-weight: 600;
@@ -1150,17 +1153,36 @@
 
       .level-select {
         width: 100%;
-        max-width: 400px;
-        margin: 0 0 28px;
+        max-width: none;
+        margin: 0 0 20px;
         display: flex;
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 14px;
+        overflow-x: auto;
+        overflow-y: hidden;
         text-align: left;
+        padding-bottom: 6px;
+        overscroll-behavior-x: contain;
+        scrollbar-color: rgba(62, 232, 255, 0.45) rgba(0, 0, 0, 0.2);
+        scroll-snap-type: x mandatory;
+      }
+
+      /* Trailing space so last card isn’t flush with viewport edge when scrolled */
+      .level-select::after {
+        content: "";
+        flex: 0 0 12px;
+        width: 12px;
+        height: 1px;
+        scroll-snap-align: end;
       }
 
       .level-option {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        width: min(360px, calc(100% - 40px));
         display: flex;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 12px;
         margin: 0;
         padding: 12px 14px;
@@ -1174,22 +1196,40 @@
       .level-option__body {
         flex: 1;
         min-width: 0;
-        display: flex;
-        align-items: center;
-        gap: 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+        gap: 14px;
+        align-items: start;
       }
 
-      /* CSS-only top-down map thumb (grid from map JSON) */
-      .level-overview {
-        flex-shrink: 0;
-        width: 92px;
+      .level-option__thumb {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
         border-radius: 8px;
         overflow: hidden;
         border: 1px solid rgba(62, 232, 255, 0.28);
         box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.45),
           0 4px 14px rgba(0, 0, 0, 0.35);
-        aspect-ratio: var(--map-gw, 10) / var(--map-gd, 12);
         background: #050d1a;
+      }
+
+      /*
+        Mini-map: absolute fill gives a definite box so .level-overview__grid 100%×100% resolves.
+        (auto-sized flex + % children was collapsing to 0×0.)
+      */
+      .level-overview {
+        position: absolute;
+        inset: 0;
+        min-width: 0;
+        min-height: 0;
+        border-radius: 0;
+        overflow: hidden;
+        border: none;
+        box-shadow: none;
+        background: transparent;
       }
 
       .level-overview__grid {
@@ -1208,6 +1248,11 @@
         min-height: 0;
         background: #0a1628;
         box-sizing: border-box;
+      }
+
+      .level-overview__cell--blank {
+        background: #050d1a;
+        box-shadow: none;
       }
 
       .level-overview__cell--path {
@@ -1258,18 +1303,19 @@
       }
 
       .level-option input {
-        margin: 4px 0 0;
+        align-self: center;
+        margin: 0;
         accent-color: var(--biolume);
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
       }
 
-      .level-option__text {
+      .level-option__content {
         min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
       }
 
       .level-option__name {
@@ -1287,7 +1333,24 @@
         text-transform: capitalize;
       }
 
+      .level-option__waves {
+        margin: 0;
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--mist);
+      }
+
+      .level-option__desc {
+        margin: 2px 0 0;
+        font-size: 0.78rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--mist);
+        opacity: 0.95;
+      }
+
       #btnPlay {
+        align-self: center;
         cursor: pointer;
         font-family: var(--font-ui);
         font-size: 0.9rem;

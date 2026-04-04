@@ -1,6 +1,7 @@
 {
   "id": "tutorial_shallows",
   "name": "Tutorial — Shallows",
+  "description": "Gentle introduction: one path, tight economy, and room to learn Arc Spine chains.",
   "difficulty": "normal",
   "startingShells": 88,
   "gridSize": [9, 12],

@@ -1,6 +1,7 @@
 {
   "id": "triple_convergence_test",
   "name": "Triple Convergence",
+  "description": "Three lanes collapse inward; position towers so chains cover every merge point.",
   "difficulty": "normal",
   "startingShells": 148,
   "gridSize": [15, 22],
@@ -47,11 +48,11 @@
     { "position": [14, 9], "type": "standard" },
     { "position": [14, 12], "type": "standard" },
     { "position": [3, 14], "type": "standard" },
-    { "position": [7, 14], "type": "standard" },
+    { "position": [6, 14], "type": "standard" },
     { "position": [11, 14], "type": "standard" },
     { "position": [5, 17], "type": "standard" },
     { "position": [9, 17], "type": "standard" },
-    { "position": [7, 19], "type": "standard" }
+    { "position": [8, 19], "type": "standard" }
   ],
   "defenses": [],
   "waves": [
