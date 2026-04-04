@@ -1,0 +1,272 @@
+{
+  "id": "trench_gate",
+  "name": "The Trench Gate",
+  "difficulty": "normal",
+  "gridSize": [12, 10],
+
+  "castle": {
+    "position": [6, 9],
+    "hp": 20,
+    "size": [3, 2]
+  },
+
+  "spawnPoints": [
+    {
+      "id": "spawn_a",
+      "position": [0, 0],
+      "pathIds": ["path_main"]
+    },
+    {
+      "id": "spawn_b",
+      "position": [11, 0],
+      "pathIds": ["path_flank"]
+    }
+  ],
+
+  "paths": [
+    {
+      "id": "path_main",
+      "waypoints": [
+        [0, 0],
+        [0, 3],
+        [4, 3],
+        [4, 5],
+        [2, 5],
+        [2, 7],
+        [6, 7],
+        [6, 9]
+      ]
+    },
+    {
+      "id": "path_flank",
+      "waypoints": [
+        [11, 0],
+        [11, 3],
+        [8, 3],
+        [8, 5],
+        [10, 5],
+        [10, 7],
+        [6, 7],
+        [6, 9]
+      ]
+    }
+  ],
+
+  "buildSlots": [
+    { "position": [1, 2], "type": "standard" },
+    { "position": [1, 4], "type": "standard" },
+    { "position": [3, 2], "type": "standard" },
+    { "position": [3, 4], "type": "standard" },
+    { "position": [3, 6], "type": "standard" },
+    { "position": [5, 4], "type": "standard" },
+    { "position": [5, 6], "type": "standard" },
+    { "position": [5, 8], "type": "standard" },
+    { "position": [7, 4], "type": "standard" },
+    { "position": [7, 6], "type": "standard" },
+    { "position": [7, 8], "type": "standard" },
+    { "position": [9, 2], "type": "standard" },
+    { "position": [9, 4], "type": "standard" },
+    { "position": [9, 6], "type": "standard" },
+    { "position": [10, 2], "type": "standard" },
+    { "position": [10, 4], "type": "standard" }
+  ],
+
+  "defenses": [],
+
+  "waves": [
+    {
+      "wave": 1,
+      "prepTime": 15,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 5, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.5, "delay": 0, "hpMultiplier": 1.0, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 2,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 8, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.2, "delay": 0, "hpMultiplier": 1.0, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 3,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 6, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.0, "delay": 0, "hpMultiplier": 1.0, "speedMultiplier": 1.0 },
+        { "enemyType": "stoneclaw", "count": 4, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.2, "delay": 3, "hpMultiplier": 1.0, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 4,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 10, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.9, "delay": 0, "hpMultiplier": 1.1, "speedMultiplier": 1.0 },
+        { "enemyType": "stoneclaw", "count": 6, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.0, "delay": 2, "hpMultiplier": 1.1, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 5,
+      "prepTime": 15,
+      "isBoss": true,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 15, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.6, "delay": 0, "hpMultiplier": 1.1, "speedMultiplier": 1.0 },
+        { "enemyType": "stoneclaw", "count": 10, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0.8, "delay": 0, "hpMultiplier": 1.1, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 6,
+      "prepTime": 15,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 8, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.0, "delay": 0, "hpMultiplier": 1.2, "speedMultiplier": 1.0 },
+        { "enemyType": "razoreel", "count": 2, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 3.0, "delay": 4, "hpMultiplier": 1.0, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 7,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 12, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.8, "delay": 0, "hpMultiplier": 1.2, "speedMultiplier": 1.0 },
+        { "enemyType": "razoreel", "count": 3, "spawnId": "spawn_a", "pathId": "path_main", "interval": 2.5, "delay": 6, "hpMultiplier": 1.0, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 8,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 10, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.8, "delay": 0, "hpMultiplier": 1.3, "speedMultiplier": 1.05 },
+        { "enemyType": "razoreel", "count": 2, "spawnId": "spawn_a", "pathId": "path_main", "interval": 2.0, "delay": 3, "hpMultiplier": 1.1, "speedMultiplier": 1.0 },
+        { "enemyType": "razoreel", "count": 2, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 2.0, "delay": 5, "hpMultiplier": 1.1, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 9,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "razoreel", "count": 5, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.5, "delay": 0, "hpMultiplier": 1.1, "speedMultiplier": 1.0 },
+        { "enemyType": "razoreel", "count": 4, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.5, "delay": 2, "hpMultiplier": 1.1, "speedMultiplier": 1.0 },
+        { "enemyType": "stoneclaw", "count": 8, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.7, "delay": 8, "hpMultiplier": 1.3, "speedMultiplier": 1.05 }
+      ]
+    },
+    {
+      "wave": 10,
+      "prepTime": 20,
+      "isBoss": true,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 12, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.6, "delay": 0, "hpMultiplier": 1.3, "speedMultiplier": 1.05 },
+        { "enemyType": "stoneclaw", "count": 8, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0.7, "delay": 0, "hpMultiplier": 1.3, "speedMultiplier": 1.05 },
+        { "enemyType": "abyssal_colossus", "count": 1, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0, "delay": 8, "hpMultiplier": 1.0, "speedMultiplier": 1.0 },
+        { "enemyType": "razoreel", "count": 3, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 2.0, "delay": 12, "hpMultiplier": 1.1, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 11,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 15, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.5, "delay": 0, "hpMultiplier": 1.4, "speedMultiplier": 1.1 },
+        { "enemyType": "razoreel", "count": 4, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.5, "delay": 3, "hpMultiplier": 1.2, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 12,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "razoreel", "count": 6, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.2, "delay": 0, "hpMultiplier": 1.2, "speedMultiplier": 1.05 },
+        { "enemyType": "stoneclaw", "count": 10, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0.6, "delay": 2, "hpMultiplier": 1.4, "speedMultiplier": 1.1 },
+        { "enemyType": "razoreel", "count": 4, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.5, "delay": 10, "hpMultiplier": 1.2, "speedMultiplier": 1.05 }
+      ]
+    },
+    {
+      "wave": 13,
+      "prepTime": 15,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 18, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.5, "delay": 0, "hpMultiplier": 1.5, "speedMultiplier": 1.1 },
+        { "enemyType": "razoreel", "count": 5, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.2, "delay": 4, "hpMultiplier": 1.3, "speedMultiplier": 1.05 },
+        { "enemyType": "stoneclaw", "count": 10, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0.6, "delay": 0, "hpMultiplier": 1.5, "speedMultiplier": 1.1 }
+      ]
+    },
+    {
+      "wave": 14,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "razoreel", "count": 8, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.0, "delay": 0, "hpMultiplier": 1.3, "speedMultiplier": 1.05 },
+        { "enemyType": "razoreel", "count": 6, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.0, "delay": 3, "hpMultiplier": 1.3, "speedMultiplier": 1.05 }
+      ]
+    },
+    {
+      "wave": 15,
+      "prepTime": 20,
+      "isBoss": true,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 20, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.4, "delay": 0, "hpMultiplier": 1.5, "speedMultiplier": 1.1 },
+        { "enemyType": "abyssal_colossus", "count": 1, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0, "delay": 5, "hpMultiplier": 1.0, "speedMultiplier": 1.0 },
+        { "enemyType": "razoreel", "count": 5, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.0, "delay": 8, "hpMultiplier": 1.3, "speedMultiplier": 1.05 },
+        { "enemyType": "abyssal_colossus", "count": 1, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0, "delay": 12, "hpMultiplier": 1.0, "speedMultiplier": 1.0 }
+      ]
+    },
+    {
+      "wave": 16,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 20, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.4, "delay": 0, "hpMultiplier": 1.6, "speedMultiplier": 1.15 },
+        { "enemyType": "stoneclaw", "count": 15, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0.5, "delay": 0, "hpMultiplier": 1.6, "speedMultiplier": 1.15 },
+        { "enemyType": "razoreel", "count": 4, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.5, "delay": 10, "hpMultiplier": 1.4, "speedMultiplier": 1.1 }
+      ]
+    },
+    {
+      "wave": 17,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        { "enemyType": "razoreel", "count": 8, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.8, "delay": 0, "hpMultiplier": 1.4, "speedMultiplier": 1.1 },
+        { "enemyType": "razoreel", "count": 6, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0.8, "delay": 2, "hpMultiplier": 1.4, "speedMultiplier": 1.1 },
+        { "enemyType": "stoneclaw", "count": 12, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.5, "delay": 8, "hpMultiplier": 1.6, "speedMultiplier": 1.15 }
+      ]
+    },
+    {
+      "wave": 18,
+      "prepTime": 25,
+      "isBoss": true,
+      "groups": [
+        { "enemyType": "stoneclaw", "count": 25, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0.3, "delay": 0, "hpMultiplier": 1.7, "speedMultiplier": 1.15 },
+        { "enemyType": "stoneclaw", "count": 20, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0.4, "delay": 0, "hpMultiplier": 1.7, "speedMultiplier": 1.15 },
+        { "enemyType": "razoreel", "count": 6, "spawnId": "spawn_a", "pathId": "path_main", "interval": 1.0, "delay": 6, "hpMultiplier": 1.5, "speedMultiplier": 1.1 },
+        { "enemyType": "razoreel", "count": 5, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 1.0, "delay": 8, "hpMultiplier": 1.5, "speedMultiplier": 1.1 },
+        { "enemyType": "abyssal_colossus", "count": 1, "spawnId": "spawn_a", "pathId": "path_main", "interval": 0, "delay": 12, "hpMultiplier": 1.2, "speedMultiplier": 1.0 },
+        { "enemyType": "abyssal_colossus", "count": 1, "spawnId": "spawn_b", "pathId": "path_flank", "interval": 0, "delay": 15, "hpMultiplier": 1.2, "speedMultiplier": 1.0 }
+      ]
+    }
+  ],
+
+  "decorations": [
+    { "type": "trench_edge", "position": [0, 0, 0], "rotation": 0, "scale": 1.0 },
+    { "type": "trench_edge", "position": [11, 0, 0], "rotation": 180, "scale": 1.0 },
+    { "type": "coral_branch", "position": [1, 0, 1], "rotation": 45, "scale": 0.8 },
+    { "type": "coral_branch", "position": [10, 0, 1], "rotation": -30, "scale": 1.0 },
+    { "type": "coral_fan", "position": [4, 0, 2], "rotation": 0, "scale": 1.2 },
+    { "type": "coral_fan", "position": [8, 0, 2], "rotation": 90, "scale": 0.9 },
+    { "type": "kelp_cluster", "position": [0, 0, 5], "rotation": 0, "scale": 1.0 },
+    { "type": "kelp_cluster", "position": [11, 0, 6], "rotation": 15, "scale": 1.1 },
+    { "type": "rock_large", "position": [6, 0, 3], "rotation": 20, "scale": 1.0 },
+    { "type": "rock_small", "position": [3, 0, 8], "rotation": 0, "scale": 0.7 },
+    { "type": "rock_small", "position": [9, 0, 8], "rotation": 45, "scale": 0.6 },
+    { "type": "vent_bubble", "position": [2, 0, 0.5], "rotation": 0, "scale": 0.8 },
+    { "type": "vent_bubble", "position": [9, 0, 0.5], "rotation": 0, "scale": 0.9 },
+    { "type": "anemone", "position": [5, 0, 5], "rotation": 0, "scale": 0.7 },
+    { "type": "anemone", "position": [7, 0, 5], "rotation": 0, "scale": 0.6 },
+    { "type": "shell_pile", "position": [1, 0, 7], "rotation": 0, "scale": 0.5 },
+    { "type": "skull", "position": [10, 0, 8], "rotation": -20, "scale": 0.8 }
+  ]
+}
