@@ -13,6 +13,12 @@ function gridXZ(gw: number, gd: number): THREE.Vector3 {
   return new THREE.Vector3((gw - 1) / 2, 0, (gd - 1) / 2);
 }
 
+/** Grid → world XY shift (same origin as {@link buildMapBoard}). */
+export function mapGridOrigin(doc: MapDocument): THREE.Vector3 {
+  const [gw, gd] = doc.gridSize;
+  return gridXZ(gw, gd);
+}
+
 const CELL_BOX = new THREE.BoxGeometry(0.96, 0.055, 0.96);
 
 /** Shared mesh assets for all map spawn portals (multi-spawn maps e.g. trench_gate). */

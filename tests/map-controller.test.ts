@@ -107,6 +107,39 @@ describe("MapController", () => {
       expect(m.isBuildSlotPosition([0, 0])).toBe(false);
       expect(m.isBuildSlotPosition([2, 1])).toBe(false);
     });
+
+    it("isBuildSlotPosition is false on decoration tiles (docs/map-schema.md)", () => {
+      const m = new MapController(
+        minimalMap({
+          decorations: [
+            {
+              type: "rock_small",
+              position: [3, 0, 3],
+              rotation: 0,
+              scale: 1,
+            },
+          ],
+        }),
+      );
+      expect(m.isBuildSlotPosition([3, 3])).toBe(false);
+      expect(m.isBuildSlotPosition([1, 1])).toBe(true);
+    });
+
+    it("decoration occupancy uses floor(x) and floor(z) for non-integer coords", () => {
+      const m = new MapController(
+        minimalMap({
+          decorations: [
+            {
+              type: "rock_small",
+              position: [1.9, 0, 1.1],
+              rotation: 0,
+              scale: 1,
+            },
+          ],
+        }),
+      );
+      expect(m.isBuildSlotPosition([1, 1])).toBe(false);
+    });
   });
 
   describe("defenses", () => {
@@ -131,6 +164,30 @@ describe("MapController", () => {
           id: "d1",
           type: "arc_spine",
           position: [0, 0],
+          level: 1,
+          targetMode: "first",
+        }),
+      ).toBe(false);
+    });
+
+    it("placeDefense rejects decoration tiles", () => {
+      const m = new MapController(
+        minimalMap({
+          decorations: [
+            {
+              type: "kelp_cluster",
+              position: [1, 0, 1],
+              rotation: 0,
+              scale: 1,
+            },
+          ],
+        }),
+      );
+      expect(
+        m.placeDefense({
+          id: "d1",
+          type: "arc_spine",
+          position: [1, 1],
           level: 1,
           targetMode: "first",
         }),

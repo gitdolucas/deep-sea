@@ -8,7 +8,7 @@ import type {
   SpawnPointDefinition,
   WaveDefinition,
 } from "./map-types.js";
-import { pathCellKeySetUnion } from "./path-cells.js";
+import { gridCellKey, pathCellKeySetUnion } from "./path-cells.js";
 import type { DefenseSnapshot, GridPos } from "./types.js";
 
 function cloneDefense(d: DefenseSnapshot): DefenseSnapshot {
@@ -16,6 +16,19 @@ function cloneDefense(d: DefenseSnapshot): DefenseSnapshot {
     ...d,
     position: [d.position[0], d.position[1]],
   };
+}
+
+/** Horizontal tile indices for each decoration (`docs/map-schema.md`). */
+function decorationOccupiedCellKeys(
+  decorations: readonly DecorationDefinition[],
+): Set<string> {
+  const set = new Set<string>();
+  for (const d of decorations) {
+    const gx = Math.floor(d.position[0]);
+    const gz = Math.floor(d.position[2]);
+    set.add(gridCellKey(gx, gz));
+  }
+  return set;
 }
 
 /**
@@ -34,6 +47,8 @@ export class MapController {
   private readonly buildSlots: readonly BuildSlotDefinition[];
   /** Grid cells occupied by enemy paths; towers may not be built here. */
   private readonly pathOccupiedCellKeys: ReadonlySet<string>;
+  /** Grid cells with a decoration; towers may not be built here. */
+  private readonly decorationOccupiedCellKeys: ReadonlySet<string>;
   private defenses: DefenseSnapshot[];
   private readonly waves: readonly WaveDefinition[];
   private readonly decorations: readonly DecorationDefinition[];
@@ -48,6 +63,9 @@ export class MapController {
     this.pathsById = new Map(doc.paths.map((p) => [p.id, p]));
     this.buildSlots = doc.buildSlots;
     this.pathOccupiedCellKeys = pathCellKeySetUnion(doc.paths);
+    this.decorationOccupiedCellKeys = decorationOccupiedCellKeys(
+      doc.decorations,
+    );
     this.defenses = doc.defenses.map(cloneDefense);
     this.waves = doc.waves;
     this.decorations = doc.decorations;
@@ -97,11 +115,15 @@ export class MapController {
   }
 
   /**
-   * True for any in-bounds cell not on an enemy path (map `buildSlots` are hints only).
+   * True for any in-bounds cell not on an enemy path or decoration tile
+   * (map `buildSlots` are hints only).
    */
   isBuildSlotPosition(pos: GridPos): boolean {
     if (!this.positionInBounds(pos)) return false;
-    return !this.pathOccupiedCellKeys.has(this.posKeyFromGrid(pos));
+    const key = this.posKeyFromGrid(pos);
+    if (this.pathOccupiedCellKeys.has(key)) return false;
+    if (this.decorationOccupiedCellKeys.has(key)) return false;
+    return true;
   }
 
   getDefenseAt(pos: GridPos): DefenseSnapshot | undefined {
@@ -109,7 +131,7 @@ export class MapController {
   }
 
   /**
-   * Places a tower if the tile is off the path, in bounds, and not occupied.
+   * Places a tower if the tile is off the path, not under a decoration, in bounds, and not occupied.
    */
   placeDefense(snapshot: DefenseSnapshot): boolean {
     if (!this.isBuildSlotPosition(snapshot.position)) return false;

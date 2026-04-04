@@ -40,6 +40,17 @@ All positions use a **grid-based coordinate system** where each tile is 1 unit.
 
 Origin `[0, 0]` is the **front-left** corner of the map.
 
+### Tower placement vs paths, defenses, and decorations
+
+A grid tile may hold a defense only if all of the following are true:
+
+- The tile is **in bounds** (`gridSize`).
+- The tile is **not occupied by the enemy path** (any cell a waypoint segment passes through; see path definitions).
+- The tile does **not already have a defense**.
+- The tile is **not occupied by a decoration** — each decoration reserves the horizontal tile at `(position[0], position[2])` (same `x` / `z` grid indices as towers; use integer coordinates in map data). Players cannot place defenses on top of decorations.
+
+`buildSlots` list suggested or highlighted positions for UX; they must still respect the rules above (do not list tiles on paths or under decorations).
+
 ---
 
 ## Section Details
@@ -91,7 +102,7 @@ Enemies interpolate between waypoints in order. The segment between each pair of
 
 ### `buildSlots`
 
-Valid tile positions where the player can place towers. Only these tiles accept tower placement.
+Suggested positions for tower placement (UI / map overview). **Buildability** is determined by the rules in [Tower placement vs paths, defenses, and decorations](#tower-placement-vs-paths-defenses-and-decorations) — notably, tiles that host a decoration are never buildable, even if listed here.
 
 ```jsonc
 [
@@ -183,7 +194,7 @@ This spawns 12 Stonecrabs immediately from spawn A, then 3 Razoreels from spawn 
 
 ### `decorations`
 
-Non-gameplay visual elements placed on the map. Used by the 3D renderer for ambiance.
+Non-gameplay visual elements placed on the map. Used by the 3D renderer for ambiance. Each entry **blocks tower placement** on its `(x, z)` tile (`position[0]`, `position[2]`); keep decorations off cells where the player should be able to build.
 
 ```jsonc
 [

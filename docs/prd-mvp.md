@@ -204,6 +204,8 @@ Single-path S-curve on a 10x12 grid. One spawn point (top-left), one castle (bot
 }
 ```
 
+**Placement:** Towers may only go on in-bounds tiles that are off the enemy path, not already holding a tower, and **not sharing the `(x,z)` tile of a decoration** (see `docs/map-schema.md`).
+
 ---
 
 ## Concrete Numbers

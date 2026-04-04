@@ -20,6 +20,7 @@ import type {
   DefenseTypeKey,
 } from "../game/types.js";
 import { buildMapBoard, worldFromGrid } from "./board.js";
+import { buildDecorationsGroup } from "./decorations.js";
 import {
   COLORS,
   CHAIN_FX_DURATION,
@@ -220,6 +221,7 @@ export class GameApp {
 
     const { root, cells } = buildMapBoard(doc);
     this.scene.add(root);
+    this.scene.add(buildDecorationsGroup(doc));
     this.cellPickEntries = cells;
 
     this.rangePreviewGroup.visible = false;
