@@ -11,6 +11,20 @@ export interface ChainEnemyRef {
   alive: boolean;
 }
 
+/** Euclidean tile radius for Arc Spine chain hops (L1 per docs/prd-mvp.md). */
+export function arcSpineChainSearchRadius(level: DefenseLevel): number {
+  switch (level) {
+    case 1:
+      return 2;
+    case 2:
+      return 3.25;
+    case 3:
+      return 4;
+    default:
+      return 0;
+  }
+}
+
 /**
  * Placed tower: upgrade tiering and arc-spine chain resolution (docs/defenses/arc-spine.md).
  */
@@ -92,17 +106,7 @@ export class DefenseController {
 
   private arcSearchRadius(): number {
     if (this.type !== "arc_spine") return 0;
-    // MVP L1: 2 tiles from previous target (docs/prd-mvp.md); higher tiers keep legacy tuning.
-    switch (this.level) {
-      case 1:
-        return 2;
-      case 2:
-        return 3.25;
-      case 3:
-        return 4;
-      default:
-        return 0;
-    }
+    return arcSpineChainSearchRadius(this.level);
   }
 
   private pickNearestWithinRadius(

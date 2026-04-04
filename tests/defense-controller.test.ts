@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { DefenseController } from "../src/game/defense-controller.js";
+import {
+  arcSpineChainSearchRadius,
+  DefenseController,
+} from "../src/game/defense-controller.js";
 import type { ChainEnemyRef } from "../src/game/defense-controller.js";
 import type { GridPos } from "../src/game/types.js";
 
@@ -30,6 +33,12 @@ function arcSpine(level: 1 | 2 | 3): DefenseController {
 }
 
 describe("DefenseController", () => {
+  it("arcSpineChainSearchRadius matches tier tuning", () => {
+    expect(arcSpineChainSearchRadius(1)).toBe(2);
+    expect(arcSpineChainSearchRadius(2)).toBe(3.25);
+    expect(arcSpineChainSearchRadius(3)).toBe(4);
+  });
+
   describe("private arc-spine tuning (white-box)", () => {
     it("maxArcJumps matches tier table", () => {
       expect(priv(arcSpine(1)).maxArcJumps()).toBe(2);

@@ -2,13 +2,35 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameSession } from "../game/game-session.js";
+import { arcSpineChainSearchRadius } from "../game/defense-controller.js";
+import { attackRangeTiles } from "../game/damage-resolver.js";
 import { MVP_ARC_SPINE_BUILD_COST } from "../game/mvp-constants.js";
+import type { DefenseTypeKey } from "../game/types.js";
 import { buildMapBoard, worldFromGrid } from "./board.js";
 import {
   COLORS,
   CHAIN_FX_DURATION,
   DAMAGE_POP_DURATION_SEC,
 } from "./constants.js";
+
+function makeRangeRingMesh(
+  innerR: number,
+  outerR: number,
+  color: number,
+  opacity: number,
+): THREE.Mesh {
+  const geom = new THREE.RingGeometry(innerR, outerR, 64);
+  const mat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  return mesh;
+}
 
 export class GameApp {
   readonly session: GameSession;
@@ -21,8 +43,8 @@ export class GameApp {
   private clock = new THREE.Clock();
   private cellPickEntries: { mesh: THREE.Mesh; gx: number; gz: number }[] =
     [];
-  private readonly buildSelectionMarker = new THREE.Group();
-  private selectedSlot: { gx: number; gz: number } | null = null;
+  private readonly rangePreviewGroup = new THREE.Group();
+  private placementType: DefenseTypeKey | null = null;
   private enemyObjects = new Map<string, THREE.Mesh>();
   private defenseObjects = new Map<string, THREE.Mesh>();
   private chainLines: { obj: THREE.Line; t: number }[] = [];
@@ -30,6 +52,8 @@ export class GameApp {
   private readonly mount: HTMLElement;
   private readonly orbitControls: OrbitControls;
   private slotPointerStart: { x: number; y: number } | null = null;
+  /** For shell stat row flash when balance changes. */
+  private prevShells: number | null = null;
 
   constructor(doc: MapDocument, mount?: HTMLElement) {
     this.doc = doc;
@@ -52,18 +76,24 @@ export class GameApp {
     this.scene.add(root);
     this.cellPickEntries = cells;
 
-    const ringGeom = new THREE.RingGeometry(0.38, 0.48, 40);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: COLORS.slotSelected,
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide,
-    });
-    const ring = new THREE.Mesh(ringGeom, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    this.buildSelectionMarker.add(ring);
-    this.buildSelectionMarker.visible = false;
-    this.scene.add(this.buildSelectionMarker);
+    const attackR = attackRangeTiles("arc_spine", 1);
+    const chainR = arcSpineChainSearchRadius(1);
+    const primaryRing = makeRangeRingMesh(
+      Math.max(0.04, attackR - 0.1),
+      attackR + 0.1,
+      COLORS.rangePreviewPrimary,
+      0.45,
+    );
+    const chainRing = makeRangeRingMesh(
+      Math.max(0.04, chainR - 0.08),
+      chainR + 0.08,
+      COLORS.rangePreviewChain,
+      0.35,
+    );
+    this.rangePreviewGroup.add(chainRing);
+    this.rangePreviewGroup.add(primaryRing);
+    this.rangePreviewGroup.visible = false;
+    this.scene.add(this.rangePreviewGroup);
 
     const [gw, gd] = doc.gridSize;
     const gridExtent = Math.max(gw, gd) + 2;
@@ -98,6 +128,7 @@ export class GameApp {
     this.orbitControls.minDistance = 4;
     this.orbitControls.maxDistance = 72;
     this.orbitControls.update();
+    this.syncOrbitWithPlacement();
 
     this.renderer.domElement.addEventListener("contextmenu", (ev) =>
       ev.preventDefault(),
@@ -106,16 +137,24 @@ export class GameApp {
     this.renderer.domElement.addEventListener("pointerdown", (ev) =>
       this.onSlotPointerDown(ev),
     );
+    this.renderer.domElement.addEventListener("pointermove", (ev) =>
+      this.onCanvasPointerMove(ev),
+    );
     window.addEventListener("pointerup", (ev) => this.onSlotPointerUp(ev));
     window.addEventListener("pointercancel", () => {
       this.slotPointerStart = null;
     });
-    document.getElementById("buildBtn")?.addEventListener("click", () =>
-      this.onBuild(),
-    );
+    window.addEventListener("keydown", (ev) => this.onKeyDown(ev));
     document.getElementById("sendWave")?.addEventListener("click", () =>
       this.onSendWave(),
     );
+    document.getElementById("invArcSpine")?.addEventListener("click", () =>
+      this.onInventoryArcSpineClick(),
+    );
+    document.getElementById("invCancel")?.addEventListener("click", () =>
+      this.clearPlacementMode(),
+    );
+    this.refreshInventoryUi();
   }
 
   start(): void {
@@ -129,6 +168,94 @@ export class GameApp {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
+  }
+
+  private onKeyDown(ev: KeyboardEvent): void {
+    if (ev.key === "Escape") {
+      this.clearPlacementMode();
+    }
+  }
+
+  private onInventoryArcSpineClick(): void {
+    if (this.session.getOutcome() !== "playing") return;
+    const shells = this.session.economy.getShells();
+    if (shells < MVP_ARC_SPINE_BUILD_COST) return;
+    if (this.placementType === "arc_spine") {
+      this.clearPlacementMode();
+    } else {
+      this.placementType = "arc_spine";
+      this.syncOrbitWithPlacement();
+      this.refreshInventoryUi();
+    }
+  }
+
+  private clearPlacementMode(): void {
+    this.placementType = null;
+    this.rangePreviewGroup.visible = false;
+    this.syncOrbitWithPlacement();
+    this.refreshInventoryUi();
+  }
+
+  /** Left-click places towers; pause orbit rotate so clicks register immediately. */
+  private syncOrbitWithPlacement(): void {
+    const placing = this.placementType !== null;
+    this.orbitControls.enableRotate = !placing;
+  }
+
+  private canPlaceTower(gx: number, gz: number): boolean {
+    const pos = [gx, gz] as const;
+    if (!this.session.map.isBuildSlotPosition(pos)) return false;
+    if (this.session.map.getDefenseAt(pos) !== undefined) return false;
+    return true;
+  }
+
+  private setPointerNDC(e: PointerEvent): void {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  }
+
+  private pickGridCell(e: PointerEvent): { gx: number; gz: number } | null {
+    this.setPointerNDC(e);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const meshes = this.cellPickEntries.map((s) => s.mesh);
+    const hits = this.raycaster.intersectObjects(meshes, false);
+    if (hits.length === 0) return null;
+    const m = hits[0]!.object as THREE.Mesh;
+    return { gx: m.userData.gx as number, gz: m.userData.gz as number };
+  }
+
+  private onCanvasPointerMove(e: PointerEvent): void {
+    if (
+      this.placementType !== "arc_spine" ||
+      this.session.getOutcome() !== "playing"
+    ) {
+      this.rangePreviewGroup.visible = false;
+      return;
+    }
+    const el = this.renderer.domElement;
+    const r = el.getBoundingClientRect();
+    if (
+      e.clientX < r.left ||
+      e.clientX > r.right ||
+      e.clientY < r.top ||
+      e.clientY > r.bottom
+    ) {
+      this.rangePreviewGroup.visible = false;
+      return;
+    }
+    const cell = this.pickGridCell(e);
+    if (!cell) {
+      this.rangePreviewGroup.visible = false;
+      return;
+    }
+    if (!this.canPlaceTower(cell.gx, cell.gz)) {
+      this.rangePreviewGroup.visible = false;
+      return;
+    }
+    const w = worldFromGrid(cell.gx, cell.gz, this.doc, 0.14);
+    this.rangePreviewGroup.position.set(w.x, w.y, w.z);
+    this.rangePreviewGroup.visible = true;
   }
 
   private onSlotPointerDown(e: PointerEvent): void {
@@ -156,64 +283,75 @@ export class GameApp {
     const dy = e.clientY - start.y;
     if (dx * dx + dy * dy > 25) return;
 
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    this.raycaster.setFromCamera(this.pointer, this.camera);
-    const meshes = this.cellPickEntries.map((s) => s.mesh);
-    const hits = this.raycaster.intersectObjects(meshes, false);
-    if (hits.length === 0) return;
-    const m = hits[0]!.object as THREE.Mesh;
-    const gx = m.userData.gx as number;
-    const gz = m.userData.gz as number;
-    if (!this.session.map.isBuildSlotPosition([gx, gz])) return;
-    this.selectedSlot = { gx, gz };
-    this.updateBuildSelectionMarker();
-    document.getElementById("panel")?.classList.add("visible");
-    this.refreshBuildButton();
-  }
+    if (this.placementType !== "arc_spine") return;
 
-  private updateBuildSelectionMarker(): void {
-    if (!this.selectedSlot) {
-      this.buildSelectionMarker.visible = false;
-      return;
-    }
-    const w = worldFromGrid(
-      this.selectedSlot.gx,
-      this.selectedSlot.gz,
-      this.doc,
-      0.11,
-    );
-    this.buildSelectionMarker.position.set(w.x, w.y, w.z);
-    this.buildSelectionMarker.visible = true;
-  }
+    const cell = this.pickGridCell(e);
+    if (!cell) return;
+    if (!this.canPlaceTower(cell.gx, cell.gz)) return;
 
-  private onBuild(): void {
-    if (this.session.getOutcome() !== "playing" || !this.selectedSlot) return;
     const id = `def_${this.nextDefenseId++}`;
     const ok = this.session.tryPurchaseArcSpineL1(id, [
-      this.selectedSlot.gx,
-      this.selectedSlot.gz,
+      cell.gx,
+      cell.gz,
     ]);
     if (ok) {
-      document.getElementById("panel")?.classList.remove("visible");
-      this.selectedSlot = null;
-      this.updateBuildSelectionMarker();
+      this.refreshInventoryUi();
+      this.updateHud();
     }
-    this.refreshBuildButton();
-    this.updateHud();
   }
 
   private onSendWave(): void {
     this.session.startWaveEarly();
   }
 
-  private refreshBuildButton(): void {
-    const btn = document.getElementById("buildBtn") as HTMLButtonElement | null;
-    if (!btn) return;
-    btn.disabled =
-      this.session.economy.getShells() < MVP_ARC_SPINE_BUILD_COST ||
-      this.session.getOutcome() !== "playing";
+  private refreshInventoryUi(): void {
+    const playing = this.session.getOutcome() === "playing";
+    const shells = this.session.economy.getShells();
+    const canAfford = shells >= MVP_ARC_SPINE_BUILD_COST;
+    const selected = this.placementType === "arc_spine";
+    const btn = document.getElementById(
+      "invArcSpine",
+    ) as HTMLButtonElement | null;
+    if (btn) {
+      // Stay enabled while selected so player can deselect even if shells dropped below cost.
+      btn.disabled = !playing || (!canAfford && !selected);
+      btn.textContent = selected ? "Selected" : "Select";
+      btn.setAttribute("aria-pressed", selected ? "true" : "false");
+    }
+    const card = document.querySelector(
+      "[data-defense-card=\"arc_spine\"]",
+    );
+    if (card) {
+      card.classList.toggle("selected", selected);
+      card.classList.toggle(
+        "defense-card--affordable",
+        playing && canAfford && !selected,
+      );
+      card.classList.toggle(
+        "defense-card--blocked",
+        playing && !canAfford && !selected,
+      );
+    }
+
+    const statusEl = document.getElementById("arcSpineStatus");
+    let statusText: string;
+    if (!playing) {
+      statusText = "Match ended";
+    } else if (selected) {
+      statusText = `Click map to place (${MVP_ARC_SPINE_BUILD_COST} shells)`;
+    } else if (canAfford) {
+      statusText = `Available · ${MVP_ARC_SPINE_BUILD_COST} shells`;
+    } else {
+      statusText = `Need ${MVP_ARC_SPINE_BUILD_COST - shells} more shells`;
+    }
+    if (statusEl) statusEl.textContent = statusText;
+    if (btn) btn.title = statusText;
+
+    const hint = document.getElementById("placementHint");
+    const cancel = document.getElementById("invCancel");
+    const placing = this.placementType === "arc_spine";
+    hint?.classList.toggle("visible", placing);
+    cancel?.classList.toggle("visible", placing);
   }
 
   private frame(): void {
@@ -226,6 +364,7 @@ export class GameApp {
     this.applyCombatVfx();
     this.updateChainFx(dt);
     this.updateHud();
+    this.refreshInventoryUi();
     this.updateUiState();
     this.orbitControls.update();
     this.renderer.render(this.scene, this.camera);
@@ -350,21 +489,38 @@ export class GameApp {
   }
 
   private updateHud(): void {
-    const shells = document.getElementById("shells");
-    const tide = document.getElementById("tide");
-    const castle = document.getElementById("castle");
-    if (shells) shells.textContent = `🐚 ${this.session.economy.getShells()}`;
+    const statShells = document.getElementById("statShells");
+    const statShellsRow = document.getElementById("statShellsRow");
+    const tide = document.getElementById("statTide");
+    const castle = document.getElementById("statCastle");
+    const shells = this.session.economy.getShells();
+    if (statShells) {
+      if (
+        this.prevShells !== null &&
+        this.prevShells !== shells &&
+        statShellsRow
+      ) {
+        statShellsRow.classList.remove("stat--tick");
+        void statShellsRow.offsetWidth;
+        statShellsRow.classList.add("stat--tick");
+        window.setTimeout(() => {
+          statShellsRow.classList.remove("stat--tick");
+        }, 520);
+      }
+      this.prevShells = shells;
+      statShells.textContent = String(shells);
+    }
     if (tide) {
       const phase = this.session.waveDirector.getPhase();
       const n = this.session.getTideDisplayNumber();
       tide.textContent =
         phase === "completed"
-          ? "TIDE —"
-          : `TIDE ${n} (${phase.toUpperCase()})`;
+          ? "—"
+          : `${n} · ${phase.toUpperCase()}`;
     }
     if (castle) {
       const c = this.session.castle;
-      castle.textContent = `♥ ${c.getCurrentHp()}/${c.maxHp}`;
+      castle.textContent = `${c.getCurrentHp()} / ${c.maxHp}`;
     }
   }
 
@@ -374,14 +530,31 @@ export class GameApp {
     const title = document.getElementById("overlayTitle");
     const sub = document.getElementById("overlaySub");
     const send = document.getElementById("sendWave") as HTMLButtonElement | null;
+    const sendSub = document.getElementById("sendWaveSub");
+    const phase = this.session.waveDirector.getPhase();
     if (send) {
-      const prep = this.session.waveDirector.getPhase() === "prep";
+      const prep = phase === "prep";
       send.disabled = !prep || out !== "playing";
+      const waveActive =
+        out === "playing" && phase !== "prep" && phase !== "completed";
+      send.classList.toggle("wave-active", waveActive);
+    }
+    if (sendSub) {
+      if (out !== "playing") {
+        sendSub.textContent = "Match ended";
+      } else if (phase === "completed") {
+        sendSub.textContent = "All waves complete.";
+      } else if (phase !== "prep") {
+        sendSub.textContent = "Wave in progress — available during next prep.";
+      } else {
+        sendSub.textContent = "";
+      }
     }
     if (out === "playing") {
       overlay?.classList.remove("visible");
       return;
     }
+    this.clearPlacementMode();
     overlay?.classList.add("visible");
     if (title && sub) {
       if (out === "win") {

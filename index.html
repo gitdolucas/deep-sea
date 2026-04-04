@@ -4,144 +4,923 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Deep Abyss TD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=JetBrains+Mono:wght@450;600&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      :root {
+        --abyss: #040a12;
+        --depth: #0a1628;
+        --panel: rgba(6, 18, 36, 0.82);
+        --panel-edge: rgba(62, 232, 255, 0.22);
+        --biolume: #3ee8ff;
+        --biolume-soft: rgba(62, 232, 255, 0.12);
+        --pulse: #7af8d2;
+        --mist: #8aa4b8;
+        --danger: #ff5c6c;
+        --card: rgba(12, 34, 58, 0.72);
+        --font-display: "Cormorant Garamond", Georgia, serif;
+        --font-ui: "Outfit", system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        --sidebar-w: min(300px, 40vw);
+        --radius: 10px;
+        --focus-ring: 0 0 0 2px var(--abyss), 0 0 0 4px var(--biolume);
+      }
+
       * {
         box-sizing: border-box;
       }
+
       html,
       body {
         margin: 0;
         overflow: hidden;
-        font-family: system-ui, sans-serif;
-        background: #050d1a;
+        background: var(--abyss);
+        color: #dce8f0;
       }
-      #hud {
+
+      body {
+        font-family: var(--font-ui);
+      }
+
+      #inventory {
         position: fixed;
         top: 0;
-        left: 0;
         right: 0;
-        padding: 12px 16px;
+        bottom: 0;
+        width: var(--sidebar-w);
+        z-index: 11;
+        pointer-events: none;
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        color: #e8f4ff;
-        pointer-events: none;
-        z-index: 10;
-        text-shadow: 0 1px 2px #000;
-      }
-      #hud span {
-        pointer-events: none;
-      }
-      #panel {
-        position: fixed;
-        bottom: 88px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(10, 22, 40, 0.92);
-        border: 1px solid #00d4ff44;
-        padding: 12px 16px;
-        border-radius: 8px;
-        color: #e8f4ff;
-        display: none;
         flex-direction: column;
-        gap: 8px;
-        z-index: 11;
-        min-width: 200px;
+        padding: 20px 18px 20px 20px;
+        background: linear-gradient(
+          165deg,
+          var(--panel) 0%,
+          rgba(4, 12, 24, 0.94) 48%,
+          rgba(2, 8, 18, 0.97) 100%
+        );
+        border-left: 1px solid var(--panel-edge);
+        box-shadow: -12px 0 48px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        font-family: var(--font-ui);
       }
-      #panel.visible {
+
+      #inventory::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          120% 80% at 100% 0%,
+          rgba(62, 232, 255, 0.06) 0%,
+          transparent 55%
+        );
+        pointer-events: none;
+      }
+
+      .sidebar-inner {
+        position: relative;
         display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
       }
-      #panel button {
-        pointer-events: auto;
-        cursor: pointer;
-        background: #112f55;
-        color: #00d4ff;
-        border: 1px solid #00d4ff;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-weight: 600;
+
+      .icon-svg {
+        display: block;
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        color: var(--biolume);
       }
-      #panel button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
+
+      .icon-svg--sm {
+        width: 18px;
+        height: 18px;
       }
-      #sendWave {
-        position: fixed;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 11;
-        pointer-events: auto;
-        cursor: pointer;
-        background: #112f55;
-        color: #00d4ff;
-        border: 1px solid #00d4ff;
-        padding: 10px 18px;
-        border-radius: 8px;
+
+      .brand {
+        pointer-events: none;
+        margin-bottom: 18px;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 1.35rem;
         font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--biolume);
+        line-height: 1.15;
+        text-shadow: 0 0 24px rgba(62, 232, 255, 0.35);
       }
-      #sendWave:disabled {
-        opacity: 0.35;
+
+      .brand .tag {
+        margin: 4px 0 0;
+        font-family: var(--font-ui);
+        font-size: 0.68rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--mist);
+        opacity: 0.9;
+      }
+
+      .sidebar-section {
+        margin-bottom: 4px;
+      }
+
+      #section-armory {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sidebar-section-title {
+        pointer-events: none;
+        font-size: 0.6rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--mist);
+        margin: 0 0 10px;
+        opacity: 0.9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sidebar-section-title .icon-svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.85;
+      }
+
+      .status-board {
+        pointer-events: none;
+        display: grid;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: var(--biolume-soft);
+        border: 1px solid rgba(62, 232, 255, 0.18);
+        border-radius: var(--radius);
+        transition: box-shadow 0.35s ease, border-color 0.35s ease;
+      }
+
+      .stat .label {
+        flex: 1;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--mist);
+      }
+
+      .stat .value {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--biolume);
+        text-align: right;
+      }
+
+      .stat.stat-vitals .value {
+        color: var(--pulse);
+      }
+
+      .stat-shells.stat--tick {
+        animation: statTick 0.5s ease-out;
+      }
+
+      @keyframes statTick {
+        0% {
+          border-color: rgba(62, 232, 255, 0.18);
+          box-shadow: 0 0 0 0 rgba(62, 232, 255, 0);
+        }
+        40% {
+          border-color: var(--biolume);
+          box-shadow: 0 0 20px rgba(62, 232, 255, 0.35);
+        }
+        100% {
+          border-color: rgba(62, 232, 255, 0.18);
+          box-shadow: 0 0 0 0 rgba(62, 232, 255, 0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .stat-shells.stat--tick {
+          animation: none;
+        }
+        #placementHint.visible {
+          animation: none !important;
+        }
+      }
+
+      #placementHint {
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        line-height: 1.45;
+        color: var(--pulse);
+        background: rgba(122, 248, 210, 0.08);
+        border: 1px solid rgba(122, 248, 210, 0.25);
+        border-radius: var(--radius);
+        display: none;
+        pointer-events: none;
+      }
+
+      #placementHint.visible {
+        display: block;
+        animation: hintPulse 2.4s ease-in-out infinite;
+      }
+
+      @keyframes hintPulse {
+        0%,
+        100% {
+          border-color: rgba(122, 248, 210, 0.25);
+        }
+        50% {
+          border-color: rgba(122, 248, 210, 0.45);
+        }
+      }
+
+      .defense-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--panel-edge) transparent;
+      }
+
+      .defense-card {
+        pointer-events: auto;
+        background: var(--card);
+        border: 1px solid rgba(62, 232, 255, 0.15);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        text-align: left;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .defense-card:hover:not(.locked) {
+        border-color: rgba(62, 232, 255, 0.35);
+      }
+
+      .defense-card--affordable:not(.selected) {
+        border-color: rgba(122, 248, 210, 0.28);
+      }
+
+      .defense-card--blocked:not(.selected) {
+        border-color: rgba(255, 92, 108, 0.45);
+        box-shadow: inset 0 0 0 1px rgba(255, 92, 108, 0.08);
+      }
+
+      .defense-card.locked {
+        pointer-events: none;
+        opacity: 1;
+        background: rgba(8, 20, 36, 0.55);
+        border: 1px dashed rgba(138, 164, 184, 0.28);
+      }
+
+      .defense-card.locked .name {
+        color: #b8c8d8;
+      }
+
+      .defense-card.locked .meta {
+        color: var(--mist);
+        opacity: 0.95;
+      }
+
+      .defense-card.selected {
+        border-color: var(--biolume);
+        box-shadow: 0 0 0 1px var(--biolume), 0 0 20px rgba(62, 232, 255, 0.15);
+      }
+
+      .defense-card__header {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .defense-card__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: rgba(62, 232, 255, 0.1);
+        color: var(--biolume);
+        flex-shrink: 0;
+      }
+
+      .defense-card__icon .icon-svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .defense-card__icon--lock {
+        background: rgba(138, 164, 184, 0.12);
+        color: var(--mist);
+      }
+
+      .defense-card__titles {
+        min-width: 0;
+      }
+
+      .defense-card .name {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.08rem;
+        margin: 0 0 4px;
+        color: #e8f4ff;
+      }
+
+      .defense-card .meta {
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--mist);
+        line-height: 1.35;
+      }
+
+      .defense-card__status {
+        margin: 10px 0 0;
+        padding: 8px 10px;
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.4;
+        color: var(--pulse);
+        background: rgba(62, 232, 255, 0.06);
+        border-radius: 6px;
+        border: 1px solid rgba(62, 232, 255, 0.12);
+      }
+
+      .defense-card--blocked .defense-card__status {
+        color: #ff9aa8;
+        border-color: rgba(255, 92, 108, 0.2);
+        background: rgba(255, 92, 108, 0.06);
+      }
+
+      .defense-card.selected .defense-card__status {
+        color: var(--pulse);
+        border-color: rgba(122, 248, 210, 0.25);
+      }
+
+      .defense-card button.pick {
+        margin-top: 10px;
+        width: 100%;
+        pointer-events: auto;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: linear-gradient(180deg, #153a5c 0%, #0d2844 100%);
+        color: var(--biolume);
+        border: 1px solid var(--biolume);
+        padding: 10px 12px;
+        border-radius: 8px;
+        transition: background 0.15s ease, transform 0.12s ease;
+      }
+
+      .defense-card button.pick:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .defense-card button.pick:hover:not(:disabled) {
+        background: linear-gradient(180deg, #1a4a72 0%, #102f4d 100%);
+      }
+
+      .defense-card button.pick:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+
+      .defense-card button.pick:disabled {
+        opacity: 0.45;
         cursor: not-allowed;
       }
+
+      #invCancel {
+        pointer-events: auto;
+        margin-top: 8px;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        background: transparent;
+        color: var(--mist);
+        border: 1px solid rgba(138, 164, 184, 0.35);
+        padding: 9px 12px;
+        border-radius: 8px;
+        display: none;
+        transition: color 0.15s ease, border-color 0.15s ease;
+      }
+
+      #invCancel:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      #invCancel.visible {
+        display: block;
+      }
+
+      #invCancel:hover {
+        color: var(--biolume);
+        border-color: rgba(62, 232, 255, 0.4);
+      }
+
+      .sidebar-actions {
+        pointer-events: auto;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(62, 232, 255, 0.12);
+      }
+
+      #sendWave {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 14px 16px;
+        border-radius: var(--radius);
+        border: 1px solid var(--biolume);
+        color: var(--abyss);
+        background: linear-gradient(
+          180deg,
+          var(--biolume) 0%,
+          #2bc4e0 100%
+        );
+        box-shadow: 0 4px 24px rgba(62, 232, 255, 0.25);
+        transition: filter 0.15s ease, transform 0.12s ease, opacity 0.2s ease;
+      }
+
+      #sendWave .send-wave-btn__icon {
+        display: flex;
+        color: inherit;
+      }
+
+      #sendWave .send-wave-btn__icon .icon-svg {
+        width: 18px;
+        height: 18px;
+        color: currentColor;
+      }
+
+      #sendWave:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring), 0 4px 24px rgba(62, 232, 255, 0.25);
+      }
+
+      #sendWave:hover:not(:disabled) {
+        filter: brightness(1.08);
+      }
+
+      #sendWave:active:not(:disabled) {
+        transform: scale(0.99);
+      }
+
+      #sendWave:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+        filter: grayscale(0.25);
+        border-color: rgba(62, 232, 255, 0.25);
+        color: var(--mist);
+        background: linear-gradient(
+          180deg,
+          rgba(62, 232, 255, 0.15) 0%,
+          rgba(43, 196, 224, 0.12) 100%
+        );
+        box-shadow: none;
+      }
+
+      #sendWave.wave-active:disabled {
+        border-color: rgba(122, 248, 210, 0.2);
+        background: rgba(122, 248, 210, 0.08);
+        color: var(--pulse);
+      }
+
+      .send-wave-sub {
+        margin: 8px 0 0;
+        min-height: 2.6em;
+        font-family: var(--font-ui);
+        font-size: 0.68rem;
+        font-weight: 500;
+        line-height: 1.35;
+        color: var(--mist);
+        opacity: 0.92;
+      }
+
+      .send-wave-sub:empty {
+        min-height: 0;
+        margin-top: 4px;
+      }
+
       #overlay {
         position: fixed;
         inset: 0;
-        background: rgba(5, 13, 26, 0.88);
+        background: rgba(2, 6, 14, 0.9);
         color: #e8f4ff;
         display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 20;
-        font-size: clamp(1.25rem, 4vw, 2rem);
+        font-family: var(--font-display);
+        font-size: clamp(1.25rem, 4vw, 2.2rem);
         text-align: center;
         padding: 24px;
       }
+
       #overlay.visible {
         display: flex;
       }
+
+      #overlayTitle {
+        margin: 0 0 12px;
+        font-weight: 700;
+        color: var(--biolume);
+        letter-spacing: 0.04em;
+      }
+
+      #overlaySub {
+        font-family: var(--font-ui);
+        font-size: 0.55em;
+        opacity: 0.85;
+        color: var(--mist);
+        max-width: 28ch;
+        line-height: 1.5;
+      }
+
       #damageLayer {
         position: fixed;
         inset: 0;
         pointer-events: none;
         z-index: 9;
       }
+
       .damage-pop {
         position: absolute;
         color: #fff;
-        font-weight: 700;
-        font-size: 14px;
-        text-shadow: 0 0 4px #000;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        font-size: 13px;
+        text-shadow: 0 0 5px #000;
         animation: floatUp 0.9s ease-out forwards;
       }
+
       .damage-pop.armor {
-        color: #bbb;
+        color: #b8c4d0;
       }
+
       @keyframes floatUp {
         to {
           opacity: 0;
           transform: translateY(-28px);
         }
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        .damage-pop {
+          animation: none;
+          opacity: 0;
+        }
+      }
     </style>
   </head>
   <body>
-    <div id="hud">
-      <span id="shells">🐚 50</span>
-      <span id="tide">TIDE 1</span>
-      <span id="castle">♥ 20/20</span>
-    </div>
-    <div id="panel">
-      <strong>Arc Spine</strong>
-      <span>Cost: 30 🐚</span>
-      <button type="button" id="buildBtn">BUILD</button>
-    </div>
-    <button type="button" id="sendWave">SEND WAVE ▶</button>
+    <aside id="inventory" aria-label="Command console">
+      <div class="sidebar-inner">
+        <header class="brand">
+          <h1>Deep Abyss</h1>
+          <p class="tag">Tactical defense</p>
+        </header>
+
+        <section
+          class="sidebar-section"
+          id="section-status"
+          aria-labelledby="status-heading"
+        >
+          <h2 class="sidebar-section-title" id="status-heading">
+            <svg
+              class="icon-svg icon-svg--sm"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M12 3v3M5.6 7.2l2.1 2.1M3 13h3M5.6 18.8l2.1-2.1M12 21v-3M18.4 18.8l-2.1-2.1M21 13h-3M18.4 7.2l-2.1 2.1" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+            Status
+          </h2>
+          <div class="status-board">
+            <div class="stat stat-shells" id="statShellsRow">
+              <svg
+                class="icon-svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 3c-3 2.5-5 6-5 9.5a5 5 0 0010 0C17 9 15 5.5 12 3z"
+                />
+                <path d="M12 10v2M10 8l2 2 2-2" />
+              </svg>
+              <span class="label">Shells</span>
+              <span
+                id="statShells"
+                class="value"
+                aria-live="polite"
+                aria-atomic="true"
+                >50</span
+              >
+            </div>
+            <div class="stat">
+              <svg
+                class="icon-svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M2 12c2-3 5-5 10-5s8 2 10 5c-2 3-5 5-10 5S4 15 2 12z" />
+                <path d="M12 7v10" opacity="0.5" />
+              </svg>
+              <span class="label">Tide</span>
+              <span id="statTide" class="value">—</span>
+            </div>
+            <div class="stat stat-vitals">
+              <svg
+                class="icon-svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 21s8-4.5 8-11a8 8 0 10-16 0c0 6.5 8 11 8 11z"
+                />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span class="label">Citadel</span>
+              <span id="statCastle" class="value">20 / 20</span>
+            </div>
+          </div>
+        </section>
+
+        <p id="placementHint">
+          Placement active — orbit is paused. Point at a valid tile for range rings,
+          then click to build. Press Esc or Cancel to rotate the map again.
+        </p>
+
+        <section
+          class="sidebar-section"
+          id="section-armory"
+          aria-labelledby="armory-heading"
+        >
+          <h2 class="sidebar-section-title" id="armory-heading">
+            <svg
+              class="icon-svg icon-svg--sm"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z" />
+              <path d="M12 8v8M8 12h8" opacity="0" />
+            </svg>
+            Armory
+          </h2>
+          <ul class="defense-list">
+            <li class="defense-card defense-card--affordable" data-defense-card="arc_spine">
+              <div class="defense-card__header">
+                <div class="defense-card__icon" aria-hidden="true">
+                  <svg
+                    class="icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  >
+                    <path d="M12 2v6M9 8l3-4 3 4" />
+                    <path
+                      d="M8 22V10h8v12M8 14h8M10 18h4"
+                    />
+                  </svg>
+                </div>
+                <div class="defense-card__titles">
+                  <div class="name">Arc Spine</div>
+                  <div class="meta">Chain lightning · build 30 shells</div>
+                </div>
+              </div>
+              <p id="arcSpineStatus" class="defense-card__status">
+                Available · 30 shells
+              </p>
+              <button type="button" class="pick" id="invArcSpine" data-defense="arc_spine">
+                Select
+              </button>
+            </li>
+            <li class="defense-card locked">
+              <div class="defense-card__header">
+                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
+                  <svg
+                    class="icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  >
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 018 0v3" />
+                  </svg>
+                </div>
+                <div class="defense-card__titles">
+                  <div class="name">Tideheart Laser</div>
+                  <div class="meta">Locked · coming soon</div>
+                </div>
+              </div>
+            </li>
+            <li class="defense-card locked">
+              <div class="defense-card__header">
+                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
+                  <svg
+                    class="icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  >
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 018 0v3" />
+                  </svg>
+                </div>
+                <div class="defense-card__titles">
+                  <div class="name">Bubble Shotgun</div>
+                  <div class="meta">Locked · coming soon</div>
+                </div>
+              </div>
+            </li>
+            <li class="defense-card locked">
+              <div class="defense-card__header">
+                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
+                  <svg
+                    class="icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  >
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 018 0v3" />
+                  </svg>
+                </div>
+                <div class="defense-card__titles">
+                  <div class="name">Vibration Zone</div>
+                  <div class="meta">Locked · coming soon</div>
+                </div>
+              </div>
+            </li>
+            <li class="defense-card locked">
+              <div class="defense-card__header">
+                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
+                  <svg
+                    class="icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  >
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 018 0v3" />
+                  </svg>
+                </div>
+                <div class="defense-card__titles">
+                  <div class="name">Current Cannon</div>
+                  <div class="meta">Locked · coming soon</div>
+                </div>
+              </div>
+            </li>
+            <li class="defense-card locked">
+              <div class="defense-card__header">
+                <div class="defense-card__icon defense-card__icon--lock" aria-hidden="true">
+                  <svg
+                    class="icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  >
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 018 0v3" />
+                  </svg>
+                </div>
+                <div class="defense-card__titles">
+                  <div class="name">Ink Veil</div>
+                  <div class="meta">Locked · coming soon</div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <button type="button" id="invCancel">Cancel placement</button>
+
+        <section
+          class="sidebar-section"
+          id="section-mission"
+          aria-labelledby="mission-heading"
+        >
+          <h2 class="sidebar-section-title" id="mission-heading">
+            <svg
+              class="icon-svg icon-svg--sm"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              aria-hidden="true"
+            >
+              <polygon points="8 5 19 12 8 19 8 5" />
+            </svg>
+            Mission
+          </h2>
+          <div class="sidebar-actions">
+            <button type="button" id="sendWave">
+              <span class="send-wave-btn__icon" aria-hidden="true">
+                <svg
+                  class="icon-svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polygon points="10 8 16 12 10 16 10 8" />
+                  <path d="M16 8v8" opacity="0.35" />
+                </svg>
+              </span>
+              <span class="send-wave-btn__label">Send wave</span>
+            </button>
+            <p id="sendWaveSub" class="send-wave-sub" aria-live="polite"></p>
+          </div>
+        </section>
+      </div>
+    </aside>
+
     <div id="damageLayer" aria-hidden="true"></div>
     <div id="overlay">
       <p id="overlayTitle"></p>
-      <p id="overlaySub" style="font-size: 0.65em; opacity: 0.85"></p>
+      <p id="overlaySub"></p>
     </div>
     <script type="module" src="/src/render/main.ts"></script>
   </body>

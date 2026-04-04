@@ -24,6 +24,10 @@ export const COLORS = {
   chain: 0x00ffcc,
   gridMajor: 0x2a4a6c,
   gridMinor: 0x132535,
+  /** Primary attack range ring (placement preview). */
+  rangePreviewPrimary: 0x00d4ff,
+  /** Arc Spine chain hop radius ring (placement preview). */
+  rangePreviewChain: 0xffaa66,
 } as const;
 
 export const CHAIN_FX_DURATION = 0.15;
