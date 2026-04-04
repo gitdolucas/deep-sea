@@ -28,6 +28,12 @@ export const COLORS = {
   rangePreviewPrimary: 0x00d4ff,
   /** Arc Spine chain hop radius ring (placement preview). */
   rangePreviewChain: 0xffaa66,
+  /** World-space enemy HP bar (fill). */
+  enemyHpBarFill: 0x39ff6e,
+  enemyHpBarBg: 0x1a2030,
+  /** World-space tower cooldown bar (fill drains toward ready). */
+  cooldownBarFill: 0x00d4ff,
+  cooldownBarBg: 0x132535,
 } as const;
 
 export const CHAIN_FX_DURATION = 0.15;

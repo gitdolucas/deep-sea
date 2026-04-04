@@ -60,6 +60,11 @@ export class GameSession {
     return [...this.enemies.values()].filter((e) => e.isAlive()).length;
   }
 
+  /** Seconds until this tower may fire again after its last shot (0 if ready or never fired). */
+  getDefenseCooldownRemaining(defenseId: string): number {
+    return Math.max(0, this.defenseCooldowns.get(defenseId) ?? 0);
+  }
+
   /** Combat events from the last `tickDefenses` pass (for VFX). */
   consumeCombatEvents(): TowerAttackResult[] {
     const out = this.pendingCombat;
@@ -147,8 +152,10 @@ export class GameSession {
         this.economy,
         snap,
       );
-      if (result) this.pendingCombat.push(result);
-      this.defenseCooldowns.set(snap.id, fireIntervalFor(snap.type));
+      if (result) {
+        this.pendingCombat.push(result);
+        this.defenseCooldowns.set(snap.id, fireIntervalFor(snap.type));
+      }
     }
   }
 }

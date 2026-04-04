@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameSession } from "../game/game-session.js";
 import { arcSpineChainSearchRadius } from "../game/defense-controller.js";
-import { attackRangeTiles } from "../game/damage-resolver.js";
+import { attackRangeTiles, fireIntervalFor } from "../game/damage-resolver.js";
 import { MVP_ARC_SPINE_BUILD_COST } from "../game/mvp-constants.js";
 import type { DefenseTypeKey } from "../game/types.js";
 import { buildMapBoard, worldFromGrid } from "./board.js";
@@ -12,6 +12,65 @@ import {
   CHAIN_FX_DURATION,
   DAMAGE_POP_DURATION_SEC,
 } from "./constants.js";
+
+type BarBillboard = {
+  group: THREE.Group;
+  fill: THREE.Mesh;
+  setFillRatio: (ratio: number) => void;
+};
+
+function makeBarBillboard(
+  width: number,
+  height: number,
+  bgColor: number,
+  fillColor: number,
+): BarBillboard {
+  const group = new THREE.Group();
+  const bg = new THREE.Mesh(
+    new THREE.PlaneGeometry(width + 0.02, height + 0.02),
+    new THREE.MeshBasicMaterial({
+      color: bgColor,
+      side: THREE.DoubleSide,
+      depthTest: true,
+      transparent: true,
+      opacity: 0.94,
+    }),
+  );
+  const fill = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({
+      color: fillColor,
+      side: THREE.DoubleSide,
+      depthTest: true,
+      transparent: true,
+      opacity: 1,
+    }),
+  );
+  fill.position.z = 0.003;
+  group.add(bg);
+  group.add(fill);
+  const half = width / 2;
+  return {
+    group,
+    fill,
+    setFillRatio(ratio: number) {
+      const r = Math.max(0, Math.min(1, ratio));
+      fill.scale.x = r <= 0 ? 1e-6 : r;
+      fill.position.x = half * (r - 1);
+    },
+  };
+}
+
+function disposeObject3DTree(root: THREE.Object3D): void {
+  root.traverse((obj) => {
+    if (obj instanceof THREE.Mesh) {
+      obj.geometry.dispose();
+      const mat = obj.material;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else (mat as THREE.Material).dispose();
+    }
+  });
+}
 
 function makeRangeRingMesh(
   innerR: number,
@@ -45,8 +104,14 @@ export class GameApp {
     [];
   private readonly rangePreviewGroup = new THREE.Group();
   private placementType: DefenseTypeKey | null = null;
-  private enemyObjects = new Map<string, THREE.Mesh>();
-  private defenseObjects = new Map<string, THREE.Mesh>();
+  private enemyObjects = new Map<
+    string,
+    { root: THREE.Group; bar: BarBillboard }
+  >();
+  private defenseObjects = new Map<
+    string,
+    { root: THREE.Group; tower: THREE.Mesh; bar: BarBillboard }
+  >();
   private chainLines: { obj: THREE.Line; t: number }[] = [];
   private nextDefenseId = 1;
   private readonly mount: HTMLElement;
@@ -414,6 +479,7 @@ export class GameApp {
     this.applyCombatVfx();
     this.updateChainFx(dt);
     this.updateHud();
+    this.syncWaveProgress();
     this.refreshInventoryUi();
     this.updateUiState();
     this.orbitControls.update();
@@ -427,22 +493,35 @@ export class GameApp {
       alive.add(id);
       const pos = e.getGridPosition();
       const w = worldFromGrid(pos[0], pos[1], this.doc, 0.28);
-      let mesh = this.enemyObjects.get(id);
-      if (!mesh) {
-        mesh = new THREE.Mesh(
+      let vis = this.enemyObjects.get(id);
+      if (!vis) {
+        const root = new THREE.Group();
+        const body = new THREE.Mesh(
           new THREE.BoxGeometry(0.45, 0.35, 0.45),
           new THREE.MeshStandardMaterial({ color: COLORS.stoneclaw }),
         );
-        this.scene.add(mesh);
-        this.enemyObjects.set(id, mesh);
+        root.add(body);
+        const bar = makeBarBillboard(
+          0.52,
+          0.072,
+          COLORS.enemyHpBarBg,
+          COLORS.enemyHpBarFill,
+        );
+        bar.group.position.set(0, 0.32, 0);
+        root.add(bar.group);
+        this.scene.add(root);
+        vis = { root, bar };
+        this.enemyObjects.set(id, vis);
       }
-      mesh.position.set(w.x, w.y, w.z);
+      vis.root.position.set(w.x, w.y, w.z);
+      const hpRatio = e.maxHp > 0 ? e.hp / e.maxHp : 0;
+      vis.bar.setFillRatio(hpRatio);
+      vis.bar.group.quaternion.copy(this.camera.quaternion);
     }
-    for (const [id, mesh] of [...this.enemyObjects]) {
+    for (const [id, vis] of [...this.enemyObjects]) {
       if (!alive.has(id)) {
-        this.scene.remove(mesh);
-        mesh.geometry.dispose();
-        (mesh.material as THREE.Material).dispose();
+        this.scene.remove(vis.root);
+        disposeObject3DTree(vis.root);
         this.enemyObjects.delete(id);
       }
     }
@@ -453,9 +532,10 @@ export class GameApp {
     for (const d of this.session.map.getDefenses()) {
       wanted.add(d.id);
       const w = worldFromGrid(d.position[0], d.position[1], this.doc, 0.35);
-      let mesh = this.defenseObjects.get(d.id);
-      if (!mesh) {
-        mesh = new THREE.Mesh(
+      let vis = this.defenseObjects.get(d.id);
+      if (!vis) {
+        const root = new THREE.Group();
+        const tower = new THREE.Mesh(
           new THREE.CylinderGeometry(0.22, 0.28, 0.55, 10),
           new THREE.MeshStandardMaterial({
             color: COLORS.tower,
@@ -463,16 +543,33 @@ export class GameApp {
             emissiveIntensity: 0.2,
           }),
         );
-        this.scene.add(mesh);
-        this.defenseObjects.set(d.id, mesh);
+        root.add(tower);
+        const bar = makeBarBillboard(
+          0.44,
+          0.062,
+          COLORS.cooldownBarBg,
+          COLORS.cooldownBarFill,
+        );
+        bar.group.position.set(0, 0.44, 0);
+        root.add(bar.group);
+        this.scene.add(root);
+        vis = { root, tower, bar };
+        this.defenseObjects.set(d.id, vis);
       }
-      mesh.position.set(w.x, w.y, w.z);
+      vis.root.position.set(w.x, w.y, w.z);
+      const interval = fireIntervalFor(d.type);
+      const remaining = this.session.getDefenseCooldownRemaining(d.id);
+      const cdRatio = interval > 0 ? remaining / interval : 0;
+      vis.bar.setFillRatio(cdRatio);
+      vis.bar.group.quaternion.copy(this.camera.quaternion);
+      const mat = vis.tower.material as THREE.MeshStandardMaterial;
+      const ready = interval > 0 ? 1 - remaining / interval : 1;
+      mat.emissiveIntensity = 0.08 + 0.28 * Math.max(0, Math.min(1, ready));
     }
-    for (const [id, mesh] of [...this.defenseObjects]) {
+    for (const [id, vis] of [...this.defenseObjects]) {
       if (!wanted.has(id)) {
-        this.scene.remove(mesh);
-        mesh.geometry.dispose();
-        (mesh.material as THREE.Material).dispose();
+        this.scene.remove(vis.root);
+        disposeObject3DTree(vis.root);
         this.defenseObjects.delete(id);
       }
     }
@@ -536,6 +633,60 @@ export class GameApp {
     el.style.top = `${y}px`;
     layer.appendChild(el);
     window.setTimeout(() => el.remove(), DAMAGE_POP_DURATION_SEC * 1000);
+  }
+
+  /**
+   * Discrete wave bar: filled segments = current tide (1-based) up to total;
+   * last filled segment pulses during active combat.
+   */
+  private syncWaveProgress(): void {
+    const host = document.getElementById("waveProgressHost");
+    const track = document.getElementById("waveProgressTrack");
+    const fraction = document.getElementById("waveProgressFraction");
+    if (!host || !track || !fraction) return;
+
+    const total = this.session.map.getWaves().length;
+    if (total === 0) {
+      host.hidden = true;
+      return;
+    }
+    host.hidden = false;
+
+    const phase = this.session.waveDirector.getPhase();
+    const out = this.session.getOutcome();
+    const display = this.session.getTideDisplayNumber();
+    let filled: number;
+    if (out === "win" || phase === "completed") {
+      filled = total;
+    } else {
+      filled = Math.min(Math.max(0, display), total);
+    }
+
+    fraction.textContent = `${filled} / ${total}`;
+    track.setAttribute("aria-valuemax", String(total));
+    track.setAttribute("aria-valuenow", String(filled));
+
+    while (track.children.length < total) {
+      const seg = document.createElement("span");
+      seg.className = "wave-seg";
+      track.appendChild(seg);
+    }
+    while (track.children.length > total) {
+      track.lastElementChild?.remove();
+    }
+
+    const activeWave =
+      out === "playing" && phase === "active" && filled > 0;
+
+    for (let i = 0; i < total; i++) {
+      const seg = track.children[i] as HTMLElement;
+      const isFilled = i < filled;
+      seg.classList.toggle("wave-seg--filled", isFilled);
+      seg.classList.toggle(
+        "wave-seg--active",
+        activeWave && isFilled && i === filled - 1,
+      );
+    }
   }
 
   private updateHud(): void {

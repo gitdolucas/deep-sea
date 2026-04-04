@@ -83,6 +83,61 @@ describe("GameSession", () => {
     expect(session.map.getDefenses()).toHaveLength(1);
   });
 
+  it("exposes per-defense cooldown remaining for UI", () => {
+    const doc = combatMap();
+    doc.defenses = [
+      {
+        id: "d_arc",
+        type: "arc_spine",
+        position: [2, 2],
+        level: 1,
+        targetMode: "first",
+      },
+    ];
+    const session = new GameSession(doc);
+    expect(session.getDefenseCooldownRemaining("d_arc")).toBe(0);
+    session.tick(0.05);
+    const r = session.getDefenseCooldownRemaining("d_arc");
+    expect(r).toBeGreaterThan(1.4);
+    expect(r).toBeLessThanOrEqual(1.5);
+  });
+
+  it("does not start defense cooldown until an attack actually fires", () => {
+    const doc = combatMap();
+    doc.waves = [
+      {
+        wave: 1,
+        prepTime: 60,
+        isBoss: false,
+        groups: [
+          {
+            enemyType: "stoneclaw",
+            count: 1,
+            spawnId: "s1",
+            pathId: "p1",
+            interval: 0,
+            delay: 0,
+            hpMultiplier: 1,
+            speedMultiplier: 0.05,
+          },
+        ],
+      },
+    ];
+    doc.defenses = [
+      {
+        id: "d_arc",
+        type: "arc_spine",
+        position: [2, 2],
+        level: 1,
+        targetMode: "first",
+      },
+    ];
+    const session = new GameSession(doc);
+    for (let i = 0; i < 20; i++) session.tick(0.1);
+    expect(session.getLivingEnemyCount()).toBe(0);
+    expect(session.getDefenseCooldownRemaining("d_arc")).toBe(0);
+  });
+
   it("applies leak damage when an enemy finishes the path", () => {
     const doc = combatMap();
     doc.defenses = [];

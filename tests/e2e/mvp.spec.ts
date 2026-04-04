@@ -21,6 +21,8 @@ test("sidebar shows armory and send wave", async ({ page }) => {
   await expect(page.locator("#invArcSpine")).toBeVisible();
   await expect(page.locator("#sendWave")).toBeVisible();
   await expect(page.locator("#arcSpineStatus")).toContainText(/Available|shells/);
+  await expect(page.locator("#waveProgressTrack")).toBeVisible();
+  await expect(page.locator("#waveProgressFraction")).toHaveText(/\d+\s*\/\s*\d+/);
 });
 
 test("main menu lists levels and starts selected map", async ({ page }) => {

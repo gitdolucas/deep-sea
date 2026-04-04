@@ -456,6 +456,84 @@
         border-color: rgba(62, 232, 255, 0.4);
       }
 
+      .wave-progress {
+        pointer-events: none;
+        margin-bottom: 14px;
+      }
+
+      .wave-progress__label {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-family: var(--font-ui);
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--mist);
+      }
+
+      .wave-progress__fraction {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--biolume);
+        letter-spacing: 0.02em;
+      }
+
+      .wave-progress__track {
+        display: flex;
+        gap: 3px;
+        width: 100%;
+        align-items: stretch;
+      }
+
+      .wave-progress__track[hidden] {
+        display: none !important;
+      }
+
+      .wave-seg {
+        flex: 1 1 0;
+        min-width: 4px;
+        height: 9px;
+        border-radius: 3px;
+        border: 1px solid rgba(62, 232, 255, 0.38);
+        background: rgba(4, 12, 24, 0.45);
+        box-sizing: border-box;
+        transition: background 0.2s ease, border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .wave-seg--filled {
+        background: linear-gradient(180deg, var(--biolume) 0%, #1ba8c4 100%);
+        border-color: rgba(62, 232, 255, 0.85);
+        box-shadow: 0 0 10px rgba(62, 232, 255, 0.28);
+      }
+
+      .wave-seg--active.wave-seg--filled {
+        animation: waveSegPulse 1.25s ease-in-out infinite;
+      }
+
+      @keyframes waveSegPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 10px rgba(62, 232, 255, 0.28);
+        }
+        50% {
+          box-shadow: 0 0 16px rgba(122, 248, 210, 0.45);
+          border-color: var(--pulse);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .wave-seg--active.wave-seg--filled {
+          animation: none;
+        }
+      }
+
       .sidebar-actions {
         pointer-events: auto;
         margin-top: 14px;
@@ -1291,6 +1369,23 @@
             </svg>
             Mission
           </h2>
+          <div class="wave-progress" id="waveProgressHost" hidden>
+            <div class="wave-progress__label">
+              <span id="waveProgressCaption">Waves</span>
+              <span id="waveProgressFraction" class="wave-progress__fraction"
+                >0 / 0</span
+              >
+            </div>
+            <div
+              id="waveProgressTrack"
+              class="wave-progress__track"
+              role="progressbar"
+              aria-labelledby="waveProgressCaption"
+              aria-valuemin="0"
+              aria-valuemax="0"
+              aria-valuenow="0"
+            ></div>
+          </div>
           <div class="sidebar-actions">
             <button type="button" id="sendWave">
               <span class="send-wave-btn__icon" aria-hidden="true">
