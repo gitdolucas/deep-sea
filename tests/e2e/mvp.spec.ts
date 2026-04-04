@@ -1,19 +1,40 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function beginMission(page: Page): Promise<void> {
+  await page.goto("/");
+  await page.locator("#btnPlay").click();
+}
 
 test("MVP HUD shows starting shells and castle HP in sidebar", async ({
   page,
 }) => {
-  await page.goto("/");
+  await beginMission(page);
   await expect(page.locator("#statShells")).toContainText("50");
   await expect(page.locator("#statCastle")).toContainText("20");
   await expect(page.locator("#statCastle")).toContainText("/");
 });
 
 test("sidebar shows armory and send wave", async ({ page }) => {
-  await page.goto("/");
+  await beginMission(page);
   await expect(page.locator("#inventory")).toBeVisible();
   await expect(page.locator("#statShells")).toContainText("50");
   await expect(page.locator("#invArcSpine")).toBeVisible();
   await expect(page.locator("#sendWave")).toBeVisible();
   await expect(page.locator("#arcSpineStatus")).toContainText(/Available|shells/);
+});
+
+test("main menu and quit confirmation return to home", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("#mainMenu")).toBeVisible();
+  await expect(page.locator("#gameScreen")).toBeHidden();
+  await page.locator("#btnPlay").click();
+  await expect(page.locator("#inventory")).toBeVisible();
+  await page.locator("#btnMainMenu").click();
+  await expect(page.locator("#quitDialog")).toBeVisible();
+  await page.locator("#quitConfirmNo").click();
+  await expect(page.locator("#quitDialog")).toBeHidden();
+  await page.locator("#btnMainMenu").click();
+  await page.locator("#quitConfirmYes").click();
+  await expect(page.locator("#mainMenu")).toBeVisible();
+  await expect(page.locator("#gameScreen")).toBeHidden();
 });

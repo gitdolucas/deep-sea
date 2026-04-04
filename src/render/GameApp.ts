@@ -51,6 +51,7 @@ export class GameApp {
   private nextDefenseId = 1;
   private readonly mount: HTMLElement;
   private readonly orbitControls: OrbitControls;
+  private readonly abortController = new AbortController();
   private slotPointerStart: { x: number; y: number } | null = null;
   /** For shell stat row flash when balance changes. */
   private prevShells: number | null = null;
@@ -130,29 +131,46 @@ export class GameApp {
     this.orbitControls.update();
     this.syncOrbitWithPlacement();
 
-    this.renderer.domElement.addEventListener("contextmenu", (ev) =>
-      ev.preventDefault(),
+    const ac = { signal: this.abortController.signal };
+    this.renderer.domElement.addEventListener(
+      "contextmenu",
+      (ev) => ev.preventDefault(),
+      ac,
     );
-    window.addEventListener("resize", () => this.onResize());
-    this.renderer.domElement.addEventListener("pointerdown", (ev) =>
-      this.onSlotPointerDown(ev),
+    window.addEventListener("resize", () => this.onResize(), ac);
+    this.renderer.domElement.addEventListener(
+      "pointerdown",
+      (ev) => this.onSlotPointerDown(ev),
+      ac,
     );
-    this.renderer.domElement.addEventListener("pointermove", (ev) =>
-      this.onCanvasPointerMove(ev),
+    this.renderer.domElement.addEventListener(
+      "pointermove",
+      (ev) => this.onCanvasPointerMove(ev),
+      ac,
     );
-    window.addEventListener("pointerup", (ev) => this.onSlotPointerUp(ev));
-    window.addEventListener("pointercancel", () => {
-      this.slotPointerStart = null;
-    });
-    window.addEventListener("keydown", (ev) => this.onKeyDown(ev));
-    document.getElementById("sendWave")?.addEventListener("click", () =>
-      this.onSendWave(),
+    window.addEventListener("pointerup", (ev) => this.onSlotPointerUp(ev), ac);
+    window.addEventListener(
+      "pointercancel",
+      () => {
+        this.slotPointerStart = null;
+      },
+      ac,
     );
-    document.getElementById("invArcSpine")?.addEventListener("click", () =>
-      this.onInventoryArcSpineClick(),
+    window.addEventListener("keydown", (ev) => this.onKeyDown(ev), ac);
+    document.getElementById("sendWave")?.addEventListener(
+      "click",
+      () => this.onSendWave(),
+      ac,
     );
-    document.getElementById("invCancel")?.addEventListener("click", () =>
-      this.clearPlacementMode(),
+    document.getElementById("invArcSpine")?.addEventListener(
+      "click",
+      () => this.onInventoryArcSpineClick(),
+      ac,
+    );
+    document.getElementById("invCancel")?.addEventListener(
+      "click",
+      () => this.clearPlacementMode(),
+      ac,
     );
     this.refreshInventoryUi();
   }
@@ -160,6 +178,38 @@ export class GameApp {
   start(): void {
     this.clock.start();
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  /**
+   * Stop the render loop, release WebGL and Three.js resources, and remove listeners.
+   */
+  dispose(): void {
+    this.abortController.abort();
+    this.renderer.setAnimationLoop(null);
+    this.orbitControls.dispose();
+    for (const c of this.chainLines) {
+      this.scene.remove(c.obj);
+      c.obj.geometry.dispose();
+      (c.obj.material as THREE.Material).dispose();
+    }
+    this.chainLines = [];
+    this.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry?.dispose();
+        const mat = obj.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else (mat as THREE.Material | undefined)?.dispose?.();
+      } else if (obj instanceof THREE.Line) {
+        obj.geometry.dispose();
+        (obj.material as THREE.Material).dispose();
+      }
+    });
+    this.enemyObjects.clear();
+    this.defenseObjects.clear();
+    this.renderer.dispose();
+    if (this.renderer.domElement.parentNode === this.mount) {
+      this.mount.removeChild(this.renderer.domElement);
+    }
   }
 
   private onResize(): void {

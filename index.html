@@ -618,9 +618,246 @@
           opacity: 0;
         }
       }
+
+      /* ——— Main menu & navigation ——— */
+      .screen {
+        box-sizing: border-box;
+      }
+
+      #mainMenu {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 24px;
+        text-align: center;
+        background: radial-gradient(
+            ellipse 120% 80% at 50% 20%,
+            rgba(62, 232, 255, 0.08) 0%,
+            transparent 55%
+          ),
+          var(--abyss);
+        font-family: var(--font-ui);
+      }
+
+      #mainMenu.visible {
+        display: flex;
+      }
+
+      .main-menu__title {
+        margin: 0 0 8px;
+        font-family: var(--font-display);
+        font-size: clamp(2rem, 6vw, 3.25rem);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--biolume);
+        text-shadow: 0 0 32px rgba(62, 232, 255, 0.35);
+      }
+
+      .main-menu__tagline {
+        margin: 0 0 36px;
+        max-width: 36ch;
+        font-size: 0.95rem;
+        font-weight: 500;
+        line-height: 1.55;
+        color: var(--mist);
+      }
+
+      #btnPlay {
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 16px 40px;
+        border-radius: var(--radius);
+        border: 2px solid var(--biolume);
+        color: var(--abyss);
+        background: linear-gradient(
+          180deg,
+          var(--biolume) 0%,
+          #2bc4e0 100%
+        );
+        box-shadow: 0 6px 32px rgba(62, 232, 255, 0.3);
+        transition: filter 0.15s ease, transform 0.12s ease;
+      }
+
+      #btnPlay:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring), 0 6px 32px rgba(62, 252, 255, 0.3);
+      }
+
+      #btnPlay:hover:not(:disabled) {
+        filter: brightness(1.08);
+      }
+
+      #btnPlay:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+
+      #btnPlay:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+
+      #gameScreen {
+        min-height: 100vh;
+      }
+
+      #gameScreen[hidden] {
+        display: none !important;
+      }
+
+      #gameMount {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+      }
+
+      #btnMainMenu {
+        width: 100%;
+        margin-top: 10px;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(138, 164, 184, 0.45);
+        color: var(--mist);
+        background: rgba(8, 22, 42, 0.55);
+        transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+      }
+
+      #btnMainMenu:hover {
+        color: var(--biolume);
+        border-color: rgba(62, 232, 255, 0.45);
+        background: rgba(12, 34, 58, 0.65);
+      }
+
+      #btnMainMenu:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      #quitDialog {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(2, 6, 14, 0.72);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+
+      #quitDialog.visible {
+        display: flex;
+      }
+
+      .quit-dialog__panel {
+        max-width: 400px;
+        width: 100%;
+        padding: 28px 26px;
+        border-radius: var(--radius);
+        border: 1px solid var(--panel-edge);
+        background: var(--panel);
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+        font-family: var(--font-ui);
+      }
+
+      .quit-dialog__panel h2 {
+        margin: 0 0 12px;
+        font-family: var(--font-display);
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: var(--biolume);
+        letter-spacing: 0.04em;
+      }
+
+      .quit-dialog__panel p {
+        margin: 0 0 24px;
+        font-size: 0.88rem;
+        line-height: 1.55;
+        color: var(--mist);
+      }
+
+      .quit-dialog__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .quit-dialog__actions button {
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 11px 18px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        transition: filter 0.15s ease, transform 0.12s ease;
+      }
+
+      .quit-dialog__actions button:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      #quitConfirmNo {
+        background: transparent;
+        color: var(--mist);
+        border-color: rgba(138, 164, 184, 0.4);
+      }
+
+      #quitConfirmNo:hover {
+        color: var(--biolume);
+        border-color: rgba(62, 232, 255, 0.45);
+      }
+
+      #quitConfirmYes {
+        color: var(--abyss);
+        border-color: var(--danger);
+        background: linear-gradient(180deg, #ff7a85 0%, var(--danger) 100%);
+      }
+
+      #quitConfirmYes:hover {
+        filter: brightness(1.06);
+      }
+
+      .quit-dialog__actions button:active {
+        transform: scale(0.98);
+      }
     </style>
   </head>
   <body>
+    <main
+      id="mainMenu"
+      class="screen main-menu visible"
+      aria-labelledby="mainMenuTitle"
+    >
+      <h1 id="mainMenuTitle" class="main-menu__title">Deep Abyss</h1>
+      <p id="mainMenuTagline" class="main-menu__tagline">
+        Hold the trench. Arc Spine towers chain lightning across the path — spend
+        shells wisely and send each wave on your terms.
+      </p>
+      <button type="button" id="btnPlay">Begin mission</button>
+    </main>
+
+    <div id="gameScreen" hidden>
+    <div id="gameMount"></div>
     <aside id="inventory" aria-label="Command console">
       <div class="sidebar-inner">
         <header class="brand">
@@ -912,12 +1149,33 @@
               <span class="send-wave-btn__label">Send wave</span>
             </button>
             <p id="sendWaveSub" class="send-wave-sub" aria-live="polite"></p>
+            <button type="button" id="btnMainMenu">Main menu</button>
           </div>
         </section>
       </div>
     </aside>
 
     <div id="damageLayer" aria-hidden="true"></div>
+    </div>
+
+    <div
+      id="quitDialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quitDialogTitle"
+      aria-describedby="quitDialogDesc"
+    >
+      <div class="quit-dialog__panel">
+        <h2 id="quitDialogTitle">Return to main menu?</h2>
+        <p id="quitDialogDesc">
+          Current mission progress will be lost. This cannot be undone.
+        </p>
+        <div class="quit-dialog__actions">
+          <button type="button" id="quitConfirmNo">Stay in mission</button>
+          <button type="button" id="quitConfirmYes">Return to menu</button>
+        </div>
+      </div>
+    </div>
     <div id="overlay">
       <p id="overlayTitle"></p>
       <p id="overlaySub"></p>
