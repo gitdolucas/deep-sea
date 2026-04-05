@@ -51,6 +51,10 @@ Preview is **read-only**; it must not mutate `GameSession`.
 
 - If `getShells()` < build cost (MVP Arc Spine build: `MVP_ARC_SPINE_BUILD_COST` = **30**), the defense control should be **disabled** or show insufficient cost; clicking must not enter placement mode (or enters mode but never allows confirm — prefer disabling for clarity).
 
+## Defense focus — grid move
+
+When a placed defense is focused (bottom bar), **Move** / D-pad steps the tower by one tile using `GameSession.tryMoveDefenseStep` → `MapController.tryMoveDefenseTo`. Target cells use the same rules as new builds (`isBuildSlotPosition`, not occupied). No shell cost. Cooldown resets on successful move (same as reposition in sim). The main camera’s vertical FOV eases to half the normal value while the orbit pivot eases to the tower’s world position (screen center); both ease back on dismiss. Orbit pan is disabled during focus so the look-at stays aligned (tile **Move** still repositions the defense).
+
 ## Architecture notes
 
 - **Do not** duplicate wave, targeting, or damage rules in the HUD. Range rings must derive from the same helpers the sim uses (`attackRangeTiles`, map slot checks via `MapController`).

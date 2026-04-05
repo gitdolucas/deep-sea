@@ -158,6 +158,28 @@ export class MapController {
     return true;
   }
 
+  /** Decrements defense tier (3→2→1) in place. Does nothing if missing or already L1. */
+  tryDecrementDefenseLevel(defenseId: string): boolean {
+    const d = this.defenses.find((x) => x.id === defenseId);
+    if (!d || d.level <= 1) return false;
+    d.level = ((d.level - 1) as DefenseLevel);
+    return true;
+  }
+
+  /**
+   * Moves an existing defense to another legal empty tile (off path, no decoration).
+   * Does nothing if the cell is invalid, occupied, or unchanged.
+   */
+  tryMoveDefenseTo(defenseId: string, newPos: GridPos): boolean {
+    const d = this.defenses.find((x) => x.id === defenseId);
+    if (!d) return false;
+    if (this.positionsEqual(d.position, newPos)) return false;
+    if (!this.isBuildSlotPosition(newPos)) return false;
+    if (this.getDefenseAt(newPos) !== undefined) return false;
+    d.position = [newPos[0], newPos[1]];
+    return true;
+  }
+
   /** Serializable defenses list for save/export. */
   snapshotDefenses(): DefenseSnapshot[] {
     return this.defenses.map(cloneDefense);

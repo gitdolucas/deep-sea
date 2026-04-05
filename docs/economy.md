@@ -29,6 +29,7 @@ The collection animation should feel **satisfying and bubbly** — never instant
 Shells are spent on:
 - **Building new towers** — costs vary by tower type
 - **Upgrading existing towers** — L1->L2 costs 2x base, L2->L3 costs 4x base
+- **Downgrading** — one tier refunds exactly the shells spent on the removed tier’s upgrade (L3→2 refunds the L2→3 payment, L2→1 refunds the L1→2 payment)
 - **Salvaging** — sell a tower back for 50% of total invested shells
 
 ## Economy Flow

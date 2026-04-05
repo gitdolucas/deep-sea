@@ -18,6 +18,10 @@ import {
   ENEMY_LEAK_DAMAGE,
 } from "./enemy-stats.js";
 import { buildCostL1 } from "./defense-build-costs.js";
+import {
+  downgradeRefundForLevel,
+  salvageShellsForDefense,
+} from "./defense-economy.js";
 import { DefenseController } from "./defense-controller.js";
 import { MVP_STARTING_SHELLS } from "./mvp-constants.js";
 import type { DefenseTypeKey, GridPos } from "./types.js";
@@ -43,6 +47,9 @@ import {
 } from "./cannon-projectiles.js";
 
 export type GameOutcome = "playing" | "win" | "lose";
+
+/** One orthogonal step when repositioning a defense from the focus UI (grid / map axes). */
+export type DefenseMoveStep = "up" | "down" | "left" | "right";
 
 /**
  * Headless game loop: waves, auras, DoTs, movement, leaks, tower fire, economy/castle.
@@ -168,6 +175,81 @@ export class GameSession {
       return false;
     }
     const after = this.map.getDefenses().find((d) => d.id === defenseId)!;
+    this.defenseCooldowns.set(
+      defenseId,
+      fireIntervalFor(after.type, after.level),
+    );
+    if (after.type === "tideheart_laser") {
+      this.laserBeamAccum.set(defenseId, 0);
+    }
+    return true;
+  }
+
+  tryDowngradeDefense(defenseId: string): boolean {
+    if (this.outcome !== "playing") return false;
+    const before = this.map.getDefenses().find((d) => d.id === defenseId);
+    if (!before || before.level <= 1) return false;
+    const refundAmt = downgradeRefundForLevel(before.type, before.level);
+    if (refundAmt === null) return false;
+    if (!this.map.tryDecrementDefenseLevel(defenseId)) return false;
+    this.economy.refund(refundAmt);
+    const after = this.map.getDefenses().find((d) => d.id === defenseId)!;
+    this.defenseCooldowns.set(
+      defenseId,
+      fireIntervalFor(after.type, after.level),
+    );
+    if (after.type === "tideheart_laser") {
+      this.laserBeamAccum.set(defenseId, 0);
+    }
+    return true;
+  }
+
+  trySalvageDefense(defenseId: string): boolean {
+    if (this.outcome !== "playing") return false;
+    const before = this.map.getDefenses().find((d) => d.id === defenseId);
+    if (!before) return false;
+    const salvage = salvageShellsForDefense(before);
+    if (!this.map.removeDefense(defenseId)) return false;
+    this.economy.refund(salvage);
+    this.defenseCooldowns.delete(defenseId);
+    this.laserBeamAccum.delete(defenseId);
+    for (let i = this.cannonProjectiles.length - 1; i >= 0; i--) {
+      if (this.cannonProjectiles[i]!.defenseId === defenseId) {
+        this.cannonProjectiles.splice(i, 1);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Move a placed defense by one tile (same rules as build cells). Fails if blocked.
+   * Resets fire cooldown (and Tideheart beam accum) like a reposition.
+   */
+  tryMoveDefenseStep(defenseId: string, step: DefenseMoveStep): boolean {
+    if (this.outcome !== "playing") return false;
+    const d = this.map.getDefenses().find((x) => x.id === defenseId);
+    if (!d) return false;
+    const [gx, gz] = d.position;
+    let ngx = gx;
+    let ngz = gz;
+    switch (step) {
+      case "up":
+        ngz -= 1;
+        break;
+      case "down":
+        ngz += 1;
+        break;
+      case "left":
+        ngx -= 1;
+        break;
+      case "right":
+        ngx += 1;
+        break;
+      default:
+        return false;
+    }
+    if (!this.map.tryMoveDefenseTo(defenseId, [ngx, ngz])) return false;
+    const after = this.map.getDefenses().find((x) => x.id === defenseId)!;
     this.defenseCooldowns.set(
       defenseId,
       fireIntervalFor(after.type, after.level),

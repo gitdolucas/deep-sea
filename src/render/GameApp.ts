@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { MapDocument } from "../game/map-types.js";
-import { GameSession } from "../game/game-session.js";
+import { GameSession, type DefenseMoveStep } from "../game/game-session.js";
 import {
   arcSpineChainSearchRadius,
   DefenseController,
@@ -17,6 +17,10 @@ import {
   ARMORY_DEFENSE_ORDER,
   buildCostL1,
 } from "../game/defense-build-costs.js";
+import {
+  downgradeRefundForLevel,
+  salvageShellsForDefense,
+} from "../game/defense-economy.js";
 import type {
   DefenseLevel,
   DefenseSnapshot,
@@ -119,6 +123,21 @@ function disposeObject3DTree(root: THREE.Object3D): void {
   });
 }
 
+/** Simulation time scale while defense focus UI is active (design: slow tactics). */
+const DEFENSE_FOCUS_TICK_SCALE = 0.25;
+
+/** Vertical FOV multiplier while a defense is focused (narrower = zoom in). */
+const DEFENSE_FOCUS_FOV_SCALE = 0.5;
+
+/**
+ * Exponential smoothing for orbit target + FOV when entering/leaving defense focus.
+ * Larger = snappier (still smooth in/out).
+ */
+const DEFENSE_FOCUS_CAMERA_SMOOTH_RATE = 6.5;
+
+/** World Y for look-at point on a tower (matches {@link GameApp.syncDefenses} root height). */
+const DEFENSE_FOCUS_LOOK_AT_Y = 0.35;
+
 /** Placeholder tower tint per defense (until sprites). */
 const DEFENSE_TOWER_COLOR: Record<DefenseTypeKey, number> = {
   arc_spine: COLORS.tower,
@@ -151,6 +170,8 @@ function makeRangeRingMesh(
 export class GameApp {
   readonly session: GameSession;
   private readonly doc: MapDocument;
+  /** Default perspective FOV (degrees); halved while defense focus is active. */
+  private readonly cameraFovBase = 50;
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.PerspectiveCamera;
@@ -207,6 +228,11 @@ export class GameApp {
   private lastTowerTipDefenseId: string | null = null;
   private gameplayTipsTimer: ReturnType<typeof setInterval> | null = null;
   private gameplayTipIndex = 0;
+  /** Orbit pivot when not focused on a defense (map center). */
+  private readonly orbitRestTarget = new THREE.Vector3(0, 0, 0);
+  private readonly tmpDefenseOrbitLookAt = new THREE.Vector3();
+  /** 0 = map rest framing, 1 = defense focus (drives eased FOV + orbit pivot). */
+  private defenseFocusViewBlend = 0;
 
   constructor(doc: MapDocument, mount?: HTMLElement) {
     this.doc = doc;
@@ -256,7 +282,12 @@ export class GameApp {
     const w0 = window.innerWidth;
     const h0 = window.innerHeight;
     const aspect0 = w0 / h0;
-    this.camera = new THREE.PerspectiveCamera(50, aspect0, 0.1, 200);
+    this.camera = new THREE.PerspectiveCamera(
+      this.cameraFovBase,
+      aspect0,
+      0.1,
+      200,
+    );
     this.camera.position.set(6, 14, 12);
     this.camera.lookAt(0, 0, 0);
 
@@ -336,7 +367,15 @@ export class GameApp {
       () => this.clearPlacementMode(),
       ac,
     );
-    document.getElementById("selectedDefenseUpgrade")?.addEventListener(
+    document.getElementById("defenseFocusBack")?.addEventListener(
+      "click",
+      (ev) => {
+        ev.preventDefault();
+        this.clearSelection();
+      },
+      ac,
+    );
+    document.getElementById("defenseFocusUpgrade")?.addEventListener(
       "click",
       (ev) => {
         ev.preventDefault();
@@ -349,11 +388,58 @@ export class GameApp {
       },
       ac,
     );
-    document.getElementById("selectedDefenseDeselect")?.addEventListener(
+    document.getElementById("defenseFocusDowngrade")?.addEventListener(
       "click",
       (ev) => {
         ev.preventDefault();
-        this.clearSelection();
+        const id = this.selectedDefenseId;
+        if (!id || this.session.getOutcome() !== "playing") return;
+        if (this.session.tryDowngradeDefense(id)) {
+          this.refreshInventoryUi();
+          this.updateHud();
+        }
+      },
+      ac,
+    );
+    document.getElementById("defenseFocusSell")?.addEventListener(
+      "click",
+      (ev) => {
+        ev.preventDefault();
+        const id = this.selectedDefenseId;
+        if (!id || this.session.getOutcome() !== "playing") return;
+        const snap = this.session.map.getDefenses().find((d) => d.id === id);
+        if (!snap) return;
+        const amt = salvageShellsForDefense(snap);
+        const ok = window.confirm(
+          `Salvage this defense for ${amt} shells (50% of invested)?`,
+        );
+        if (!ok) return;
+        if (this.session.trySalvageDefense(id)) {
+          this.clearSelection();
+          this.refreshInventoryUi();
+          this.updateHud();
+        }
+      },
+      ac,
+    );
+    document.getElementById("defenseFocusBar")?.addEventListener(
+      "click",
+      (ev) => {
+        const t = (ev.target as HTMLElement | null)?.closest?.(
+          "[data-defense-focus-move]",
+        ) as HTMLElement | null;
+        const step = t?.dataset?.defenseFocusMove as
+          | DefenseMoveStep
+          | undefined;
+        if (!step) return;
+        ev.preventDefault();
+        const id = this.selectedDefenseId;
+        if (!id || this.session.getOutcome() !== "playing") return;
+        if (this.session.tryMoveDefenseStep(id, step)) {
+          this.selectionRangeCacheKey = null;
+          this.refreshInventoryUi();
+          this.updateHud();
+        }
       },
       ac,
     );
@@ -556,16 +642,19 @@ export class GameApp {
     group: THREE.Group,
     type: DefenseTypeKey,
     level: DefenseLevel,
+    emphasized = false,
   ): void {
     const attackR =
       type === "vibration_zone" || type === "ink_veil"
         ? auraRadiusTiles(type, level)
         : attackRangeTiles(type, level);
+    const primaryOp = emphasized ? 0.62 : 0.45;
+    const chainOp = emphasized ? 0.52 : 0.35;
     const primaryRing = makeRangeRingMesh(
       Math.max(0.04, attackR - 0.1),
       attackR + 0.1,
       COLORS.rangePreviewPrimary,
-      0.45,
+      primaryOp,
     );
     group.add(primaryRing);
     if (type === "arc_spine") {
@@ -574,7 +663,7 @@ export class GameApp {
         Math.max(0.04, chainR - 0.08),
         chainR + 0.08,
         COLORS.rangePreviewChain,
-        0.35,
+        chainOp,
       );
       group.add(chainRing);
     }
@@ -604,10 +693,16 @@ export class GameApp {
     this.towerHoverRangeGroup.visible = true;
   }
 
-  /** Left-click places towers; pause pan so clicks register immediately. */
+  /** Placement and defense focus: orbit pan only when idle (tile pick + camera explore). */
   private syncOrbitWithPlacement(): void {
-    const placing = this.placementType !== null;
-    this.orbitControls.enablePan = !placing;
+    this.updateOrbitPanEnabled();
+  }
+
+  private updateOrbitPanEnabled(): void {
+    const focused =
+      this.session.getOutcome() === "playing" &&
+      this.selectedDefenseId !== null;
+    this.orbitControls.enablePan = !this.placementType && !focused;
   }
 
   private selectDefense(id: string): void {
@@ -624,33 +719,88 @@ export class GameApp {
   }
 
   private refreshSelectedDefensePanel(): void {
-    const section = document.getElementById("section-selected-defense");
-    const titleEl = document.getElementById("selectedDefenseTitle");
-    const levelEl = document.getElementById("selectedDefenseLevel");
-    const costEl = document.getElementById("selectedDefenseCost");
+    const legacySel = document.getElementById(
+      "section-selected-defense",
+    ) as HTMLElement | null;
+    if (legacySel) legacySel.hidden = true;
+    this.refreshDefenseFocusBar();
+  }
+
+  private refreshDefenseFocusBar(): void {
+    const bar = document.getElementById("defenseFocusBar");
+    const pic = document.getElementById("defenseFocusPic");
+    const titleEl = document.getElementById("defenseFocusTitle");
+    const levelLine = document.getElementById("defenseFocusLevelLine");
+    const mechanicsEl = document.getElementById("defenseFocusMechanics");
+    const statsEl = document.getElementById("defenseFocusStats");
     const upgradeBtn = document.getElementById(
-      "selectedDefenseUpgrade",
+      "defenseFocusUpgrade",
     ) as HTMLButtonElement | null;
-    if (!section || !titleEl || !levelEl || !costEl || !upgradeBtn) return;
+    const downgradeBtn = document.getElementById(
+      "defenseFocusDowngrade",
+    ) as HTMLButtonElement | null;
+    const sellBtn = document.getElementById(
+      "defenseFocusSell",
+    ) as HTMLButtonElement | null;
+    if (
+      !bar ||
+      !pic ||
+      !titleEl ||
+      !levelLine ||
+      !mechanicsEl ||
+      !statsEl ||
+      !upgradeBtn ||
+      !downgradeBtn ||
+      !sellBtn
+    ) {
+      return;
+    }
 
     const sid = this.selectedDefenseId;
     const playing = this.session.getOutcome() === "playing";
     if (!sid || !playing) {
-      section.hidden = true;
+      bar.hidden = true;
       return;
     }
     const snap = this.session.map.getDefenses().find((d) => d.id === sid);
     if (!snap) {
-      section.hidden = true;
+      bar.hidden = true;
       return;
     }
-    section.hidden = false;
+
+    bar.hidden = false;
     const spec = buildPlacedDefenseTooltipSpec(snap);
+    const tint = DEFENSE_TOWER_COLOR[snap.type];
+    pic.style.background = `#${tint.toString(16).padStart(6, "0")}`;
+
     titleEl.textContent = spec.title;
-    levelEl.textContent = `Level ${snap.level} / 3`;
+    levelLine.textContent = `Level ${snap.level} / 3 · Δ ${spec.footer.gx}, ${spec.footer.gz}`;
+
+    mechanicsEl.replaceChildren();
+    for (const line of spec.mechanics) {
+      const li = document.createElement("li");
+      li.textContent = line;
+      mechanicsEl.appendChild(li);
+    }
+
+    statsEl.replaceChildren();
+    for (const row of spec.core) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "defense-focus-stat-row";
+      const label = document.createElement("span");
+      label.className = "defense-focus-stat-k";
+      label.textContent = row.label;
+      const val = document.createElement("span");
+      val.className = "defense-focus-stat-v";
+      if (row.tone === "accent") val.classList.add("defense-focus-stat-v--accent");
+      if (row.tone === "secondary") val.classList.add("defense-focus-stat-v--muted");
+      val.textContent = row.value;
+      rowEl.append(label, val);
+      statsEl.appendChild(rowEl);
+    }
+
     const shells = this.session.economy.getShells();
     if (snap.level >= 3) {
-      costEl.textContent = "Max tier.";
       upgradeBtn.disabled = true;
       upgradeBtn.textContent = "Max level";
     } else {
@@ -658,13 +808,23 @@ export class GameApp {
       const cost = new DefenseController(snap).upgradeShellCost(base);
       const c = cost ?? 0;
       const canAfford = cost !== null && shells >= cost;
-      costEl.textContent =
-        cost !== null
-          ? `Next tier: ${cost} shells (${canAfford ? "ready" : `need ${Math.max(0, c - shells)} more`})`
-          : "—";
       upgradeBtn.disabled = cost === null || !canAfford;
-      upgradeBtn.textContent = `Upgrade (${c} shells)`;
+      upgradeBtn.textContent =
+        cost !== null ? `Upgrade (${c} shells)` : "Upgrade";
     }
+
+    if (snap.level <= 1) {
+      downgradeBtn.disabled = true;
+      downgradeBtn.textContent = "Downgrade";
+    } else {
+      const ref = downgradeRefundForLevel(snap.type, snap.level) ?? 0;
+      downgradeBtn.disabled = false;
+      downgradeBtn.textContent = `Downgrade (+${ref} shells)`;
+    }
+
+    const salvage = salvageShellsForDefense(snap);
+    sellBtn.textContent = `Sell (+${salvage} shells)`;
+    sellBtn.disabled = false;
   }
 
   private updateSelectionRangeOverlay(): void {
@@ -682,11 +842,18 @@ export class GameApp {
       this.refreshSelectedDefensePanel();
       return;
     }
-    const key = `sel:${snap.id}:${snap.type}:${snap.level}`;
+    const emphasized =
+      this.selectedDefenseId !== null && this.session.getOutcome() === "playing";
+    const key = `sel:${snap.id}:${snap.type}:${snap.level}:e${emphasized ? 1 : 0}`;
     if (key !== this.selectionRangeCacheKey) {
       this.selectionRangeCacheKey = key;
       this.clearRangePreviewMeshes(this.selectionRangeGroup);
-      this.fillAttackRangePreview(this.selectionRangeGroup, snap.type, snap.level);
+      this.fillAttackRangePreview(
+        this.selectionRangeGroup,
+        snap.type,
+        snap.level,
+        emphasized,
+      );
     }
     const w = worldFromGrid(snap.position[0], snap.position[1], this.doc, 0.14);
     this.selectionRangeGroup.position.set(w.x, w.y, w.z);
@@ -946,7 +1113,11 @@ export class GameApp {
   private frame(): void {
     const dt = this.clock.getDelta();
     if (this.session.getOutcome() === "playing") {
-      this.session.tick(dt);
+      const focus =
+        this.selectedDefenseId !== null &&
+        this.session.getOutcome() === "playing";
+      const simDt = focus ? dt * DEFENSE_FOCUS_TICK_SCALE : dt;
+      this.session.tick(simDt);
     }
     this.syncDefenses();
     this.updateSelectionRangeOverlay();
@@ -963,8 +1134,66 @@ export class GameApp {
     if (this.session.getOutcome() !== "playing") {
       this.hideTowerHoverTip();
     }
+    this.syncDefenseFocusCamera(dt);
     this.orbitControls.update();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /**
+   * Ease orbit pivot (screen center) toward the selected defense and FOV in/out with smoothstep.
+   * Pan is disabled while focused so the look-at stays on the tower; D-pad moves the tower, pivot follows.
+   */
+  private syncDefenseFocusCamera(dt: number): void {
+    this.updateOrbitPanEnabled();
+
+    const playing = this.session.getOutcome() === "playing";
+    const id = this.selectedDefenseId;
+    const snap =
+      playing && id
+        ? this.session.map.getDefenses().find((d) => d.id === id)
+        : undefined;
+
+    const wantBlend = snap ? 1 : 0;
+    const step = 1 - Math.exp(
+      -DEFENSE_FOCUS_CAMERA_SMOOTH_RATE * Math.min(dt, 0.1),
+    );
+    this.defenseFocusViewBlend = THREE.MathUtils.lerp(
+      this.defenseFocusViewBlend,
+      wantBlend,
+      step,
+    );
+    const t = this.defenseFocusViewBlend;
+    const easeInOut = t * t * (3 - 2 * t);
+
+    if (snap) {
+      const p = worldFromGrid(
+        snap.position[0],
+        snap.position[1],
+        this.doc,
+        DEFENSE_FOCUS_LOOK_AT_Y,
+      );
+      this.tmpDefenseOrbitLookAt.set(p.x, p.y, p.z);
+    } else {
+      this.tmpDefenseOrbitLookAt.copy(this.orbitRestTarget);
+    }
+
+    this.orbitControls.target.lerpVectors(
+      this.orbitRestTarget,
+      this.tmpDefenseOrbitLookAt,
+      easeInOut,
+    );
+
+    const nextFov = THREE.MathUtils.lerp(
+      this.cameraFovBase,
+      this.cameraFovBase * DEFENSE_FOCUS_FOV_SCALE,
+      easeInOut,
+    );
+    if (Math.abs(nextFov - this.camera.fov) > 1e-5) {
+      this.camera.fov = nextFov;
+      this.camera.updateProjectionMatrix();
+    } else {
+      this.camera.fov = nextFov;
+    }
   }
 
   private syncEnemies(): void {

@@ -545,6 +545,250 @@
         border-color: rgba(62, 232, 255, 0.4);
       }
 
+      .defense-focus-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 12;
+        pointer-events: none;
+        padding: 14px 16px 18px;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(4, 10, 18, 0.88) 28%,
+          rgba(2, 8, 16, 0.94) 100%
+        );
+        border-top: 1px solid var(--panel-edge);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .defense-focus-bar__inner {
+        pointer-events: auto;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(200px, 1.2fr) auto minmax(120px, 0.45fr);
+        gap: 16px 20px;
+        align-items: end;
+      }
+
+      @media (max-width: 900px) {
+        .defense-focus-bar__inner {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .defense-focus-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--biolume);
+        background: rgba(12, 34, 58, 0.65);
+        border: 1px solid rgba(62, 232, 255, 0.28);
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .defense-focus-back:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .defense-focus-info {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+
+      .defense-focus-pic {
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        border: 2px solid rgba(62, 232, 255, 0.35);
+        box-shadow: 0 0 20px rgba(62, 232, 255, 0.15);
+      }
+
+      .defense-focus-title {
+        margin: 0 0 4px;
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--pulse);
+        letter-spacing: 0.04em;
+      }
+
+      .defense-focus-level {
+        margin: 0 0 8px;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        color: var(--mist);
+      }
+
+      .defense-focus-mechanics {
+        margin: 0 0 10px;
+        padding-left: 1.1em;
+        font-size: 0.7rem;
+        line-height: 1.45;
+        color: var(--mist);
+      }
+
+      .defense-focus-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 14px;
+      }
+
+      .defense-focus-stat-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 0.66rem;
+        padding: 6px 8px;
+        background: var(--biolume-soft);
+        border-radius: 6px;
+        border: 1px solid rgba(62, 232, 255, 0.14);
+      }
+
+      .defense-focus-stat-k {
+        color: var(--mist);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .defense-focus-stat-v {
+        font-family: var(--font-mono);
+        color: var(--biolume);
+        text-align: right;
+      }
+
+      .defense-focus-stat-v--accent {
+        color: var(--pulse);
+      }
+
+      .defense-focus-stat-v--muted {
+        opacity: 0.8;
+      }
+
+      .defense-focus-col--actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 180px;
+      }
+
+      .defense-focus-btn {
+        pointer-events: auto;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(138, 164, 184, 0.35);
+        background: rgba(12, 34, 58, 0.55);
+        color: var(--mist);
+      }
+
+      .defense-focus-btn:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .defense-focus-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .defense-focus-btn--primary {
+        background: linear-gradient(180deg, #153a5c 0%, #0d2844 100%);
+        border-color: var(--biolume);
+        color: var(--biolume);
+      }
+
+      .defense-focus-btn--primary:hover:not(:disabled) {
+        background: linear-gradient(180deg, #1a4a72 0%, #102f4d 100%);
+      }
+
+      .defense-focus-btn--danger:hover:not(:disabled) {
+        color: var(--danger);
+        border-color: rgba(255, 92, 108, 0.45);
+      }
+
+      .defense-focus-col--move {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .defense-focus-move-label {
+        font-size: 0.6rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--mist);
+      }
+
+      .defense-focus-dpad {
+        display: grid;
+        grid-template-columns: 44px 44px 44px;
+        grid-template-rows: 44px 44px 44px;
+        gap: 5px;
+        pointer-events: auto;
+      }
+
+      .defense-focus-dpad .dpad-btn {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        font-size: 1rem;
+        line-height: 1;
+        border-radius: 8px;
+        border: 1px solid rgba(62, 232, 255, 0.25);
+        background: rgba(6, 18, 36, 0.75);
+        color: var(--biolume);
+        cursor: pointer;
+      }
+
+      .defense-focus-dpad .dpad-btn:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .defense-focus-dpad .dpad-btn:hover {
+        background: rgba(62, 232, 255, 0.12);
+      }
+
+      .dpad-btn--up {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      .dpad-btn--left {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      .dpad-btn--right {
+        grid-column: 3;
+        grid-row: 2;
+      }
+      .dpad-btn--down {
+        grid-column: 2;
+        grid-row: 3;
+      }
+
       .wave-progress {
         pointer-events: none;
         margin-bottom: 14px;
@@ -2031,6 +2275,94 @@
         >
           ›
         </button>
+      </div>
+    </div>
+
+    <div
+      id="defenseFocusBar"
+      class="defense-focus-bar"
+      hidden
+      role="dialog"
+      aria-label="Defense focus"
+    >
+      <div class="defense-focus-bar__inner">
+        <div class="defense-focus-col defense-focus-col--info">
+          <button type="button" id="defenseFocusBack" class="defense-focus-back">
+            ‹ Back
+          </button>
+          <div class="defense-focus-info">
+            <div
+              id="defenseFocusPic"
+              class="defense-focus-pic"
+              aria-hidden="true"
+            ></div>
+            <div class="defense-focus-copy">
+              <h3 id="defenseFocusTitle" class="defense-focus-title"></h3>
+              <p id="defenseFocusLevelLine" class="defense-focus-level"></p>
+              <ul
+                id="defenseFocusMechanics"
+                class="defense-focus-mechanics"
+              ></ul>
+              <div id="defenseFocusStats" class="defense-focus-stats"></div>
+            </div>
+          </div>
+        </div>
+        <div class="defense-focus-col defense-focus-col--actions">
+          <button
+            type="button"
+            id="defenseFocusUpgrade"
+            class="defense-focus-btn defense-focus-btn--primary"
+          >
+            Upgrade
+          </button>
+          <button type="button" id="defenseFocusDowngrade" class="defense-focus-btn">
+            Downgrade
+          </button>
+          <button
+            type="button"
+            id="defenseFocusSell"
+            class="defense-focus-btn defense-focus-btn--danger"
+          >
+            Sell
+          </button>
+        </div>
+        <div class="defense-focus-col defense-focus-col--move">
+          <span class="defense-focus-move-label">Move</span>
+          <div class="defense-focus-dpad" role="group" aria-label="Move defense on grid">
+            <button
+              type="button"
+              class="dpad-btn dpad-btn--up"
+              data-defense-focus-move="up"
+              aria-label="Move defense one tile up (decrease Z)"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              class="dpad-btn dpad-btn--left"
+              data-defense-focus-move="left"
+              aria-label="Move defense one tile left"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              class="dpad-btn dpad-btn--right"
+              data-defense-focus-move="right"
+              aria-label="Move defense one tile right"
+            >
+              →
+            </button>
+            <button
+              type="button"
+              class="dpad-btn dpad-btn--down"
+              data-defense-focus-move="down"
+              aria-label="Move defense one tile down (increase Z)"
+            >
+              ↓
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     </div>

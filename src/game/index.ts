@@ -21,12 +21,21 @@ export {
   ENEMY_LEAK_DAMAGE,
 } from "./enemy-stats.js";
 export { spawnEnemyFromWaveGroup } from "./enemy-spawner.js";
-export { GameSession, type GameOutcome } from "./game-session.js";
+export {
+  GameSession,
+  type DefenseMoveStep,
+  type GameOutcome,
+} from "./game-session.js";
 export {
   ARMORY_DEFENSE_ORDER,
   DEFENSE_BUILD_COST_L1,
   buildCostL1,
 } from "./defense-build-costs.js";
+export {
+  downgradeRefundForLevel,
+  salvageShellsForDefense,
+  totalInvestedShells,
+} from "./defense-economy.js";
 export { MVP_ARC_SPINE_BUILD_COST, MVP_STARTING_SHELLS } from "./mvp-constants.js";
 export { MapController } from "./map-controller.js";
 export {
