@@ -1,66 +1,72 @@
 # Inventory HUD
 
-Right-side panel for **shell balance** and **buildable defenses**. It replaces the ad-hoc “select slot → side panel → Build” flow with a defense-first placement loop while keeping all spend/place rules in `src/game` (`GameSession`, `EconomyController`, `MapController`).
+**Board-first** layout: minimal **top-left strip** (citadel + shells), **right rail** for mission controls and a **collapsible defenses inventory**, **left slide-in drawer** for the selected placed defense (details, upgrade, salvage, targeting, move). Placement flow stays defense-first: pick type → range preview on the grid → commit; spend rules live in `GameSession`, `EconomyController`, `MapController`.
 
-## Layout (right rail)
+## Layout (`#gameHud` in `index.html`)
 
 | Region | Content |
 |--------|---------|
-| **Shells** | Current shells (and optionally lifetime earned for meta/progression UI). Same canonical value as `EconomyController.getShells()` / top HUD. |
-| **Defenses** | One entry per purchasable type (see `DefenseTypeKey` in `types.ts`). MVP: only **Arc Spine** is implemented for purchase; others can appear **locked** with copy or be hidden until `tryPurchase*` exists. |
+| **Top-left (`#hudMinibar`)** | Citadel HP (`#statCastle`, `#citadelHpTrack`), shells (`#statShells`), optional hotkey hint (`#hudHotkeyHint` while playing). |
+| **Right rail (`#hudRightRail`)** | Tide (`#statTide`), wave progress (`#waveProgressHost`), speed (`#hudSpeed`), **Send wave** (`#sendWave`), **Leave mission** (`#btnMainMenu`). **Defenses toggle** (`#btnDefensesToggle`, `aria-expanded`, controls `#section-armory`). **Armory** (`#section-armory`): placement copy lives in the floating dock; **inventory grid** (`#defenseInventoryGrid`) of defense cards. |
+| **Placement dock (`#placementDock`, bottom center)** | Shown only while a defense **type** is selected for placement: hint (`#placementHint`), **Cancel placement** (`#invCancel`). Visible even when the armory panel is **collapsed** so the player is never stranded. |
+| **Left drawer** | **Backdrop** (`#defenseDetailBackdrop`) + **panel** (`#defenseDetailDrawer`): opens when a **placed** defense is focused (tower tap). Details, **Targeting**, **Upgrade**, **Salvage**, **Dismiss**, D-pad **Move**. Closes on backdrop tap, **Dismiss**, **Escape** (clears focus), or when the tower is removed. |
 
-Visual treatment should match existing deep-sea HUD: frosted panel, readable on dark 3D view (`docs/economy.md` counter guidance is a good baseline).
+### Breakpoints
+
+- **Wide (default desktop):** inventory grid **2 cards per row**; armory defaults **expanded** unless the user has stored a preference in `localStorage` (`deepSeaArmoryOpen`: `"1"` / `"0"`).
+- **Narrow (`max-width: 720px`):** **1 card per row**, **compact** card density (horizontal thumb + text); armory defaults **collapsed** on first visit; same `localStorage` key overrides.
+
+### Defenses toggle + placement
+
+- Collapsing the armory **does not** cancel placement. **Cancel** remains on `#placementDock`, and **Escape** still clears placement.
+- Expanding the armory is optional before picking a card; keyboard **1–6** still selects defenses when the match is **playing**.
+
+## Inventory defense card
+
+Each card (`[data-defense-card]`) includes:
+
+- **1:1** icon/thumbnail (tower glyph),
+- **Title** (`ARMORY_DISPLAY_NAME`),
+- **Main perk** (one line from `ARMORY_CARD_PERK` in `src/game/defense-armory-meta.ts`),
+- **Cost** accent (L1 build cost from `buildCostL1`).
+
+**Click / tap** the card (`.pick`, `data-defense`) enters placement mode like the legacy hotbar. **Hotkeys 1–6** map to `ARMORY_DEFENSE_ORDER` via `hotbarIndexFromKey` (`src/game/hotbar-key.ts`).
+
+## Keyboard
+
+- **1–6** select/toggle the matching defense (same as clicking the card): only while outcome is **playing**; ignored with Ctrl/Cmd/Alt and on key repeat.
 
 ## Interaction model
 
 ### 1. Idle
 
-- Panel shows balances and defense list.
-- Board has normal camera/orbit; no placement ghost.
+- Right rail shows mission controls; armory may be collapsed (narrow default).
+- Left drawer is closed; board has normal orbit unless a tower is focused (camera eases to focused tower).
 
-### 2. Select a defense (enter placement mode)
+### 2. Select a defense (placement mode)
 
-- **Click** a defense row/card → that type becomes the active **placement affordance**.
-- Optional: highlight the selected card; dim others.
-- Cursor or label indicates “place on grid.”
+- **Click** a card or press **1–6** → active placement type; selected card `aria-pressed="true"`.
+- **Placement dock** appears (hint + cancel).
+- Range preview follows pointer over valid empty build slots (see `GameApp` + `attackRangeTiles`).
 
-### 3. Hover the grid (preview)
+### 3–5. Hover, confirm, cancel
 
-While a defense is selected:
+Unchanged from previous spec: valid cell shows rings; click commits via `tryPurchaseDefenseL1` (or type-specific purchase); **Escape**, cancel, or same-type toggle clears placement.
 
-- **Raycast** build slots (only cells where `MapController.isBuildSlotPosition` is true and slot is empty).
-- **Valid slot under cursor:** show a **range preview** for that defense at **level 1** (or selected tier if upgrades are exposed later).
-  - Primary engagement radius: use `attackRangeTiles(type, level)` from `damage-resolver.ts` (e.g. Arc Spine L1 = **3** tiles).
-  - For **Arc Spine**, optionally show a secondary ring or tooltip for **chain search radius** (tile Euclidean radius from `DefenseController` tuning: L1 chain hop radius **2** tiles) so players understand clustering value.
-- **Invalid cell** (path, occupied, out of map): no ring, or a muted “blocked” state.
+### Disabled / insufficient funds
 
-Preview is **read-only**; it must not mutate `GameSession`.
+- Card button **disabled** when not playing or when shells insufficient (unless already selected for placement). Status is reflected in `aria-label`.
 
-### 4. Confirm placement (economy debit)
+### Defense focus — drawer + grid move
 
-- **Click** a valid empty build slot while a defense is selected → call the appropriate **`GameSession.tryPurchase…`** API (today: `tryPurchaseArcSpineL1`).
-- **Debit rule:** shells are spent only when placement succeeds. Failed placement must not leave the economy inconsistent (session already refunds if `placeDefense` fails after spend).
-- On success: exit placement mode or keep the same defense selected for rapid multi-build (product choice; document the chosen behavior in UI polish pass).
-
-### 5. Cancel placement
-
-- Clear selection when the user presses **Escape**, clicks a **cancel** control, or clicks the same defense again to toggle off.
-- Clearing selection hides range preview and restores default pointer behavior.
-
-## Disabled / insufficient funds
-
-- If `getShells()` < build cost (MVP Arc Spine build: `MVP_ARC_SPINE_BUILD_COST` = **30**), the defense control should be **disabled** or show insufficient cost; clicking must not enter placement mode (or enters mode but never allows confirm — prefer disabling for clarity).
-
-## Defense focus — grid move
-
-When a placed defense is focused (bottom bar), **Move** / D-pad steps the tower by one tile using `GameSession.tryMoveDefenseStep` → `MapController.tryMoveDefenseTo`. Target cells use the same rules as new builds (`isBuildSlotPosition`, not occupied). No shell cost. Cooldown resets on successful move (same as reposition in sim). The main camera’s vertical FOV eases to half the normal value while the orbit pivot eases to the tower’s world position (screen center); both ease back on dismiss. Orbit pan is disabled during focus so the look-at stays aligned (tile **Move** still repositions the defense).
+When a placed defense is focused, the **left drawer** opens. **Move** D-pad calls `GameSession.tryMoveDefenseStep`. **Upgrade** → `tryUpgradeDefense`; **Salvage** → `trySalvageDefense`; **Targeting** cycles `cycleDefenseTargetMode`. Camera FOV/orbit behavior is unchanged (`GameApp.syncDefenseFocusCamera`).
 
 ## Architecture notes
 
-- **Do not** duplicate wave, targeting, or damage rules in the HUD. Range rings must derive from the same helpers the sim uses (`attackRangeTiles`, map slot checks via `MapController`).
-- **Orchestration:** `GameApp` (or a dedicated UI module) reads session state, drives DOM/WebGL overlays, and calls `GameSession` for purchases only.
-- **Tests:** add Vitest coverage for any new session APIs; keep preview math tested indirectly via existing `attackRangeTiles` / map tests where possible.
+- Do **not** duplicate combat math in HUD markup — costs and stats come from `buildCostL1`, `DefenseController.upgradeShellCost`, `buildPlacedDefenseTooltipSpec`, etc.
+- **Orchestration:** `GameApp` drives DOM and calls `GameSession` only for mutations.
+- **Accessibility:** defenses toggle uses `aria-controls` / `aria-expanded`; drawer uses `aria-modal` when open and focus moves to the dismiss control; respect `prefers-reduced-motion` for slide transitions.
 
-## Relation to current MVP UI
+## Relation to MVP UI
 
-Current flow (`index.html` + `GameApp`): pick slot → `#panel` → **BUILD**. This spec moves **defense choice first**, then slot + range preview, then commit. Both must converge on the same session methods so balance stays single-sourced.
+`GameApp` + `index.html`: Bloons-style rails with collapsible armory and left detail drawer; keyboard shortcuts preserved from the hotbar era.

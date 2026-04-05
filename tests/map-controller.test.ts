@@ -1,12 +1,7 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { MapController } from "../src/game/map-controller.js";
 import type { MapDocument } from "../src/game/map-types.js";
 import type { GridPos } from "../src/game/types.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 interface MapControllerPrivate {
   posKeyFromGrid(pos: GridPos): string;
@@ -229,23 +224,32 @@ describe("MapController", () => {
       snap[0]!.position = [9, 9];
       expect(m.getDefenses()[0]!.position).toEqual([1, 1]);
     });
+
+    it("trySetDefenseTargetMode updates in-place", () => {
+      const m = new MapController(minimalMap());
+      m.placeDefense({
+        id: "d1",
+        type: "arc_spine",
+        position: [1, 1],
+        level: 1,
+        targetMode: "first",
+      });
+      expect(m.trySetDefenseTargetMode("d1", "closest")).toBe(true);
+      expect(m.getDefenses()[0]!.targetMode).toBe("closest");
+      expect(m.trySetDefenseTargetMode("missing", "last")).toBe(false);
+    });
   });
 
-  describe("trench_gate.json", () => {
-    it("loads sample map and resolves paths/spawns", () => {
-      const raw = readFileSync(
-        join(__dirname, "../data/maps/trench_gate.json"),
-        "utf8",
-      );
-      const doc = JSON.parse(raw) as MapDocument;
-      const m = new MapController(doc);
+  describe("minimal map fixture", () => {
+    it("resolves paths, spawns, and waves", () => {
+      const m = new MapController(minimalMap());
 
-      expect(m.id).toBe("trench_gate");
-      expect(m.getSpawnPoint("spawn_a")?.pathIds).toEqual(["path_main"]);
-      expect(m.getPathWaypoints("path_main")?.[0]).toEqual([0, 0]);
+      expect(m.id).toBe("test");
+      expect(m.getSpawnPoint("s1")?.pathIds).toEqual(["p1"]);
+      expect(m.getPathWaypoints("p1")?.[0]).toEqual([0, 0]);
       expect(m.getBuildSlots().length).toBeGreaterThan(0);
       expect(m.getWaveIndex(1)).toBe(0);
-      expect(m.getDecorations().length).toBeGreaterThan(0);
+      expect(m.getDecorations().length).toBe(0);
     });
   });
 });

@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import tutorialShallows from "../data/maps/tutorial_shallows.json";
-import type { MapDocument } from "../src/game/map-types.js";
 import {
   cellsAlongSegment,
   gridCellKey,
@@ -10,9 +8,14 @@ import {
 } from "../src/game/path-cells.js";
 
 describe("pathCellKeySet", () => {
-  it("includes spawn and corners for tutorial shallows path", () => {
-    const doc = tutorialShallows as MapDocument;
-    const waypoints = doc.paths[0]!.waypoints;
+  it("includes cells along an orthogonal polyline", () => {
+    const waypoints = [
+      [0, 0],
+      [4, 0],
+      [4, 4],
+      [7, 4],
+      [7, 11],
+    ] as const;
     const set = pathCellKeySet(waypoints);
     expect(set.has(gridCellKey(0, 0))).toBe(true);
     expect(set.has(gridCellKey(4, 0))).toBe(true);
@@ -49,9 +52,15 @@ describe("cellsAlongSegment", () => {
 });
 
 describe("pathCellVisualKind", () => {
-  it("classifies ends, straight runs, and junctions on tutorial shallows path", () => {
-    const doc = tutorialShallows as MapDocument;
-    const set = pathCellKeySet(doc.paths[0]!.waypoints);
+  it("classifies ends, straight runs, and corners on an orthogonal path", () => {
+    const waypoints = [
+      [0, 0],
+      [4, 0],
+      [4, 4],
+      [7, 4],
+      [7, 11],
+    ] as const;
+    const set = pathCellKeySet(waypoints);
     expect(pathCellVisualKind(0, 0, set)).toBe("end");
     expect(pathCellVisualKind(7, 11, set)).toBe("end");
     expect(pathCellVisualKind(2, 0, set)).toBe("straight");

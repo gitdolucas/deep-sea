@@ -1,0 +1,494 @@
+{
+  "id": "map_05_null_depths",
+  "name": "Null Depths",
+  "description": "Three trench mouths pour into one ridgeline—then the abyss answers twice. Nightmare cadence; your citadel is barely a candle in the Murk.",
+  "difficulty": "nightmare",
+  "startingShells": 65,
+  "gridSize": [16, 22],
+  "castle": {
+    "position": [7, 21],
+    "hp": 10,
+    "size": [1, 1]
+  },
+  "spawnPoints": [
+    {
+      "id": "spawn_left",
+      "position": [0, 0],
+      "pathIds": ["path_left"]
+    },
+    {
+      "id": "spawn_right",
+      "position": [15, 0],
+      "pathIds": ["path_right"]
+    },
+    {
+      "id": "spawn_center",
+      "position": [7, 0],
+      "pathIds": ["path_center"]
+    }
+  ],
+  "paths": [
+    {
+      "id": "path_left",
+      "waypoints": [
+        [0, 0],
+        [0, 12],
+        [5, 12],
+        [5, 16],
+        [7, 16],
+        [7, 21]
+      ]
+    },
+    {
+      "id": "path_right",
+      "waypoints": [
+        [15, 0],
+        [15, 11],
+        [10, 11],
+        [10, 16],
+        [8, 16],
+        [7, 16],
+        [7, 21]
+      ]
+    },
+    {
+      "id": "path_center",
+      "waypoints": [
+        [7, 0],
+        [7, 8],
+        [11, 8],
+        [11, 16],
+        [8, 16],
+        [7, 16],
+        [7, 21]
+      ]
+    }
+  ],
+  "buildSlots": [
+    { "position": [1, 5], "type": "standard" },
+    { "position": [2, 9], "type": "standard" },
+    { "position": [3, 14], "type": "standard" },
+    { "position": [4, 7], "type": "standard" },
+    { "position": [6, 10], "type": "standard" },
+    { "position": [14, 5], "type": "standard" },
+    { "position": [13, 9], "type": "standard" },
+    { "position": [12, 14], "type": "standard" },
+    { "position": [14, 7], "type": "standard" },
+    { "position": [9, 4], "type": "standard" },
+    { "position": [10, 6], "type": "standard" },
+    { "position": [8, 11], "type": "standard" },
+    { "position": [12, 19], "type": "standard" },
+    { "position": [4, 19], "type": "standard" },
+    { "position": [5, 20], "type": "standard" },
+    { "position": [9, 20], "type": "standard" },
+    { "position": [2, 18], "type": "standard" },
+    { "position": [13, 18], "type": "standard" }
+  ],
+  "defenses": [],
+  "waves": [
+    {
+      "wave": 1,
+      "prepTime": 20,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 5,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1.4,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 5,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1.4,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1.5,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 2,
+          "delay": 6,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "prepTime": 16,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1.6,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 6,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1.2,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 6,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1.2,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1.6,
+          "delay": 4,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 3,
+      "prepTime": 15,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 7,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1.1,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1.4,
+          "delay": 3,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 7,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1.1,
+          "delay": 1,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1.4,
+          "delay": 5,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 4,
+      "prepTime": 14,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 8,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.05,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 5,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1.2,
+          "delay": 4,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 8,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.05,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 5,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1.2,
+          "delay": 3,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 5,
+      "prepTime": 13,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "razoreel",
+          "count": 6,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1.1,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 9,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 0.9,
+          "delay": 2,
+          "hpMultiplier": 1.05,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 9,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 0.9,
+          "delay": 2,
+          "hpMultiplier": 1.05,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 5,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1.1,
+          "delay": 6,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 6,
+      "prepTime": 22,
+      "isBoss": true,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 10,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 0.85,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 10,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 0.85,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 5,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1.2,
+          "delay": 8,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1,
+          "delay": 14,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 7,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "razoreel",
+          "count": 7,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 10,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 0.85,
+          "delay": 1,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 6,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1,
+          "delay": 3,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 8,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 12,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 0.75,
+          "delay": 0,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 8,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 0.95,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 12,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 0.75,
+          "delay": 1,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 9,
+      "prepTime": 24,
+      "isBoss": true,
+      "groups": [
+        {
+          "enemyType": "razoreel",
+          "count": 6,
+          "spawnId": "spawn_left",
+          "pathId": "path_left",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 12,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 0.75,
+          "delay": 0,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 6,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1,
+          "delay": 4,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1,
+          "delay": 16,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    }
+  ],
+  "decorations": []
+}

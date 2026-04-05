@@ -1,0 +1,93 @@
+{
+  "id": "map_01_tutorial",
+  "name": "Tidebreak Shoals",
+  "description": "A single narrow channel and gentle waves. Learn paths, build slots, and your first Arc Spine.",
+  "difficulty": "normal",
+  "startingShells": 50,
+  "gridSize": [7, 11],
+  "castle": {
+    "position": [6, 10],
+    "hp": 20,
+    "size": [1, 1]
+  },
+  "spawnPoints": [
+    {
+      "id": "spawn_trench",
+      "position": [0, 0],
+      "pathIds": ["path_main"]
+    }
+  ],
+  "paths": [
+    {
+      "id": "path_main",
+      "waypoints": [
+        [0, 0],
+        [4, 0],
+        [4, 7],
+        [6, 7],
+        [6, 10]
+      ]
+    }
+  ],
+  "buildSlots": [
+    { "position": [3, 2], "type": "standard" },
+    { "position": [5, 2], "type": "standard" },
+    { "position": [3, 5], "type": "standard" },
+    { "position": [5, 5], "type": "standard" }
+  ],
+  "defenses": [],
+  "waves": [
+    {
+      "wave": 1,
+      "prepTime": 18,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_trench",
+          "pathId": "path_main",
+          "interval": 2,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "prepTime": 15,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 6,
+          "spawnId": "spawn_trench",
+          "pathId": "path_main",
+          "interval": 1.5,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 3,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 8,
+          "spawnId": "spawn_trench",
+          "pathId": "path_main",
+          "interval": 1.2,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    }
+  ],
+  "decorations": []
+}

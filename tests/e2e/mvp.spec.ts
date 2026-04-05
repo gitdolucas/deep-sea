@@ -5,51 +5,35 @@ async function beginMission(page: Page): Promise<void> {
   await page.locator("#btnPlay").click();
 }
 
-test("MVP HUD shows starting shells and castle HP in sidebar", async ({
-  page,
-}) => {
+test("MVP HUD shows shells and castle HP", async ({ page }) => {
   await beginMission(page);
-  await expect(page.locator("#statShells")).toContainText("88");
-  await expect(page.locator("#statCastle")).toContainText("20");
+  await expect(page.locator("#statShells")).toHaveText(/\d+/);
   await expect(page.locator("#statCastle")).toContainText("/");
 });
 
-test("sidebar shows armory and send wave", async ({ page }) => {
+test("in-game HUD shows shells, speed, send wave, wave progress", async ({
+  page,
+}) => {
   await beginMission(page);
-  await expect(page.locator("#inventory")).toBeVisible();
-  await expect(page.locator("#statShells")).toContainText("88");
-  await expect(page.locator("#invArcSpine")).toBeVisible();
+  await expect(page.locator("#gameHud")).toBeVisible();
+  await expect(page.locator("#statShells")).toHaveText(/\d+/);
   await expect(page.locator("#sendWave")).toBeVisible();
-  await expect(
-    page.locator('[data-defense-status="arc_spine"]'),
-  ).toContainText(/Available|shells/);
+  await expect(page.locator("#hudSpeed")).toBeVisible();
+  await expect(page.locator("#section-armory")).toHaveCount(1);
+  await expect(page.locator("#defenseInventoryGrid")).toBeVisible();
   await expect(page.locator("#waveProgressTrack")).toBeVisible();
   await expect(page.locator("#waveProgressFraction")).toHaveText(/\d+\s*\/\s*\d+/);
 });
 
-test("main menu lists levels and starts selected map", async ({ page }) => {
+test("main menu starts placeholder map when no levels bundled", async ({
+  page,
+}) => {
   await page.goto("/");
-  await expect(page.locator('input[name="levelId"]')).toHaveCount(5);
-  await expect(
-    page.locator('input[name="levelId"][value="tutorial_shallows"]'),
-  ).toBeChecked();
-  await page.locator('input[name="levelId"][value="trench_gate"]').click();
+  await expect(page.locator('input[name="levelId"]')).toHaveCount(0);
   await page.locator("#btnPlay").click();
   await expect(page.locator("#gameScreen")).toHaveAttribute(
     "data-active-map",
-    "trench_gate",
-  );
-});
-
-test("main menu can start hydra convergence map", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .locator('input[name="levelId"][value="hydra_convergence"]')
-    .click();
-  await page.locator("#btnPlay").click();
-  await expect(page.locator("#gameScreen")).toHaveAttribute(
-    "data-active-map",
-    "hydra_convergence",
+    "minimal_placeholder",
   );
 });
 
@@ -58,7 +42,7 @@ test("main menu and quit confirmation return to home", async ({ page }) => {
   await expect(page.locator("#mainMenu")).toBeVisible();
   await expect(page.locator("#gameScreen")).toBeHidden();
   await page.locator("#btnPlay").click();
-  await expect(page.locator("#inventory")).toBeVisible();
+  await expect(page.locator("#gameHud")).toBeVisible();
   await page.locator("#btnMainMenu").click();
   await expect(page.locator("#quitDialog")).toBeVisible();
   await page.locator("#quitConfirmNo").click();

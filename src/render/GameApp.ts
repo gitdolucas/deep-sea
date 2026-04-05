@@ -1,26 +1,28 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameSession, type DefenseMoveStep } from "../game/game-session.js";
 import {
-  arcSpineChainSearchRadius,
   DefenseController,
+  arcSpineChainSearchRadius,
 } from "../game/defense-controller.js";
 import {
   attackRangeTiles,
   auraRadiusTiles,
   fireIntervalFor,
 } from "../game/damage-resolver.js";
-import { buildPlacedDefenseTooltipSpec } from "../game/placed-defense-tooltip.js";
-import { mountTowerHoverTip } from "./tower-hover-dom.js";
 import {
   ARMORY_DEFENSE_ORDER,
   buildCostL1,
 } from "../game/defense-build-costs.js";
 import {
-  downgradeRefundForLevel,
-  salvageShellsForDefense,
-} from "../game/defense-economy.js";
+  ARMORY_CARD_PERK,
+  ARMORY_DISPLAY_NAME,
+} from "../game/defense-armory-meta.js";
+import { salvageShellsForDefense } from "../game/defense-economy.js";
+import { buildPlacedDefenseTooltipSpec } from "../game/placed-defense-tooltip.js";
+import { hotbarIndexFromKey } from "../game/hotbar-key.js";
 import type {
   DefenseLevel,
   DefenseSnapshot,
@@ -58,11 +60,19 @@ import {
 } from "./tideheart-laser-beam-fx.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
 import {
-  applyVibrationZoneAuraRadius,
-  createVibrationZoneAuraMesh,
-  updateVibrationZoneAuraMaterial,
-} from "./vibration-zone-aura.js";
+  applyVibrationDomeTuningToMesh,
+  getVibrationDomeTuning,
+} from "./vibration-dome-tuning.js";
+import {
+  applyVibrationZoneDomeRadius,
+  createVibrationZoneDomeMesh,
+  syncVibrationDomeGeometryAndEdges,
+  syncVibrationZoneDomeTierMaterial,
+  updateVibrationZoneDomeMaterial,
+  vibrationDomeDebugWireframeFromUrl,
+} from "./vibration-zone-dome.js";
 import { GAMEPLAY_TIPS } from "./gameplay-tips.js";
+import { defenseFocusCardIconInnerHtml } from "./defense-focus-card-icons.js";
 
 type BarBillboard = {
   group: THREE.Group;
@@ -114,7 +124,7 @@ function makeBarBillboard(
 
 function disposeObject3DTree(root: THREE.Object3D): void {
   root.traverse((obj) => {
-    if (obj instanceof THREE.Mesh) {
+    if (obj instanceof THREE.Mesh || obj instanceof THREE.Line) {
       obj.geometry.dispose();
       const mat = obj.material;
       if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
@@ -148,6 +158,15 @@ const DEFENSE_TOWER_COLOR: Record<DefenseTypeKey, number> = {
   ink_veil: 0x7b2fff,
 };
 
+/** Wired from main: post-mission navigation (overlay buttons). */
+export type MissionEndNavigation = {
+  retry: () => void;
+  nextMap: () => void;
+  menu: () => void;
+  /** True when another level exists after the current map in the campaign list. */
+  hasNextMap: boolean;
+};
+
 function makeRangeRingMesh(
   innerR: number,
   outerR: number,
@@ -178,6 +197,8 @@ export class GameApp {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private clock = new THREE.Clock();
+  /** Bottom-bar “CURRENT”: 2× simulation tick while playing. */
+  private simSpeedMultiplier: 1 | 2 = 1;
   private cellPickEntries: { mesh: THREE.Mesh; gx: number; gz: number }[] =
     [];
   private readonly rangePreviewGroup = new THREE.Group();
@@ -198,8 +219,8 @@ export class GameApp {
       root: THREE.Group;
       tower: THREE.Mesh;
       bar: BarBillboard;
-      vibrationAura?: THREE.Mesh;
-      vibrationAuraKey?: string;
+      vibrationDome?: THREE.Mesh;
+      vibrationDomeKey?: string;
     }
   >();
   private chainLines: { obj: THREE.LineSegments; t: number; mat: THREE.ShaderMaterial }[] =
@@ -225,7 +246,6 @@ export class GameApp {
   private slotPointerStart: { x: number; y: number } | null = null;
   /** For shell stat row flash when balance changes. */
   private prevShells: number | null = null;
-  private lastTowerTipDefenseId: string | null = null;
   private gameplayTipsTimer: ReturnType<typeof setInterval> | null = null;
   private gameplayTipIndex = 0;
   /** Orbit pivot when not focused on a defense (map center). */
@@ -233,19 +253,39 @@ export class GameApp {
   private readonly tmpDefenseOrbitLookAt = new THREE.Vector3();
   /** 0 = map rest framing, 1 = defense focus (drives eased FOV + orbit pivot). */
   private defenseFocusViewBlend = 0;
+  private readonly missionEndNav: MissionEndNavigation | null;
+  private readonly armoryOpenStorageKey = "deepSeaArmoryOpen";
+  private armoryExpanded = true;
+  private armoryGridBuilt = false;
+  private armoryNarrowMql: MediaQueryList | null = null;
+  /** Cached drawer UI key so we do not rebuild DOM every frame. */
+  private defenseDrawerUiCache: string | null = null;
 
-  constructor(doc: MapDocument, mount?: HTMLElement) {
+  constructor(
+    doc: MapDocument,
+    mount?: HTMLElement,
+    missionEndNav?: MissionEndNavigation | null,
+  ) {
     this.doc = doc;
     this.session = new GameSession(doc);
     this.mount = mount ?? document.body;
+    this.missionEndNav = missionEndNav ?? null;
+    this.armoryNarrowMql = window.matchMedia("(max-width: 720px)");
+    this.armoryExpanded = this.readArmoryExpandedInitial();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    /** Internal framebuffer for MeshPhysicalMaterial transmission (three manages RT size). */
+    this.renderer.transmissionResolutionScale = 0.72;
     this.mount.appendChild(this.renderer.domElement);
 
     this.scene.background = new THREE.Color(COLORS.background);
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0).texture;
+    pmrem.dispose();
+
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.45));
     const sun = new THREE.DirectionalLight(0xffffff, 0.85);
     sun.position.set(8, 18, 10);
@@ -315,6 +355,16 @@ export class GameApp {
       ac,
     );
     window.addEventListener("resize", () => this.onResize(), ac);
+    window.addEventListener(
+      "orientationchange",
+      () => window.setTimeout(() => this.onResize(), 150),
+      ac,
+    );
+    window.visualViewport?.addEventListener(
+      "resize",
+      () => this.onResize(),
+      ac,
+    );
     this.renderer.domElement.addEventListener(
       "pointerdown",
       (ev) => this.onSlotPointerDown(ev),
@@ -344,103 +394,9 @@ export class GameApp {
       () => this.onSendWave(),
       ac,
     );
-    document.getElementById("section-armory")?.addEventListener(
+    document.getElementById("hudSpeed")?.addEventListener(
       "click",
-      (ev) => {
-        const t = (ev.target as HTMLElement | null)?.closest?.(
-          "[data-defense]",
-        ) as HTMLElement | null;
-        const key = t?.dataset?.defense as DefenseTypeKey | undefined;
-        if (
-          key &&
-          ARMORY_DEFENSE_ORDER.includes(key) &&
-          t?.classList.contains("pick")
-        ) {
-          ev.preventDefault();
-          this.onArmoryDefenseClick(key);
-        }
-      },
-      ac,
-    );
-    document.getElementById("invCancel")?.addEventListener(
-      "click",
-      () => this.clearPlacementMode(),
-      ac,
-    );
-    document.getElementById("defenseFocusBack")?.addEventListener(
-      "click",
-      (ev) => {
-        ev.preventDefault();
-        this.clearSelection();
-      },
-      ac,
-    );
-    document.getElementById("defenseFocusUpgrade")?.addEventListener(
-      "click",
-      (ev) => {
-        ev.preventDefault();
-        const id = this.selectedDefenseId;
-        if (!id || this.session.getOutcome() !== "playing") return;
-        if (this.session.tryUpgradeDefense(id)) {
-          this.refreshInventoryUi();
-          this.updateHud();
-        }
-      },
-      ac,
-    );
-    document.getElementById("defenseFocusDowngrade")?.addEventListener(
-      "click",
-      (ev) => {
-        ev.preventDefault();
-        const id = this.selectedDefenseId;
-        if (!id || this.session.getOutcome() !== "playing") return;
-        if (this.session.tryDowngradeDefense(id)) {
-          this.refreshInventoryUi();
-          this.updateHud();
-        }
-      },
-      ac,
-    );
-    document.getElementById("defenseFocusSell")?.addEventListener(
-      "click",
-      (ev) => {
-        ev.preventDefault();
-        const id = this.selectedDefenseId;
-        if (!id || this.session.getOutcome() !== "playing") return;
-        const snap = this.session.map.getDefenses().find((d) => d.id === id);
-        if (!snap) return;
-        const amt = salvageShellsForDefense(snap);
-        const ok = window.confirm(
-          `Salvage this defense for ${amt} shells (50% of invested)?`,
-        );
-        if (!ok) return;
-        if (this.session.trySalvageDefense(id)) {
-          this.clearSelection();
-          this.refreshInventoryUi();
-          this.updateHud();
-        }
-      },
-      ac,
-    );
-    document.getElementById("defenseFocusBar")?.addEventListener(
-      "click",
-      (ev) => {
-        const t = (ev.target as HTMLElement | null)?.closest?.(
-          "[data-defense-focus-move]",
-        ) as HTMLElement | null;
-        const step = t?.dataset?.defenseFocusMove as
-          | DefenseMoveStep
-          | undefined;
-        if (!step) return;
-        ev.preventDefault();
-        const id = this.selectedDefenseId;
-        if (!id || this.session.getOutcome() !== "playing") return;
-        if (this.session.tryMoveDefenseStep(id, step)) {
-          this.selectionRangeCacheKey = null;
-          this.refreshInventoryUi();
-          this.updateHud();
-        }
-      },
+      () => this.toggleSimSpeed(),
       ac,
     );
     document.getElementById("gameplayTipsPrev")?.addEventListener(
@@ -459,12 +415,79 @@ export class GameApp {
       },
       ac,
     );
+    if (missionEndNav) {
+      document.getElementById("overlayBtnNext")?.addEventListener(
+        "click",
+        () => missionEndNav.nextMap(),
+        ac,
+      );
+      document.getElementById("overlayBtnRetry")?.addEventListener(
+        "click",
+        () => missionEndNav.retry(),
+        ac,
+      );
+      document.getElementById("overlayBtnMenu")?.addEventListener(
+        "click",
+        () => missionEndNav.menu(),
+        ac,
+      );
+    }
+
+    this.ensureDefenseInventoryGrid();
+    this.applyArmoryExpandedUi();
+    document.getElementById("btnDefensesToggle")?.addEventListener(
+      "click",
+      () => this.toggleArmoryExpanded(),
+      ac,
+    );
+    document.getElementById("invCancel")?.addEventListener(
+      "click",
+      () => this.clearPlacementMode(),
+      ac,
+    );
+    document.getElementById("defenseDetailBackdrop")?.addEventListener(
+      "click",
+      () => this.clearSelection(),
+      ac,
+    );
+    document.getElementById("defenseDetailDismiss")?.addEventListener(
+      "click",
+      () => this.clearSelection(),
+      ac,
+    );
+    document.getElementById("defenseDetailTargeting")?.addEventListener(
+      "click",
+      () => this.onDefenseDetailTargeting(),
+      ac,
+    );
+    document.getElementById("defenseDetailUpgrade")?.addEventListener(
+      "click",
+      () => this.onDefenseDetailUpgrade(),
+      ac,
+    );
+    document.getElementById("defenseDetailSalvage")?.addEventListener(
+      "click",
+      () => this.onDefenseDetailSalvage(),
+      ac,
+    );
+    for (const btn of document.querySelectorAll("[data-dpad]")) {
+      btn.addEventListener(
+        "click",
+        (ev) => {
+          const step = (ev.currentTarget as HTMLElement).dataset
+            .dpad as DefenseMoveStep;
+          this.onDefenseDetailDpad(step);
+        },
+        ac,
+      );
+    }
+
     this.refreshInventoryUi();
   }
 
   start(): void {
     this.clock.start();
-    this.startGameplayTips();
+    this.stopGameplayTips();
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
@@ -597,7 +620,15 @@ export class GameApp {
       } else {
         this.clearSelection();
       }
+      return;
     }
+    if (ev.repeat) return;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (this.session.getOutcome() !== "playing") return;
+
+    const idx = hotbarIndexFromKey(ev.key);
+    if (idx === null || idx >= ARMORY_DEFENSE_ORDER.length) return;
+    this.onArmoryDefenseClick(ARMORY_DEFENSE_ORDER[idx]!);
   }
 
   private onArmoryDefenseClick(type: DefenseTypeKey): void {
@@ -622,6 +653,241 @@ export class GameApp {
     this.rebuildPlacementRangeRings();
     this.syncOrbitWithPlacement();
     this.refreshInventoryUi();
+  }
+
+  private readArmoryExpandedInitial(): boolean {
+    try {
+      const v = localStorage.getItem(this.armoryOpenStorageKey);
+      if (v === "1") return true;
+      if (v === "0") return false;
+    } catch {
+      /* ignore */
+    }
+    return !this.armoryNarrowMql?.matches;
+  }
+
+  private persistArmoryExpanded(): void {
+    try {
+      localStorage.setItem(
+        this.armoryOpenStorageKey,
+        this.armoryExpanded ? "1" : "0",
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private toggleArmoryExpanded(): void {
+    this.armoryExpanded = !this.armoryExpanded;
+    this.persistArmoryExpanded();
+    this.applyArmoryExpandedUi();
+  }
+
+  private applyArmoryExpandedUi(): void {
+    const rail = document.getElementById("hudRightRail");
+    const btn = document.getElementById(
+      "btnDefensesToggle",
+    ) as HTMLButtonElement | null;
+    rail?.classList.toggle("hud-right-rail--armory-collapsed", !this.armoryExpanded);
+    if (btn) {
+      btn.setAttribute("aria-expanded", this.armoryExpanded ? "true" : "false");
+    }
+  }
+
+  private ensureDefenseInventoryGrid(): void {
+    if (this.armoryGridBuilt) return;
+    const ul = document.getElementById(
+      "defenseInventoryGrid",
+    ) as HTMLUListElement | null;
+    if (!ul) return;
+    ul.replaceChildren();
+    ARMORY_DEFENSE_ORDER.forEach((type, index) => {
+      const hotkey = String(index + 1);
+      const li = document.createElement("li");
+      li.className =
+        "defense-card defense-card--inventory defense-card--affordable";
+      li.dataset.defenseCard = type;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pick defense-inventory__btn";
+      btn.dataset.defense = type;
+      const key = document.createElement("span");
+      key.className = "defense-inventory__key";
+      key.textContent = hotkey;
+      key.setAttribute("aria-hidden", "true");
+      const thumb = document.createElement("span");
+      thumb.className = "defense-inventory__thumb";
+      thumb.innerHTML = defenseFocusCardIconInnerHtml(type).replace(
+        "defense-focus-card__icon-svg",
+        "defense-inventory__icon-svg",
+      );
+      const textWrap = document.createElement("div");
+      textWrap.className = "defense-inventory__text";
+      const titleEl = document.createElement("span");
+      titleEl.className = "defense-inventory__title";
+      titleEl.textContent = ARMORY_DISPLAY_NAME[type];
+      const perkEl = document.createElement("span");
+      perkEl.className = "defense-inventory__perk";
+      perkEl.textContent = ARMORY_CARD_PERK[type];
+      const costWrap = document.createElement("span");
+      costWrap.className = "defense-inventory__cost";
+      const costNum = document.createElement("strong");
+      costNum.dataset.defenseCost = "";
+      const costUnit = document.createElement("span");
+      costUnit.className = "defense-inventory__cost-unit";
+      costUnit.textContent = "shells";
+      costWrap.append(costNum, costUnit);
+      textWrap.append(titleEl, perkEl, costWrap);
+      btn.append(key, thumb, textWrap);
+      btn.addEventListener("click", () => this.onArmoryDefenseClick(type));
+      li.append(btn);
+      ul.append(li);
+    });
+    this.armoryGridBuilt = true;
+  }
+
+  private syncDefenseDetailDrawerDom(snap: DefenseSnapshot | null): void {
+    const backdrop = document.getElementById("defenseDetailBackdrop");
+    const drawer = document.getElementById("defenseDetailDrawer");
+    const title = document.getElementById("defenseDetailTitle");
+    const sub = document.getElementById("defenseDetailSubtitle");
+    const statsHost = document.getElementById("defenseDetailStats");
+    const mechHost = document.getElementById("defenseDetailMechanics");
+    const iconHost = document.getElementById("defenseDetailIcon");
+    const btnTarget = document.getElementById(
+      "defenseDetailTargeting",
+    ) as HTMLButtonElement | null;
+    const btnUp = document.getElementById(
+      "defenseDetailUpgrade",
+    ) as HTMLButtonElement | null;
+    const btnSal = document.getElementById(
+      "defenseDetailSalvage",
+    ) as HTMLButtonElement | null;
+
+    const playing = this.session.getOutcome() === "playing";
+    const open = playing && snap !== null;
+    if (backdrop) {
+      backdrop.hidden = !open;
+      backdrop.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+    if (drawer) {
+      drawer.hidden = !open;
+      drawer.classList.toggle("defense-detail-drawer--open", open);
+      drawer.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+
+    if (!snap || !statsHost || !mechHost || !title || !sub || !iconHost) return;
+
+    const spec = buildPlacedDefenseTooltipSpec(snap);
+    title.textContent = spec.title;
+    sub.textContent = `Level ${spec.level} · [${snap.position[0]}, ${snap.position[1]}] · ${snap.id}`;
+    iconHost.innerHTML = defenseFocusCardIconInnerHtml(snap.type);
+
+    statsHost.replaceChildren();
+    for (const row of spec.core) {
+      const wrap = document.createElement("div");
+      wrap.className = "defense-detail-drawer__stat-row";
+      const k = document.createElement("span");
+      k.className = "defense-detail-drawer__stat-k";
+      k.textContent = row.label;
+      const v = document.createElement("span");
+      v.className = "defense-detail-drawer__stat-v";
+      v.textContent = row.value;
+      wrap.append(k, v);
+      statsHost.append(wrap);
+    }
+
+    mechHost.replaceChildren();
+    for (const line of spec.mechanics) {
+      const li = document.createElement("li");
+      li.textContent = line;
+      mechHost.append(li);
+    }
+
+    const tgt = spec.core.find((r) => r.label === "Targeting");
+    if (btnTarget) {
+      btnTarget.textContent = `Targeting: ${tgt?.value ?? snap.targetMode}`;
+      btnTarget.disabled = !playing;
+    }
+
+    const dc = new DefenseController(snap);
+    const base = buildCostL1(snap.type);
+    const upCost = dc.upgradeShellCost(base);
+    if (btnUp) {
+      if (snap.level >= 3 || upCost === null) {
+        btnUp.textContent = "Max level";
+        btnUp.disabled = true;
+      } else {
+        const shells = this.session.economy.getShells();
+        btnUp.textContent = `Upgrade (${upCost} shells)`;
+        btnUp.disabled = !playing || shells < upCost;
+      }
+    }
+
+    if (btnSal) {
+      const sal = salvageShellsForDefense(snap);
+      btnSal.textContent = `Salvage (+${sal} shells)`;
+      btnSal.disabled = !playing;
+    }
+  }
+
+  private syncDefenseDrawerUi(): void {
+    const legacySel = document.getElementById(
+      "section-selected-defense",
+    ) as HTMLElement | null;
+    if (legacySel) legacySel.hidden = true;
+
+    const playing = this.session.getOutcome() === "playing";
+    const id = playing ? this.selectedDefenseId : null;
+    const snap =
+      id === null
+        ? null
+        : (this.session.map.getDefenses().find((d) => d.id === id) ?? null);
+    const shells = this.session.economy.getShells();
+    const key =
+      snap === null
+        ? `closed:${playing}`
+        : `${snap.id}:${snap.level}:${snap.targetMode}:${shells}:${snap.position[0]},${snap.position[1]}`;
+    if (key === this.defenseDrawerUiCache) return;
+    this.defenseDrawerUiCache = key;
+    this.syncDefenseDetailDrawerDom(snap);
+  }
+
+  private onDefenseDetailTargeting(): void {
+    const id = this.selectedDefenseId;
+    if (!id || this.session.getOutcome() !== "playing") return;
+    this.session.cycleDefenseTargetMode(id);
+    this.defenseDrawerUiCache = null;
+    this.syncDefenseDrawerUi();
+  }
+
+  private onDefenseDetailUpgrade(): void {
+    const id = this.selectedDefenseId;
+    if (!id || this.session.getOutcome() !== "playing") return;
+    if (this.session.tryUpgradeDefense(id)) {
+      this.updateHud();
+      this.defenseDrawerUiCache = null;
+      this.syncDefenseDrawerUi();
+    }
+  }
+
+  private onDefenseDetailSalvage(): void {
+    const id = this.selectedDefenseId;
+    if (!id || this.session.getOutcome() !== "playing") return;
+    if (this.session.trySalvageDefense(id)) {
+      this.clearSelection();
+      this.updateHud();
+      this.refreshInventoryUi();
+    }
+  }
+
+  private onDefenseDetailDpad(step: DefenseMoveStep): void {
+    const id = this.selectedDefenseId;
+    if (!id || this.session.getOutcome() !== "playing") return;
+    if (this.session.tryMoveDefenseStep(id, step)) {
+      this.defenseDrawerUiCache = null;
+      this.syncDefenseDrawerUi();
+    }
   }
 
   private clearRangePreviewMeshes(group: THREE.Group): void {
@@ -706,125 +972,30 @@ export class GameApp {
   }
 
   private selectDefense(id: string): void {
-    this.clearPlacementMode();
+    if (this.placementType !== null) {
+      this.placementType = null;
+      this.rangePreviewGroup.visible = false;
+      this.rebuildPlacementRangeRings();
+      this.syncOrbitWithPlacement();
+    }
     this.selectedDefenseId = id;
-    this.refreshSelectedDefensePanel();
+    this.defenseDrawerUiCache = null;
+    this.refreshInventoryUi();
+    window.requestAnimationFrame(() => {
+      (
+        document.querySelector(
+          "[data-drawer-initial-focus]",
+        ) as HTMLElement | null
+      )?.focus();
+    });
   }
 
   private clearSelection(): void {
     this.selectedDefenseId = null;
     this.selectionRangeCacheKey = null;
     this.selectionRangeGroup.visible = false;
-    this.refreshSelectedDefensePanel();
-  }
-
-  private refreshSelectedDefensePanel(): void {
-    const legacySel = document.getElementById(
-      "section-selected-defense",
-    ) as HTMLElement | null;
-    if (legacySel) legacySel.hidden = true;
-    this.refreshDefenseFocusBar();
-  }
-
-  private refreshDefenseFocusBar(): void {
-    const bar = document.getElementById("defenseFocusBar");
-    const pic = document.getElementById("defenseFocusPic");
-    const titleEl = document.getElementById("defenseFocusTitle");
-    const levelLine = document.getElementById("defenseFocusLevelLine");
-    const mechanicsEl = document.getElementById("defenseFocusMechanics");
-    const statsEl = document.getElementById("defenseFocusStats");
-    const upgradeBtn = document.getElementById(
-      "defenseFocusUpgrade",
-    ) as HTMLButtonElement | null;
-    const downgradeBtn = document.getElementById(
-      "defenseFocusDowngrade",
-    ) as HTMLButtonElement | null;
-    const sellBtn = document.getElementById(
-      "defenseFocusSell",
-    ) as HTMLButtonElement | null;
-    if (
-      !bar ||
-      !pic ||
-      !titleEl ||
-      !levelLine ||
-      !mechanicsEl ||
-      !statsEl ||
-      !upgradeBtn ||
-      !downgradeBtn ||
-      !sellBtn
-    ) {
-      return;
-    }
-
-    const sid = this.selectedDefenseId;
-    const playing = this.session.getOutcome() === "playing";
-    if (!sid || !playing) {
-      bar.hidden = true;
-      return;
-    }
-    const snap = this.session.map.getDefenses().find((d) => d.id === sid);
-    if (!snap) {
-      bar.hidden = true;
-      return;
-    }
-
-    bar.hidden = false;
-    const spec = buildPlacedDefenseTooltipSpec(snap);
-    const tint = DEFENSE_TOWER_COLOR[snap.type];
-    pic.style.background = `#${tint.toString(16).padStart(6, "0")}`;
-
-    titleEl.textContent = spec.title;
-    levelLine.textContent = `Level ${snap.level} / 3 · Δ ${spec.footer.gx}, ${spec.footer.gz}`;
-
-    mechanicsEl.replaceChildren();
-    for (const line of spec.mechanics) {
-      const li = document.createElement("li");
-      li.textContent = line;
-      mechanicsEl.appendChild(li);
-    }
-
-    statsEl.replaceChildren();
-    for (const row of spec.core) {
-      const rowEl = document.createElement("div");
-      rowEl.className = "defense-focus-stat-row";
-      const label = document.createElement("span");
-      label.className = "defense-focus-stat-k";
-      label.textContent = row.label;
-      const val = document.createElement("span");
-      val.className = "defense-focus-stat-v";
-      if (row.tone === "accent") val.classList.add("defense-focus-stat-v--accent");
-      if (row.tone === "secondary") val.classList.add("defense-focus-stat-v--muted");
-      val.textContent = row.value;
-      rowEl.append(label, val);
-      statsEl.appendChild(rowEl);
-    }
-
-    const shells = this.session.economy.getShells();
-    if (snap.level >= 3) {
-      upgradeBtn.disabled = true;
-      upgradeBtn.textContent = "Max level";
-    } else {
-      const base = buildCostL1(snap.type);
-      const cost = new DefenseController(snap).upgradeShellCost(base);
-      const c = cost ?? 0;
-      const canAfford = cost !== null && shells >= cost;
-      upgradeBtn.disabled = cost === null || !canAfford;
-      upgradeBtn.textContent =
-        cost !== null ? `Upgrade (${c} shells)` : "Upgrade";
-    }
-
-    if (snap.level <= 1) {
-      downgradeBtn.disabled = true;
-      downgradeBtn.textContent = "Downgrade";
-    } else {
-      const ref = downgradeRefundForLevel(snap.type, snap.level) ?? 0;
-      downgradeBtn.disabled = false;
-      downgradeBtn.textContent = `Downgrade (+${ref} shells)`;
-    }
-
-    const salvage = salvageShellsForDefense(snap);
-    sellBtn.textContent = `Sell (+${salvage} shells)`;
-    sellBtn.disabled = false;
+    this.defenseDrawerUiCache = null;
+    this.syncDefenseDrawerUi();
   }
 
   private updateSelectionRangeOverlay(): void {
@@ -839,7 +1010,8 @@ export class GameApp {
       this.selectedDefenseId = null;
       this.selectionRangeGroup.visible = false;
       this.selectionRangeCacheKey = null;
-      this.refreshSelectedDefensePanel();
+      this.defenseDrawerUiCache = null;
+      this.syncDefenseDrawerUi();
       return;
     }
     const emphasized =
@@ -898,54 +1070,6 @@ export class GameApp {
 
   private hideTowerHoverTip(): void {
     this.syncTowerHoverAttackRange(null);
-    this.lastTowerTipDefenseId = null;
-    const tip = document.getElementById("towerHoverTip");
-    if (!tip) return;
-    tip.classList.remove("tower-hover-tip--pulse");
-    tip.hidden = true;
-    tip.setAttribute("aria-hidden", "true");
-    tip.removeAttribute("data-defense");
-    tip.removeAttribute("aria-labelledby");
-  }
-
-  private updateTowerHoverTip(e: PointerEvent): void {
-    const tip = document.getElementById("towerHoverTip");
-    if (!tip) return;
-    const id = this.pickDefenseTowerAt(e);
-    if (!id) {
-      this.hideTowerHoverTip();
-      return;
-    }
-    const snap = this.session.map.getDefenses().find((d) => d.id === id);
-    if (!snap) {
-      this.hideTowerHoverTip();
-      return;
-    }
-    if (id !== this.lastTowerTipDefenseId) {
-      this.lastTowerTipDefenseId = id;
-      const spec = buildPlacedDefenseTooltipSpec(snap);
-      mountTowerHoverTip(tip, spec);
-      tip.classList.remove("tower-hover-tip--pulse");
-      void tip.offsetWidth;
-      tip.classList.add("tower-hover-tip--pulse");
-    }
-    tip.hidden = false;
-    tip.setAttribute("aria-hidden", "false");
-
-    this.syncTowerHoverAttackRange(snap);
-
-    const pad = 16;
-    const rect = tip.getBoundingClientRect();
-    let left = e.clientX + pad;
-    let top = e.clientY + pad;
-    if (left + rect.width > window.innerWidth - 8) {
-      left = e.clientX - rect.width - pad;
-    }
-    if (top + rect.height > window.innerHeight - 8) {
-      top = e.clientY - rect.height - pad;
-    }
-    tip.style.left = `${Math.max(8, left)}px`;
-    tip.style.top = `${Math.max(8, top)}px`;
   }
 
   private onCanvasPointerMove(e: PointerEvent): void {
@@ -957,11 +1081,7 @@ export class GameApp {
       e.clientY >= r.top &&
       e.clientY <= r.bottom;
 
-    if (insideCanvas && this.session.getOutcome() === "playing") {
-      this.updateTowerHoverTip(e);
-    } else {
-      this.hideTowerHoverTip();
-    }
+    this.hideTowerHoverTip();
 
     if (
       this.placementType === null ||
@@ -1055,6 +1175,20 @@ export class GameApp {
     this.session.startWaveEarly();
   }
 
+  private toggleSimSpeed(): void {
+    if (this.session.getOutcome() !== "playing") return;
+    this.simSpeedMultiplier = this.simSpeedMultiplier === 1 ? 2 : 1;
+    this.syncHudSpeedButton();
+  }
+
+  private syncHudSpeedButton(): void {
+    const btn = document.getElementById("hudSpeed") as HTMLButtonElement | null;
+    if (!btn) return;
+    const on = this.simSpeedMultiplier === 2;
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? "Speed ×2" : "Speed ×1";
+  }
+
   private refreshInventoryUi(): void {
     const playing = this.session.getOutcome() === "playing";
     const shells = this.session.economy.getShells();
@@ -1069,11 +1203,38 @@ export class GameApp {
       ) as HTMLButtonElement | null;
       const card = document.querySelector(`[data-defense-card="${type}"]`);
       const statusEl = card?.querySelector("[data-defense-status]");
+      const costLabel = card?.querySelector("[data-defense-cost]");
+
+      let statusText: string;
+      if (!playing) {
+        statusText = "Match ended";
+      } else if (selected) {
+        statusText = `Click map to place (${cost} shells)`;
+      } else if (canAfford) {
+        statusText = `Available · ${cost} shells`;
+      } else {
+        statusText = `Need ${cost - shells} more shells`;
+      }
+
+      const prettyName = type
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
 
       if (btn) {
         btn.disabled = !playing || (!canAfford && !selected);
-        btn.textContent = selected ? "Selected" : "Select";
+        if (
+          !btn.classList.contains("defense-hotbar__btn") &&
+          !btn.classList.contains("defense-inventory__btn")
+        ) {
+          btn.textContent = "";
+        }
+        btn.setAttribute("title", statusText);
         btn.setAttribute("aria-pressed", selected ? "true" : "false");
+        btn.setAttribute("aria-label", `${prettyName}. ${statusText}`);
+      }
+      if (costLabel) {
+        costLabel.textContent = String(cost);
       }
       if (card) {
         card.classList.toggle("selected", selected);
@@ -1087,27 +1248,16 @@ export class GameApp {
         );
       }
 
-      let statusText: string;
-      if (!playing) {
-        statusText = "Match ended";
-      } else if (selected) {
-        statusText = `Click map to place (${cost} shells)`;
-      } else if (canAfford) {
-        statusText = `Available · ${cost} shells`;
-      } else {
-        statusText = `Need ${cost - shells} more shells`;
-      }
       if (statusEl) statusEl.textContent = statusText;
-      if (btn) btn.title = statusText;
     }
 
-    this.refreshSelectedDefensePanel();
+    this.syncDefenseDrawerUi();
 
+    const dock = document.getElementById("placementDock");
     const hint = document.getElementById("placementHint");
-    const cancel = document.getElementById("invCancel");
     const placing = selectedType !== null;
+    if (dock) dock.hidden = !placing;
     hint?.classList.toggle("visible", placing);
-    cancel?.classList.toggle("visible", placing);
   }
 
   private frame(): void {
@@ -1116,8 +1266,8 @@ export class GameApp {
       const focus =
         this.selectedDefenseId !== null &&
         this.session.getOutcome() === "playing";
-      const simDt = focus ? dt * DEFENSE_FOCUS_TICK_SCALE : dt;
-      this.session.tick(simDt);
+      const baseDt = focus ? dt * DEFENSE_FOCUS_TICK_SCALE : dt;
+      this.session.tick(baseDt * this.simSpeedMultiplier);
     }
     this.syncDefenses();
     this.updateSelectionRangeOverlay();
@@ -1136,6 +1286,8 @@ export class GameApp {
     }
     this.syncDefenseFocusCamera(dt);
     this.orbitControls.update();
+    this.renderer.transmissionResolutionScale =
+      getVibrationDomeTuning().transmissionResolutionScale;
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -1279,28 +1431,47 @@ export class GameApp {
 
       if (d.type === "vibration_zone") {
         const rTiles = auraRadiusTiles("vibration_zone", d.level);
+        const tune = getVibrationDomeTuning();
         const auraKey = `${d.level}:${rTiles}`;
-        if (!vis.vibrationAura) {
-          vis.vibrationAura = createVibrationZoneAuraMesh(d.level, rTiles);
-          vis.root.add(vis.vibrationAura);
-          vis.vibrationAuraKey = auraKey;
-        } else if (vis.vibrationAuraKey !== auraKey) {
-          applyVibrationZoneAuraRadius(vis.vibrationAura, rTiles);
-          vis.vibrationAuraKey = auraKey;
+        const showWire =
+          tune.showWireframe || vibrationDomeDebugWireframeFromUrl();
+        if (!vis.vibrationDome) {
+          vis.vibrationDome = createVibrationZoneDomeMesh(d.level, rTiles);
+          vis.root.add(vis.vibrationDome);
+          vis.vibrationDomeKey = auraKey;
+        } else if (vis.vibrationDomeKey !== auraKey) {
+          applyVibrationZoneDomeRadius(
+            vis.vibrationDome,
+            d.level,
+            rTiles,
+            tune.geometryWidthSegments,
+            tune.geometryHeightSegments,
+          );
+          vis.vibrationDomeKey = auraKey;
+        }
+        syncVibrationDomeGeometryAndEdges(
+          vis.vibrationDome,
+          rTiles,
+          tune.geometryWidthSegments,
+          tune.geometryHeightSegments,
+          showWire,
+        );
+        syncVibrationZoneDomeTierMaterial(vis.vibrationDome, d.level, rTiles);
+        if (tune.applyOverrides) {
+          applyVibrationDomeTuningToMesh(vis.vibrationDome, tune);
         }
         const floorY = 0.06;
-        vis.vibrationAura.position.set(0, floorY - w.y, 0);
-        updateVibrationZoneAuraMaterial(
-          vis.vibrationAura.material as THREE.ShaderMaterial,
+        vis.vibrationDome.position.set(0, floorY - w.y + tune.floorYOffset, 0);
+        updateVibrationZoneDomeMaterial(
+          vis.vibrationDome.material as THREE.MeshPhysicalMaterial,
           this.clock.elapsedTime,
           d.level,
         );
-      } else if (vis.vibrationAura) {
-        vis.root.remove(vis.vibrationAura);
-        vis.vibrationAura.geometry.dispose();
-        (vis.vibrationAura.material as THREE.Material).dispose();
-        vis.vibrationAura = undefined;
-        vis.vibrationAuraKey = undefined;
+      } else if (vis.vibrationDome) {
+        vis.root.remove(vis.vibrationDome);
+        disposeObject3DTree(vis.vibrationDome);
+        vis.vibrationDome = undefined;
+        vis.vibrationDomeKey = undefined;
       }
     }
     for (const [id, vis] of [...this.defenseObjects]) {
@@ -1567,6 +1738,32 @@ export class GameApp {
     if (castle) {
       const c = this.session.castle;
       castle.textContent = `${c.getCurrentHp()} / ${c.maxHp}`;
+      this.syncCitadelHpSegments(c.getCurrentHp(), c.maxHp);
+    }
+    const hotkeyHint = document.getElementById("hudHotkeyHint");
+    if (hotkeyHint) {
+      const playing = this.session.getOutcome() === "playing";
+      hotkeyHint.classList.toggle("hud-hotkey-hint--visible", playing);
+    }
+  }
+
+  private syncCitadelHpSegments(currentHp: number, maxHp: number): void {
+    const track = document.getElementById("citadelHpTrack");
+    if (!track || maxHp <= 0) return;
+
+    while (track.children.length < maxHp) {
+      const seg = document.createElement("span");
+      seg.className = "citadel-seg";
+      track.appendChild(seg);
+    }
+    while (track.children.length > maxHp) {
+      track.lastElementChild?.remove();
+    }
+
+    const hp = Math.max(0, Math.min(currentHp, maxHp));
+    for (let i = 0; i < maxHp; i++) {
+      const seg = track.children[i] as HTMLElement;
+      seg.classList.toggle("citadel-seg--filled", i < hp);
     }
   }
 
@@ -1576,6 +1773,7 @@ export class GameApp {
     const title = document.getElementById("overlayTitle");
     const sub = document.getElementById("overlaySub");
     const send = document.getElementById("sendWave") as HTMLButtonElement | null;
+    const hudSpeed = document.getElementById("hudSpeed") as HTMLButtonElement | null;
     const sendSub = document.getElementById("sendWaveSub");
     const phase = this.session.waveDirector.getPhase();
     if (send) {
@@ -1584,6 +1782,13 @@ export class GameApp {
       const waveActive =
         out === "playing" && phase !== "prep" && phase !== "completed";
       send.classList.toggle("wave-active", waveActive);
+    }
+    if (hudSpeed) {
+      hudSpeed.disabled = out !== "playing";
+    }
+    if (out !== "playing") {
+      this.simSpeedMultiplier = 1;
+      this.syncHudSpeedButton();
     }
     if (sendSub) {
       if (out !== "playing") {
@@ -1596,13 +1801,28 @@ export class GameApp {
         sendSub.textContent = "";
       }
     }
+    const overlayActions = document.getElementById("overlayActions");
+    const overlayNext = document.getElementById("overlayBtnNext");
+
     if (out === "playing") {
       overlay?.classList.remove("visible");
+      overlayActions?.setAttribute("hidden", "");
       return;
     }
     this.clearPlacementMode();
     this.clearSelection();
     overlay?.classList.add("visible");
+    if (overlayActions) {
+      if (this.missionEndNav) {
+        overlayActions.removeAttribute("hidden");
+        overlayNext?.toggleAttribute(
+          "hidden",
+          !(out === "win" && this.missionEndNav.hasNextMap),
+        );
+      } else {
+        overlayActions.setAttribute("hidden", "");
+      }
+    }
     if (title && sub) {
       if (out === "win") {
         title.textContent = "THE DEEP ENDURES";

@@ -3,6 +3,21 @@ import type { EnemyController } from "./enemy-controller.js";
 import type { GridPos, TargetMode } from "./types.js";
 import { tileDistanceSq } from "./spatial.js";
 
+/** UI / gameplay order when cycling tower priority (docs/combat.md §1). */
+export const TARGET_MODE_CYCLE_ORDER: readonly TargetMode[] = [
+  "first",
+  "last",
+  "strongest",
+  "weakest",
+  "closest",
+] as const;
+
+export function cycleTargetMode(current: TargetMode): TargetMode {
+  const i = TARGET_MODE_CYCLE_ORDER.indexOf(current);
+  const next = (i < 0 ? 0 : i + 1) % TARGET_MODE_CYCLE_ORDER.length;
+  return TARGET_MODE_CYCLE_ORDER[next]!;
+}
+
 function maxScoreEnemy<T extends { id: string }>(
   enemies: T[],
   score: (e: T) => number,

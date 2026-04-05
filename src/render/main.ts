@@ -1,8 +1,16 @@
+import { MINIMAL_MAP_DOCUMENT } from "../game/minimal-map-document.js";
 import { validateMapDocument } from "../game/map-validation.js";
 import type { MapDocument } from "../game/map-types.js";
-import { GameApp } from "./GameApp.js";
+import { GameApp, type MissionEndNavigation } from "./GameApp.js";
 import { LEVELS } from "./levels.js";
 import { createMapOverviewElement } from "./map-overview.js";
+import { shouldMountVibrationDomeLeva } from "./vibration-dome-tuning.js";
+
+if (shouldMountVibrationDomeLeva()) {
+  void import("./mount-vibration-dome-leva.js").then((m) =>
+    m.mountVibrationDomeLeva(),
+  );
+}
 
 const PLAYTEST_SESSION_KEY = "deepSeaPlaytestMap";
 
@@ -30,13 +38,43 @@ const quitDialog = document.getElementById("quitDialog");
 const quitConfirmYes = document.getElementById("quitConfirmYes");
 const quitConfirmNo = document.getElementById("quitConfirmNo");
 const levelSelectHost = document.getElementById("levelSelectHost");
+const skipToContent = document.getElementById(
+  "skipToContent",
+) as HTMLAnchorElement | null;
+
+function syncSkipLinkTarget(): void {
+  if (!skipToContent) return;
+  const menuVisible = mainMenu?.classList.contains("visible") ?? false;
+  const gameVisible = Boolean(
+    gameScreen && !gameScreen.hasAttribute("hidden"),
+  );
+  if (gameVisible && !menuVisible) {
+    skipToContent.href = "#gameScreen";
+    skipToContent.textContent = "Skip to game";
+  } else {
+    skipToContent.href = "#mainMenu";
+    skipToContent.textContent = "Skip to main menu";
+  }
+}
+
+skipToContent?.addEventListener("click", () => {
+  const hash = new URL(skipToContent.href).hash;
+  const el = hash ? document.querySelector<HTMLElement>(hash) : null;
+  if (!el) return;
+  window.requestAnimationFrame(() => {
+    el.focus({ preventScroll: false });
+  });
+});
 
 let app: GameApp | null = null;
-let selectedLevelId = LEVELS[0]!.id;
+let selectedLevelId = LEVELS[0]?.id ?? MINIMAL_MAP_DOCUMENT.id;
+/** Map for the active run (retry / nav); set whenever a mission starts. */
+let activeMissionDoc: MapDocument | null = null;
 
 function getSelectedDocument(): MapDocument {
   return (
-    LEVELS.find((l) => l.id === selectedLevelId)?.document ?? LEVELS[0]!.document
+    LEVELS.find((l) => l.id === selectedLevelId)?.document ??
+    MINIMAL_MAP_DOCUMENT
   );
 }
 
@@ -88,18 +126,57 @@ function renderLevelSelect(): void {
 
 renderLevelSelect();
 
+syncSkipLinkTarget();
+
 const playtestDocument = takePlaytestDocument();
+
+function buildMissionEndNav(): MissionEndNavigation {
+  const doc = activeMissionDoc;
+  if (!doc) {
+    return {
+      retry: () => {},
+      nextMap: () => {},
+      menu: () => showMainMenu(),
+      hasNextMap: false,
+    };
+  }
+  const idx = LEVELS.findIndex((level) => level.id === doc.id);
+  const hasNext = idx >= 0 && idx < LEVELS.length - 1;
+  return {
+    retry: () => {
+      if (!gameMount || !activeMissionDoc) return;
+      app?.dispose();
+      app = new GameApp(
+        activeMissionDoc,
+        gameMount,
+        buildMissionEndNav(),
+      );
+      app.start();
+    },
+    nextMap: () => {
+      if (!gameMount || idx < 0) return;
+      const next = LEVELS[idx + 1];
+      if (!next) return;
+      startMission(next.document);
+    },
+    menu: () => showMainMenu(),
+    hasNextMap: hasNext,
+  };
+}
 
 function showMainMenu(): void {
   if (app) {
     app.dispose();
     app = null;
   }
+  activeMissionDoc = null;
   document.getElementById("overlay")?.classList.remove("visible");
+  document.getElementById("overlayActions")?.setAttribute("hidden", "");
   gameScreen?.removeAttribute("data-active-map");
   gameScreen?.setAttribute("hidden", "");
   mainMenu?.classList.add("visible");
   btnPlay?.removeAttribute("disabled");
+  syncSkipLinkTarget();
   btnPlay?.focus();
 }
 
@@ -112,16 +189,23 @@ function showQuitDialog(): void {
   quitConfirmNo?.focus();
 }
 
-function startGame(): void {
+function startMission(doc: MapDocument): void {
   if (!gameMount) return;
-  const doc = getSelectedDocument();
+  activeMissionDoc = doc;
+  selectedLevelId = doc.id;
   btnPlay?.setAttribute("disabled", "");
   mainMenu?.classList.remove("visible");
   gameScreen?.removeAttribute("hidden");
   gameScreen?.setAttribute("data-active-map", doc.id);
-  app = new GameApp(doc, gameMount);
+  syncSkipLinkTarget();
+  app?.dispose();
+  app = new GameApp(doc, gameMount, buildMissionEndNav());
   app.start();
   btnPlay?.removeAttribute("disabled");
+}
+
+function startGame(): void {
+  startMission(getSelectedDocument());
 }
 
 btnPlay?.addEventListener("click", () => {
@@ -159,6 +243,8 @@ if (playtestDocument && gameMount) {
   mainMenu?.classList.remove("visible");
   gameScreen?.removeAttribute("hidden");
   gameScreen?.setAttribute("data-active-map", playtestDocument.id);
-  app = new GameApp(playtestDocument, gameMount);
+  syncSkipLinkTarget();
+  activeMissionDoc = playtestDocument;
+  app = new GameApp(playtestDocument, gameMount, buildMissionEndNav());
   app.start();
 }

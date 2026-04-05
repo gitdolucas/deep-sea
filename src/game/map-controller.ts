@@ -9,7 +9,12 @@ import type {
   WaveDefinition,
 } from "./map-types.js";
 import { gridCellKey, pathCellKeySetUnion } from "./path-cells.js";
-import type { DefenseLevel, DefenseSnapshot, GridPos } from "./types.js";
+import type {
+  DefenseLevel,
+  DefenseSnapshot,
+  GridPos,
+  TargetMode,
+} from "./types.js";
 
 function cloneDefense(d: DefenseSnapshot): DefenseSnapshot {
   return {
@@ -177,6 +182,13 @@ export class MapController {
     if (!this.isBuildSlotPosition(newPos)) return false;
     if (this.getDefenseAt(newPos) !== undefined) return false;
     d.position = [newPos[0], newPos[1]];
+    return true;
+  }
+
+  trySetDefenseTargetMode(defenseId: string, mode: TargetMode): boolean {
+    const d = this.defenses.find((x) => x.id === defenseId);
+    if (!d) return false;
+    d.targetMode = mode;
     return true;
   }
 

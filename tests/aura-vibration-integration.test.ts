@@ -1,14 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { applyAurasFromDefenses } from "../src/game/aura-system.js";
 import { EnemyController } from "../src/game/enemy-controller.js";
 import { GameSession } from "../src/game/game-session.js";
-import { MapController } from "../src/game/map-controller.js";
 import type { MapDocument } from "../src/game/map-types.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe("vibration zone aura vs map placements", () => {
   it("covers path cells slightly beyond integer radius (center distance > 3 tiles)", () => {
@@ -57,61 +51,6 @@ describe("vibration zone aura vs map placements", () => {
     enemy.tickMovement(0.5);
     baseline.tickMovement(0.5);
     expect(enemy.getPathProgress()).toBeLessThan(baseline.getPathProgress());
-  });
-
-  it("slows enemies on six-spine gauntlet path inside vibration radius near merge", () => {
-    const raw = readFileSync(
-      join(__dirname, "../data/maps/six_tower_gauntlet.json"),
-      "utf8",
-    );
-    const doc = JSON.parse(raw) as MapDocument;
-    const map = new MapController(doc);
-
-    const waypoints = map.getPathWaypoints("path_s6")!;
-    /** Along [22,0]→[22,9]→[11,9]…; ~mid first leg (22,4.5) inside aura at [19,5]. */
-    const progress = 4.5 / 28;
-
-    const vibeAtMerge = [
-      {
-        id: "vz",
-        type: "vibration_zone" as const,
-        position: [19, 5] as const,
-        level: 1 as const,
-        targetMode: "closest" as const,
-      },
-    ];
-
-    const slowed = new EnemyController({
-      id: "slow",
-      enemyType: "stoneclaw",
-      pathId: "path_s6",
-      waypoints,
-      pathProgress: progress,
-      hp: 50,
-      maxHp: 50,
-      speedMultiplier: 1,
-    });
-    const baseline = new EnemyController({
-      id: "base",
-      enemyType: "stoneclaw",
-      pathId: "path_s6",
-      waypoints,
-      pathProgress: progress,
-      hp: 50,
-      maxHp: 50,
-      speedMultiplier: 1,
-    });
-
-    applyAurasFromDefenses(
-      new Map([[slowed.id, slowed]]),
-      vibeAtMerge,
-      0.016,
-    );
-    applyAurasFromDefenses(new Map([[baseline.id, baseline]]), [], 0.016);
-
-    slowed.tickMovement(1);
-    baseline.tickMovement(1);
-    expect(slowed.getPathProgress()).toBeLessThan(baseline.getPathProgress());
   });
 
   it("GameSession.tick applies vibration slow end-to-end (tight corridor map)", () => {

@@ -32,6 +32,11 @@ export {
   buildCostL1,
 } from "./defense-build-costs.js";
 export {
+  ARMORY_CARD_PERK,
+  ARMORY_DISPLAY_NAME,
+} from "./defense-armory-meta.js";
+export { hotbarIndexFromKey } from "./hotbar-key.js";
+export {
   downgradeRefundForLevel,
   salvageShellsForDefense,
   totalInvestedShells,
@@ -53,6 +58,8 @@ export {
 } from "./path-cells.js";
 export {
   TargetingSystem,
+  TARGET_MODE_CYCLE_ORDER,
+  cycleTargetMode,
   type TargetingContext,
   type TargetingOptions,
 } from "./targeting-system.js";

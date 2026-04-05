@@ -11,6 +11,7 @@ import {
   DamageResolver,
   fireIntervalFor,
   KILL_SHELL_REWARD,
+  type CombatResolveContext,
   type TowerAttackResult,
 } from "./damage-resolver.js";
 import {
@@ -24,7 +25,7 @@ import {
 } from "./defense-economy.js";
 import { DefenseController } from "./defense-controller.js";
 import { MVP_STARTING_SHELLS } from "./mvp-constants.js";
-import type { DefenseTypeKey, GridPos } from "./types.js";
+import type { DefenseTypeKey, GridPos, TargetMode } from "./types.js";
 import { applyAurasFromDefenses } from "./aura-system.js";
 import {
   DIRECT_DAMAGE,
@@ -32,7 +33,11 @@ import {
   attackRangeTiles,
 } from "./combat-balance.js";
 import { damageAfterArmorEffective } from "./combat-damage.js";
-import { TargetingSystem, type TargetingContext } from "./targeting-system.js";
+import {
+  TargetingSystem,
+  cycleTargetMode,
+  type TargetingContext,
+} from "./targeting-system.js";
 import { tileDistanceSq } from "./spatial.js";
 import {
   spawnBubbleVolley,
@@ -69,6 +74,7 @@ export class GameSession {
   private bubbleProjectiles: BubbleProjectileState[] = [];
   private bubblePopFx: BubblePopFx[] = [];
   private cannonProjectiles: CannonProjectileState[] = [];
+  private readonly defensePops = new Map<string, number>();
 
   constructor(
     doc: MapDocument,
@@ -92,6 +98,23 @@ export class GameSession {
   private targetingCtx(): TargetingContext {
     const c = this.map.castle.position;
     return { castlePosition: [c[0], c[1]] };
+  }
+
+  private combatCtx(): CombatResolveContext {
+    return {
+      enemies: this.enemies,
+      economy: this.economy,
+      targeting: this.targetingCtx(),
+      onDefensePop: (defenseId, count) => {
+        const prev = this.defensePops.get(defenseId) ?? 0;
+        this.defensePops.set(defenseId, prev + count);
+      },
+    };
+  }
+
+  /** Enemies this defense removed from the board (direct fire paths; excludes auras / bubbles). */
+  getDefensePops(defenseId: string): number {
+    return this.defensePops.get(defenseId) ?? 0;
   }
 
   getOutcome(): GameOutcome {
@@ -260,6 +283,17 @@ export class GameSession {
     return true;
   }
 
+  /**
+   * Advance targeting priority for this tower (first → last → … → closest → first).
+   */
+  cycleDefenseTargetMode(defenseId: string): boolean {
+    if (this.outcome !== "playing") return false;
+    const d = this.map.getDefenses().find((x) => x.id === defenseId);
+    if (!d) return false;
+    const next: TargetMode = cycleTargetMode(d.targetMode);
+    return this.map.trySetDefenseTargetMode(defenseId, next);
+  }
+
   startWaveEarly(): void {
     if (this.outcome !== "playing") return;
     if (this.waveDirector.getPhase() !== "prep") return;
@@ -323,11 +357,7 @@ export class GameSession {
     simulateCannonProjectiles(
       this.cannonProjectiles,
       deltaSeconds,
-      {
-        enemies: this.enemies,
-        economy: this.economy,
-        targeting: this.targetingCtx(),
-      },
+      this.combatCtx(),
       (defenseId) =>
         this.map.getDefenses().find((d) => d.id === defenseId),
       (r) => {
@@ -356,7 +386,7 @@ export class GameSession {
   }
 
   private tickTideheartLasers(dt: number): void {
-    const ctx = this.targetingCtx();
+    const targ = this.targetingCtx();
     for (const snap of this.map.getDefenses()) {
       if (snap.type !== "tideheart_laser") continue;
       let acc = this.laserBeamAccum.get(snap.id) ?? 0;
@@ -378,13 +408,17 @@ export class GameSession {
           living,
           snap.targetMode,
           { maxAttackRangeTiles: range },
-          ctx,
+          targ,
           beamCount,
         );
         for (const t of targets) {
           if (!t.isAlive()) continue;
           const dealt = damageAfterArmorEffective(t, dmg);
           t.applyDamage(dealt);
+          if (!t.isAlive()) {
+            const prev = this.defensePops.get(snap.id) ?? 0;
+            this.defensePops.set(snap.id, prev + 1);
+          }
           hits.push({
             enemyId: t.id,
             damage: dealt,
@@ -478,12 +512,7 @@ export class GameSession {
         continue;
       }
 
-      const result = DamageResolver.resolveTowerAttack(
-        this.enemies,
-        this.economy,
-        snap,
-        ctx,
-      );
+      const result = DamageResolver.resolveTowerAttack(snap, this.combatCtx());
       if (result) {
         this.pendingCombat.push(result);
         this.defenseCooldowns.set(

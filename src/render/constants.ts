@@ -41,7 +41,7 @@ export const COLORS = {
   /** Arc Spine chain hop radius ring (placement preview). */
   rangePreviewChain: 0xffaa66,
   /** World-space enemy HP bar (fill). */
-  enemyHpBarFill: 0x39ff6e,
+  enemyHpBarFill: 0xff9d9d,
   enemyHpBarBg: 0x1a2030,
   /** World-space tower cooldown bar (fill drains toward ready). */
   cooldownBarFill: 0x00d4ff,

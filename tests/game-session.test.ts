@@ -159,8 +159,8 @@ describe("GameSession", () => {
     expect(session.getDefenseCooldownRemaining("d_arc")).toBe(0);
     session.tick(0.05);
     const r = session.getDefenseCooldownRemaining("d_arc");
-    expect(r).toBeGreaterThan(1.4);
-    expect(r).toBeLessThanOrEqual(1.5);
+    expect(r).toBeGreaterThan(1.2);
+    expect(r).toBeLessThanOrEqual(1.275);
   });
 
   it("does not start defense cooldown until an attack actually fires", () => {
@@ -228,5 +228,12 @@ describe("GameSession", () => {
     }
     expect(session.getLivingEnemyCount()).toBe(0);
     expect(session.castle.getCurrentHp()).toBeLessThan(session.castle.maxHp);
+  });
+
+  it("cycleDefenseTargetMode updates the placed defense", () => {
+    const session = new GameSession(combatMap());
+    expect(session.map.getDefenses()[0]!.targetMode).toBe("first");
+    expect(session.cycleDefenseTargetMode("d1")).toBe(true);
+    expect(session.map.getDefenses()[0]!.targetMode).toBe("last");
   });
 });

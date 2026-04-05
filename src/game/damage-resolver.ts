@@ -63,6 +63,8 @@ export type CombatResolveContext = {
   enemies: Map<string, EnemyController>;
   economy: EconomyController;
   targeting: TargetingContext;
+  /** When enemies die during this collect pass, attribute kill credit to this defense (HUD pops). */
+  onDefensePop?: (defenseId: string, count: number) => void;
 };
 
 function chainRawDamage(primaryRaw: number, chainIndex: number): number {
@@ -71,14 +73,19 @@ function chainRawDamage(primaryRaw: number, chainIndex: number): number {
 }
 
 function collectKills(
-  enemies: Map<string, EnemyController>,
-  economy: EconomyController,
+  ctx: CombatResolveContext,
+  creditDefenseId: string | undefined,
 ): void {
-  for (const e of [...enemies.values()]) {
+  let n = 0;
+  for (const e of [...ctx.enemies.values()]) {
     if (!e.isAlive()) {
-      economy.earn(KILL_SHELL_REWARD);
-      enemies.delete(e.id);
+      n++;
+      ctx.economy.earn(KILL_SHELL_REWARD);
+      ctx.enemies.delete(e.id);
     }
+  }
+  if (n > 0 && creditDefenseId && ctx.onDefensePop) {
+    ctx.onDefensePop(creditDefenseId, n);
   }
 }
 
@@ -126,7 +133,7 @@ export function resolveArcSpineAttack(
     });
   });
 
-  collectKills(ctx.enemies, ctx.economy);
+  collectKills(ctx, snap.id);
   return { defenseId: snap.id, hits, chainLightningVfx: true };
 }
 
@@ -186,7 +193,7 @@ export function applyCurrentCannonImpact(
     }
   }
 
-  collectKills(ctx.enemies, ctx.economy);
+  collectKills(ctx, snap.id);
   return {
     defenseId: snap.id,
     hits,
@@ -223,12 +230,9 @@ export function resolveCurrentCannonAttack(
 /** Legacy entry for tests / tools — delegates by type. */
 export class DamageResolver {
   static resolveTowerAttack(
-    enemies: Map<string, EnemyController>,
-    economy: EconomyController,
     snap: DefenseSnapshot,
-    targeting: TargetingContext,
+    ctx: CombatResolveContext,
   ): TowerAttackResult | null {
-    const ctx: CombatResolveContext = { enemies, economy, targeting };
     if (snap.type === "arc_spine") return resolveArcSpineAttack(ctx, snap);
     if (
       snap.type === "ink_veil" ||
@@ -264,7 +268,7 @@ function resolveDirectSingleHit(
 
   const dealt = damageAfterArmorEffective(target, raw);
   target.applyDamage(dealt);
-  collectKills(ctx.enemies, ctx.economy);
+  collectKills(ctx, snap.id);
   return {
     defenseId: snap.id,
     hits: [

@@ -15,7 +15,8 @@ export const DIRECT_DAMAGE: Record<DefenseTypeKey, Record<DefenseLevel, number>>
     /** Buffed vs docs table; adds AoE splash in simulation (cannon-projectiles). */
     current_cannon: { 1: 12, 2: 19, 3: 28 },
     ink_veil: { 1: 0, 2: 0, 3: 0 },
-    arc_spine: { 1: 8, 2: 10, 3: 12 },
+    /** L1 tuned vs scaled Stoneclaw HP (12×ENEMY_GLOBAL_STRENGTH_MULT): ~3.5 primary hits to kill. */
+    arc_spine: { 1: 12, 2: 15, 3: 18 },
   };
 
 /** Bubble L3 extra splash damage (docs/combat.md §4). */
@@ -29,7 +30,8 @@ export const FIRE_COOLDOWN_SEC: Record<DefenseTypeKey, Record<DefenseLevel, numb
     vibration_zone: { 1: 0.5, 2: 0.5, 3: 0.3 },
     current_cannon: { 1: 2.5, 2: 2.0, 3: 1.5 },
     ink_veil: { 1: 3.0, 2: 3.0, 3: 3.0 },
-    arc_spine: { 1: 1.5, 2: 1.2, 3: 1.0 },
+    /** −15% vs docs/combat.md table (faster fire rate). */
+    arc_spine: { 1: 1.275, 2: 1.02, 3: 0.85 },
   };
 
 /** Vibration slow fraction (0–1) by level. */
@@ -91,12 +93,12 @@ const BASE_ATTACK_RANGE: Record<DefenseTypeKey, number> = {
   ink_veil: 4,
 };
 
-/** Engagement radius in tiles (Arc Spine L1 = 3 per PRD; others provisional). */
+/** Engagement radius in tiles (Arc Spine +25% vs doc baseline L1=3/L2+=4; others provisional). */
 export function attackRangeTiles(
   type: DefenseTypeKey,
   level: DefenseLevel,
 ): number {
-  if (type === "arc_spine") return level === 1 ? 3 : 4;
+  if (type === "arc_spine") return level === 1 ? 3.75 : 5;
   return BASE_ATTACK_RANGE[type] + (level - 1);
 }
 

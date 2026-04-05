@@ -34,9 +34,9 @@ function arcSpine(level: 1 | 2 | 3): DefenseController {
 
 describe("DefenseController", () => {
   it("arcSpineChainSearchRadius matches tier tuning", () => {
-    expect(arcSpineChainSearchRadius(1)).toBe(2);
-    expect(arcSpineChainSearchRadius(2)).toBe(3.25);
-    expect(arcSpineChainSearchRadius(3)).toBe(4);
+    expect(arcSpineChainSearchRadius(1)).toBe(2.5);
+    expect(arcSpineChainSearchRadius(2)).toBe(4.0625);
+    expect(arcSpineChainSearchRadius(3)).toBe(5);
   });
 
   describe("private arc-spine tuning (white-box)", () => {
@@ -47,9 +47,9 @@ describe("DefenseController", () => {
     });
 
     it("arcSearchRadius grows with level", () => {
-      expect(priv(arcSpine(1)).arcSearchRadius()).toBe(2);
-      expect(priv(arcSpine(2)).arcSearchRadius()).toBe(3.25);
-      expect(priv(arcSpine(3)).arcSearchRadius()).toBe(4);
+      expect(priv(arcSpine(1)).arcSearchRadius()).toBe(2.5);
+      expect(priv(arcSpine(2)).arcSearchRadius()).toBe(4.0625);
+      expect(priv(arcSpine(3)).arcSearchRadius()).toBe(5);
     });
 
     it("distanceSquared is squared Euclidean", () => {

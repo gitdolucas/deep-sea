@@ -13,14 +13,14 @@ export const DEFENSE_BUILD_COST_L1: Record<DefenseTypeKey, number> = {
   ink_veil: 27,
 };
 
-/** UI / armory list order */
+/** UI / armory list order (hotbar 1–6, keyboard order) */
 export const ARMORY_DEFENSE_ORDER: readonly DefenseTypeKey[] = [
   "arc_spine",
-  "tideheart_laser",
   "bubble_shotgun",
   "vibration_zone",
   "current_cannon",
   "ink_veil",
+  "tideheart_laser",
 ];
 
 export function buildCostL1(type: DefenseTypeKey): number {

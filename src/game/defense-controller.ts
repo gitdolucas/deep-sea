@@ -28,15 +28,15 @@ export function arcSpineMaxEnemiesPerDischarge(level: DefenseLevel): number {
   }
 }
 
-/** Euclidean tile radius for Arc Spine chain hops (L1 per docs/prd-mvp.md). */
+/** Euclidean tile radius for Arc Spine chain hops (+25% vs doc L1=2 / L2=3.25 / L3=4). */
 export function arcSpineChainSearchRadius(level: DefenseLevel): number {
   switch (level) {
     case 1:
-      return 2;
+      return 2.5;
     case 2:
-      return 3.25;
+      return 4.0625;
     case 3:
-      return 4;
+      return 5;
     default:
       return 0;
   }

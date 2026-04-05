@@ -1,4 +1,4 @@
-import tutorialShallows from "../../data/maps/tutorial_shallows.json";
+import { MINIMAL_MAP_DOCUMENT } from "../game/minimal-map-document.js";
 import { gridCellKey, pathCellKeySetUnion } from "../game/path-cells.js";
 import type {
   DecorationDefinition,
@@ -49,7 +49,7 @@ function cloneDoc(base: MapDocument): MapDocument {
   return structuredClone(base) as MapDocument;
 }
 
-let state: MapDocument = cloneDoc(tutorialShallows as MapDocument);
+let state: MapDocument = cloneDoc(MINIMAL_MAP_DOCUMENT);
 let tool: Tool = "path";
 let selectedPathId: string = state.paths[0]?.id ?? "path_main";
 let selectedSpawnId: string = state.spawnPoints[0]?.id ?? "spawn_a";
@@ -843,7 +843,7 @@ btnPlaytest.addEventListener("click", () => {
 });
 
 btnLoadTutorial.addEventListener("click", () => {
-  state = cloneDoc(tutorialShallows as MapDocument);
+  state = cloneDoc(MINIMAL_MAP_DOCUMENT);
   selectedPathId = state.paths[0]?.id ?? selectedPathId;
   selectedSpawnId = state.spawnPoints[0]?.id ?? selectedSpawnId;
   syncFormFromState();

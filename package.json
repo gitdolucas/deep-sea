@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lan": "node scripts/dev-lan.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -12,12 +13,18 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/three": "^0.183.1",
+    "@vitejs/plugin-react": "^5.1.1",
     "typescript": "^5.7.2",
     "vite": "^7.3.1",
     "vitest": "^3.0.5"
   },
   "dependencies": {
+    "leva": "^0.10.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "three": "^0.183.2"
   }
 }

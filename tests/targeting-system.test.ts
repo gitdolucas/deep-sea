@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { DefenseController } from "../src/game/defense-controller.js";
 import { EnemyController } from "../src/game/enemy-controller.js";
-import { TargetingSystem } from "../src/game/targeting-system.js";
+import type { TargetMode } from "../src/game/types.js";
+import {
+  TargetingSystem,
+  cycleTargetMode,
+  TARGET_MODE_CYCLE_ORDER,
+} from "../src/game/targeting-system.js";
 
 const ctx = { castlePosition: [10, 0] as const };
 
@@ -26,6 +31,15 @@ function enemy(
 }
 
 describe("TargetingSystem", () => {
+  it("cycleTargetMode walks the full ring", () => {
+    let m: TargetMode = "closest";
+    for (let i = 0; i < TARGET_MODE_CYCLE_ORDER.length; i++) {
+      m = cycleTargetMode(m);
+    }
+    expect(m).toBe("closest");
+    expect(cycleTargetMode("first")).toBe("last");
+  });
+
   it("first targets furthest along the path", () => {
     const defense = new DefenseController({
       id: "d",

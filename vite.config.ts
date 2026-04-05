@@ -1,3 +1,4 @@
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -5,6 +6,7 @@ import path from "node:path";
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  plugins: [react()],
   root: rootDir,
   publicDir: "public",
   // Bind explicitly so Playwright's `http://127.0.0.1:3000` readiness check matches (localhost/IPv6 mismatches time out).

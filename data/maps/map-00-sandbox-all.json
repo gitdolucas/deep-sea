@@ -1,0 +1,161 @@
+{
+  "id": "map_00_sandbox_all",
+  "name": "Sandbox — todas as defesas",
+  "description": "Mapa de teste: uma torre de cada tipo já colocada e ondas com Stoneclaw, Razoreel e Colosso. Econômica generosa para QA.",
+  "difficulty": "normal",
+  "startingShells": 9999,
+  "gridSize": [15, 14],
+  "castle": {
+    "position": [12, 13],
+    "hp": 20,
+    "size": [1, 1]
+  },
+  "spawnPoints": [
+    {
+      "id": "spawn_test",
+      "position": [0, 0],
+      "pathIds": ["path_main"]
+    }
+  ],
+  "paths": [
+    {
+      "id": "path_main",
+      "waypoints": [
+        [0, 0],
+        [10, 0],
+        [10, 12],
+        [12, 12],
+        [12, 13]
+      ]
+    }
+  ],
+  "buildSlots": [
+    { "position": [2, 2], "type": "standard" },
+    { "position": [4, 2], "type": "standard" },
+    { "position": [6, 2], "type": "standard" },
+    { "position": [8, 2], "type": "standard" },
+    { "position": [2, 5], "type": "standard" },
+    { "position": [4, 5], "type": "standard" }
+  ],
+  "defenses": [
+    {
+      "id": "def_test_arc",
+      "type": "arc_spine",
+      "position": [2, 2],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_test_laser",
+      "type": "tideheart_laser",
+      "position": [4, 2],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_test_shotgun",
+      "type": "bubble_shotgun",
+      "position": [6, 2],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_test_vibe",
+      "type": "vibration_zone",
+      "position": [8, 2],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_test_cannon",
+      "type": "current_cannon",
+      "position": [2, 5],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_test_ink",
+      "type": "ink_veil",
+      "position": [4, 5],
+      "level": 1,
+      "targetMode": "closest"
+    }
+  ],
+  "waves": [
+    {
+      "wave": 1,
+      "prepTime": 30,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 2,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 2,
+          "delay": 3,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 1,
+          "delay": 10,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "prepTime": 20,
+      "isBoss": true,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 2,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 1.5,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 1.5,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 1,
+          "delay": 6,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    }
+  ],
+  "decorations": []
+}
