@@ -96,6 +96,31 @@ describe("GameSession", () => {
     expect(d?.level).toBe(1);
   });
 
+  it("emits bubble column FX when shotgun muzzle fires", () => {
+    const doc = combatMap();
+    doc.defenses = [
+      {
+        id: "bub",
+        type: "bubble_shotgun",
+        position: [2, 2],
+        level: 1,
+        targetMode: "first",
+      },
+    ];
+    const session = new GameSession(doc);
+    session.tick(0.01);
+    expect(session.getLivingEnemyCount()).toBe(1);
+    session.tick(0.05);
+    const cols = session.consumeBubbleColumnFxEvents();
+    expect(cols.some((e) => e.preset === "bubble_shotgun_muzzle")).toBe(
+      true,
+    );
+    const muzzle = cols.find((e) => e.preset === "bubble_shotgun_muzzle")!;
+    expect(muzzle.axis).toBe("segment");
+    expect(muzzle.from[0]).toBe(2);
+    expect(muzzle.to).toBeDefined();
+  });
+
   it("bubble shotgun does not spawn projectiles when no enemy is in attack range", () => {
     const doc = combatMap();
     doc.spawnPoints = [{ id: "far", position: [10, 0], pathIds: ["p_far"] }];

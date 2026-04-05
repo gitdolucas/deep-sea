@@ -7,6 +7,7 @@ import {
   DEFAULT_BUBBLE_ATTACK_FX_TUNING,
   resetBubbleAttackFxTuning,
 } from "./bubble-attack-fx-tuning.js";
+import { bubbleColumnLevaFolders } from "./bubble-column-fx-leva.js";
 
 const d = DEFAULT_BUBBLE_ATTACK_FX_TUNING;
 
@@ -579,6 +580,7 @@ function BubbleAttackFxLevaPanel({ onRemount }: { onRemount: () => void }) {
           },
         },
       }),
+      ...bubbleColumnLevaFolders(),
     }),
     [],
   );

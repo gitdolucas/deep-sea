@@ -45,6 +45,12 @@ import {
   type BubblePopRing,
 } from "./bubble-attack-fx.js";
 import {
+  disposeBubbleColumnFx,
+  spawnBubbleColumns,
+  updateBubbleColumns,
+  type ActiveBubbleColumn,
+} from "./bubble-column-fx.js";
+import {
   disposeCannonAttackFxShared,
   ensureCannonProjectilePool,
   spawnCannonBlastDecals,
@@ -252,6 +258,9 @@ export class GameApp {
   private readonly bubbleProjectileGroup = new THREE.Group();
   private bubbleProjectilePool: THREE.Points[] = [];
   private bubblePopRings: BubblePopRing[] = [];
+  private readonly bubbleColumnGroup = new THREE.Group();
+  private bubbleColumnActive: ActiveBubbleColumn[] = [];
+  private bubbleColumnFreePool: THREE.Points[] = [];
   private readonly cannonProjectileGroup = new THREE.Group();
   private cannonProjectilePool: THREE.Mesh[] = [];
   private cannonBlastDecals: CannonBlastDecal[] = [];
@@ -333,6 +342,7 @@ export class GameApp {
     this.scene.add(grid);
 
     this.scene.add(this.bubbleProjectileGroup);
+    this.scene.add(this.bubbleColumnGroup);
     this.scene.add(this.cannonProjectileGroup);
 
     const w0 = window.innerWidth;
@@ -552,6 +562,12 @@ export class GameApp {
     }
     this.bubbleProjectilePool.length = 0;
     disposeBubbleAttackFxShared();
+    disposeBubbleColumnFx(
+      this.bubbleColumnGroup,
+      this.bubbleColumnActive,
+      this.bubbleColumnFreePool,
+    );
+    this.scene.remove(this.bubbleColumnGroup);
     this.scene.remove(this.cannonProjectileGroup);
     for (const m of this.cannonProjectilePool) {
       m.geometry.dispose();
@@ -1534,6 +1550,20 @@ export class GameApp {
       this.bubblePopRings,
     );
     updateBubblePopRings(this.bubblePopRings, dt, this.scene);
+    spawnBubbleColumns(
+      this.session.consumeBubbleColumnFxEvents(),
+      this.doc,
+      this.bubbleColumnGroup,
+      this.bubbleColumnActive,
+      this.bubbleColumnFreePool,
+    );
+    updateBubbleColumns(
+      this.bubbleColumnGroup,
+      this.bubbleColumnActive,
+      this.bubbleColumnFreePool,
+      dt,
+      this.clock.elapsedTime,
+    );
   }
 
   private syncCannonAttackFx(dt: number): void {

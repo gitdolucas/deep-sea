@@ -26,6 +26,11 @@ export {
   type DefenseMoveStep,
   type GameOutcome,
 } from "./game-session.js";
+export type {
+  BubbleColumnFxAxisMode,
+  BubbleColumnFxEvent,
+  BubbleColumnFxPreset,
+} from "./bubble-column-fx-events.js";
 export {
   ARMORY_DEFENSE_ORDER,
   DEFENSE_BUILD_COST_L1,

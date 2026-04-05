@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { BubbleColumnFxEvent } from "../src/game/bubble-column-fx-events.js";
 import {
   spawnBubbleVolley,
   tickBubbleProjectiles,
@@ -31,9 +32,17 @@ describe("bubble projectiles", () => {
     const economy = new EconomyController({ shells: 0 });
     const pops: { gx: number; gz: number; splash: boolean }[] = [];
     const projs = spawnBubbleVolley([0, 0], [8, 0], 1);
-    tickBubbleProjectiles(projs, 0.45, enemies, economy, pops);
+    const columns: BubbleColumnFxEvent[] = [];
+    tickBubbleProjectiles(projs, 0.45, enemies, economy, pops, columns);
     expect(pops.length).toBeGreaterThanOrEqual(1);
     expect(pops[0]).toMatchObject({ splash: false });
+    expect(columns.length).toBeGreaterThanOrEqual(1);
+    expect(columns[0]).toMatchObject({
+      preset: "bubble_shotgun_impact",
+      axis: "segment",
+      splash: false,
+    });
+    expect(columns[0]!.to).toBeDefined();
   });
 
   it("hits Stoneclaw along the travel segment (no tunneling on large dt)", () => {

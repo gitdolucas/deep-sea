@@ -4,6 +4,7 @@ import type { EnemyController } from "./enemy-controller.js";
 import { KILL_SHELL_REWARD } from "./damage-resolver.js";
 import type { EconomyController } from "./economy-controller.js";
 import { distanceSqPointToSegment, tileDistanceSq } from "./spatial.js";
+import type { BubbleColumnFxEvent } from "./bubble-column-fx-events.js";
 import type { DefenseLevel, GridPos } from "./types.js";
 
 /** Per docs/defenses/bubble-shotgun.md — L1 3, L2 5, L3 7 bubbles. */
@@ -45,6 +46,8 @@ export type BubblePopFx = {
 /** Enemies can be skipped in one dt if we only test the endpoint; segment tests + forgiving radius. */
 const HIT_RAD_SQ = 0.55 * 0.55;
 const SPLASH_RAD_SQ = 1.01;
+/** Grid-space extent for impact column axis along projectile velocity. */
+const IMPACT_COLUMN_VEL_TILES = 0.4;
 
 export function spawnBubbleVolley(
   towerPos: GridPos,
@@ -95,6 +98,7 @@ export function tickBubbleProjectiles(
   enemies: Map<string, EnemyController>,
   economy: EconomyController,
   popFxOut?: BubblePopFx[],
+  columnFxOut?: BubbleColumnFxEvent[],
 ): void {
   outer: for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i]!;
@@ -120,6 +124,21 @@ export function tickBubbleProjectiles(
         popFxOut?.push({
           gx: ep,
           gz: ez,
+          splash: p.splash > 0,
+        });
+        const vlen = Math.hypot(p.vgx, p.vgz) || 1;
+        const ux = p.vgx / vlen;
+        const uz = p.vgz / vlen;
+        columnFxOut?.push({
+          preset: "bubble_shotgun_impact",
+          seed:
+            (Math.imul(ep | 0, 73856093) ^
+              Math.imul(ez | 0, 19349663) ^
+              Math.imul(Math.floor(p.traveled * 1000) | 0, 50331653)) >>>
+            0,
+          from: [ep, ez],
+          to: [ep + ux * IMPACT_COLUMN_VEL_TILES, ez + uz * IMPACT_COLUMN_VEL_TILES],
+          axis: "segment",
           splash: p.splash > 0,
         });
         const dealt = damageAfterArmorEffective(e, p.directDamage);

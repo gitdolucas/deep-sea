@@ -39,6 +39,9 @@ import {
   type TargetingContext,
 } from "./targeting-system.js";
 import { tileDistanceSq } from "./spatial.js";
+import type {
+  BubbleColumnFxEvent,
+} from "./bubble-column-fx-events.js";
 import {
   spawnBubbleVolley,
   tickBubbleProjectiles,
@@ -73,6 +76,8 @@ export class GameSession {
   private readonly laserBeamAccum = new Map<string, number>();
   private bubbleProjectiles: BubbleProjectileState[] = [];
   private bubblePopFx: BubblePopFx[] = [];
+  private bubbleColumnFxEvents: BubbleColumnFxEvent[] = [];
+  private nextBubbleColumnFxSeed = 1;
   private cannonProjectiles: CannonProjectileState[] = [];
   private readonly defensePops = new Map<string, number>();
 
@@ -154,6 +159,14 @@ export class GameSession {
     if (this.bubblePopFx.length === 0) return [];
     const out = this.bubblePopFx.slice();
     this.bubblePopFx.length = 0;
+    return out;
+  }
+
+  /** Bubble column VFX requests (muzzle / impact); clears when consumed. */
+  consumeBubbleColumnFxEvents(): BubbleColumnFxEvent[] {
+    if (this.bubbleColumnFxEvents.length === 0) return [];
+    const out = this.bubbleColumnFxEvents.slice();
+    this.bubbleColumnFxEvents.length = 0;
     return out;
   }
 
@@ -351,6 +364,7 @@ export class GameSession {
       this.enemies,
       this.economy,
       this.bubblePopFx,
+      this.bubbleColumnFxEvents,
     );
     this.tickTideheartLasers(deltaSeconds);
     this.tickMainDefenses(deltaSeconds);
@@ -472,6 +486,14 @@ export class GameSession {
           this.bubbleProjectiles.push(
             ...spawnBubbleVolley(snap.position, aim, snap.level),
           );
+          this.bubbleColumnFxEvents.push({
+            preset: "bubble_shotgun_muzzle",
+            seed: (this.nextBubbleColumnFxSeed++ * 0x9e3779b9) >>> 0,
+            from: snap.position,
+            to: aim,
+            axis: "segment",
+            splash: false,
+          });
         }
         this.defenseCooldowns.set(
           snap.id,
