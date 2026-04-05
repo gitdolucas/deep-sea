@@ -54,6 +54,11 @@ import {
 } from "./cannon-attack-fx.js";
 import { createArcSpineLightningLine } from "./arc-spine-chain-fx.js";
 import {
+  spawnArcSpineHitSparkles,
+  updateArcSpineHitSparkles,
+  type ArcSpineHitSparkleBurst,
+} from "./arc-spine-hit-sparkles.js";
+import {
   alignTideheartLaserMesh,
   beamWidthForTideheartLevel,
   createTideheartLaserBeam,
@@ -223,8 +228,9 @@ export class GameApp {
       vibrationDomeKey?: string;
     }
   >();
-  private chainLines: { obj: THREE.LineSegments; t: number; mat: THREE.ShaderMaterial }[] =
+  private chainLines: { obj: THREE.Mesh; t: number; mat: THREE.ShaderMaterial }[] =
     [];
+  private arcSpineHitSparkles: ArcSpineHitSparkleBurst[] = [];
   private tideheartBeams: {
     obj: THREE.Mesh;
     t: number;
@@ -505,6 +511,12 @@ export class GameApp {
       c.mat.dispose();
     }
     this.chainLines = [];
+    for (const s of this.arcSpineHitSparkles) {
+      this.scene.remove(s.obj);
+      s.geo.dispose();
+      s.mat.dispose();
+    }
+    this.arcSpineHitSparkles = [];
     for (const b of this.tideheartBeams) {
       this.scene.remove(b.obj);
       b.obj.geometry.dispose();
@@ -1276,6 +1288,7 @@ export class GameApp {
     this.applyCombatVfx();
     this.syncCannonAttackFx(dt);
     this.updateChainFx(dt);
+    updateArcSpineHitSparkles(this.arcSpineHitSparkles, dt, this.scene);
     this.updateTideheartBeamFx(dt);
     this.updateHud();
     this.syncWaveProgress();
@@ -1540,12 +1553,22 @@ export class GameApp {
         0.6,
       );
       const pts: THREE.Vector3[] = [start];
-      for (const h of evt.hits) {
+      evt.hits.forEach((h, hi) => {
         pts.push(
           worldFromGrid(h.position[0], h.position[1], this.doc, 0.6),
         );
         this.spawnDamagePopup(h.damage, h.position[0], h.position[1]);
-      }
+        if (evt.chainLightningVfx === true) {
+          spawnArcSpineHitSparkles(
+            h.position[0],
+            h.position[1],
+            this.doc,
+            this.scene,
+            this.arcSpineHitSparkles,
+            hi,
+          );
+        }
+      });
       if (evt.chainLightningVfx === true && pts.length >= 2) {
         this.addChain(pts);
       }
