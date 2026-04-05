@@ -4,11 +4,18 @@ import type { MapDocument } from "../game/map-types.js";
 import { GameApp, type MissionEndNavigation } from "./GameApp.js";
 import { LEVELS } from "./levels.js";
 import { createMapOverviewElement } from "./map-overview.js";
+import { shouldMountBubbleAttackFxLeva } from "./bubble-attack-fx-tuning.js";
 import { shouldMountVibrationDomeLeva } from "./vibration-dome-tuning.js";
 
 if (shouldMountVibrationDomeLeva()) {
   void import("./mount-vibration-dome-leva.js").then((m) =>
     m.mountVibrationDomeLeva(),
+  );
+}
+
+if (shouldMountBubbleAttackFxLeva()) {
+  void import("./mount-bubble-attack-fx-leva.js").then((m) =>
+    m.mountBubbleAttackFxLeva(),
   );
 }
 

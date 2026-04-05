@@ -141,6 +141,16 @@ function disposeObject3DTree(root: THREE.Object3D): void {
 /** Simulation time scale while defense focus UI is active (design: slow tactics). */
 const DEFENSE_FOCUS_TICK_SCALE = 0.25;
 
+/** User-selectable simulation speeds (real-time factor after focus scale). */
+const SIM_TIME_SCALES = [0, 0.15, 0.25, 0.5, 1, 2, 5, 10] as const;
+type SimTimeScale = (typeof SIM_TIME_SCALES)[number];
+
+const SIM_TIME_SCALE_SET = new Set<number>(SIM_TIME_SCALES);
+
+function isSimTimeScale(n: number): n is SimTimeScale {
+  return SIM_TIME_SCALE_SET.has(n);
+}
+
 /** Vertical FOV multiplier while a defense is focused (narrower = zoom in). */
 const DEFENSE_FOCUS_FOV_SCALE = 0.5;
 
@@ -202,8 +212,8 @@ export class GameApp {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private clock = new THREE.Clock();
-  /** Bottom-bar “CURRENT”: 2× simulation tick while playing. */
-  private simSpeedMultiplier: 1 | 2 = 1;
+  /** Simulation time scale (0 = pause gameplay tick; visuals still run). */
+  private simTimeScale: SimTimeScale = 1;
   private cellPickEntries: { mesh: THREE.Mesh; gx: number; gz: number }[] =
     [];
   private readonly rangePreviewGroup = new THREE.Group();
@@ -240,7 +250,7 @@ export class GameApp {
     width: number;
   }[] = [];
   private readonly bubbleProjectileGroup = new THREE.Group();
-  private bubbleProjectilePool: THREE.Mesh[] = [];
+  private bubbleProjectilePool: THREE.Points[] = [];
   private bubblePopRings: BubblePopRing[] = [];
   private readonly cannonProjectileGroup = new THREE.Group();
   private cannonProjectilePool: THREE.Mesh[] = [];
@@ -401,8 +411,13 @@ export class GameApp {
       ac,
     );
     document.getElementById("hudSpeed")?.addEventListener(
-      "click",
-      () => this.toggleSimSpeed(),
+      "change",
+      (ev) => {
+        const sel = ev.target as HTMLSelectElement;
+        const v = Number(sel.value);
+        if (isSimTimeScale(v)) this.setSimTimeScale(v);
+        else this.syncHudSpeedControl();
+      },
       ac,
     );
     document.getElementById("gameplayTipsPrev")?.addEventListener(
@@ -488,6 +503,7 @@ export class GameApp {
       );
     }
 
+    this.syncHudSpeedControl();
     this.refreshInventoryUi();
   }
 
@@ -532,6 +548,7 @@ export class GameApp {
     this.scene.remove(this.bubbleProjectileGroup);
     for (const m of this.bubbleProjectilePool) {
       m.geometry.dispose();
+      (m.material as THREE.Material).dispose();
     }
     this.bubbleProjectilePool.length = 0;
     disposeBubbleAttackFxShared();
@@ -1187,18 +1204,16 @@ export class GameApp {
     this.session.startWaveEarly();
   }
 
-  private toggleSimSpeed(): void {
+  private setSimTimeScale(scale: SimTimeScale): void {
     if (this.session.getOutcome() !== "playing") return;
-    this.simSpeedMultiplier = this.simSpeedMultiplier === 1 ? 2 : 1;
-    this.syncHudSpeedButton();
+    this.simTimeScale = scale;
+    this.syncHudSpeedControl();
   }
 
-  private syncHudSpeedButton(): void {
-    const btn = document.getElementById("hudSpeed") as HTMLButtonElement | null;
-    if (!btn) return;
-    const on = this.simSpeedMultiplier === 2;
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.textContent = on ? "Speed ×2" : "Speed ×1";
+  private syncHudSpeedControl(): void {
+    const sel = document.getElementById("hudSpeed") as HTMLSelectElement | null;
+    if (!sel) return;
+    sel.value = String(this.simTimeScale);
   }
 
   private refreshInventoryUi(): void {
@@ -1279,7 +1294,10 @@ export class GameApp {
         this.selectedDefenseId !== null &&
         this.session.getOutcome() === "playing";
       const baseDt = focus ? dt * DEFENSE_FOCUS_TICK_SCALE : dt;
-      this.session.tick(baseDt * this.simSpeedMultiplier);
+      const simDt = baseDt * this.simTimeScale;
+      if (simDt > 0) {
+        this.session.tick(simDt);
+      }
     }
     this.syncDefenses();
     this.updateSelectionRangeOverlay();
@@ -1796,7 +1814,7 @@ export class GameApp {
     const title = document.getElementById("overlayTitle");
     const sub = document.getElementById("overlaySub");
     const send = document.getElementById("sendWave") as HTMLButtonElement | null;
-    const hudSpeed = document.getElementById("hudSpeed") as HTMLButtonElement | null;
+    const hudSpeed = document.getElementById("hudSpeed") as HTMLSelectElement | null;
     const sendSub = document.getElementById("sendWaveSub");
     const phase = this.session.waveDirector.getPhase();
     if (send) {
@@ -1810,8 +1828,8 @@ export class GameApp {
       hudSpeed.disabled = out !== "playing";
     }
     if (out !== "playing") {
-      this.simSpeedMultiplier = 1;
-      this.syncHudSpeedButton();
+      this.simTimeScale = 1;
+      this.syncHudSpeedControl();
     }
     if (sendSub) {
       if (out !== "playing") {
