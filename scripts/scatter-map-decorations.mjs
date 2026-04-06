@@ -104,9 +104,6 @@ function idSeed(id) {
 function validDecorationCells(doc) {
   const [gw, gh] = doc.gridSize;
   const pathKeys = pathCellKeySetUnion(doc.paths);
-  const buildKeys = new Set(
-    doc.buildSlots.map((s) => gridCellKey(s.position[0], s.position[1])),
-  );
   const [cx, cz] = doc.castle.position;
   const [cw, ch] = doc.castle.size;
   const inCastle = (x, z) =>
@@ -119,7 +116,6 @@ function validDecorationCells(doc) {
     for (let z = 0; z < gh; z++) {
       const k = gridCellKey(x, z);
       if (pathKeys.has(k)) continue;
-      if (buildKeys.has(k)) continue;
       if (inCastle(x, z)) continue;
       if (spawnKeys.has(k)) continue;
       out.push([x, z]);

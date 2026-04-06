@@ -20,7 +20,6 @@ export const MINIMAL_MAP_DOCUMENT: MapDocument = {
       ],
     },
   ],
-  buildSlots: [{ position: [1, 1], type: "standard" }],
   defenses: [],
   waves: [
     {

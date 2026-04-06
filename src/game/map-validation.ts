@@ -1,9 +1,5 @@
 import { gridCellKey, pathCellKeySetUnion } from "./path-cells.js";
-import type {
-  BuildSlotType,
-  MapDifficulty,
-  MapDocument,
-} from "./map-types.js";
+import type { MapDifficulty, MapDocument } from "./map-types.js";
 import type {
   DefenseTypeKey,
   EnemyTypeKey,
@@ -43,8 +39,6 @@ const TARGET_MODES = new Set<TargetMode>([
   "weakest",
   "closest",
 ]);
-
-const BUILD_SLOT_TYPES = new Set<BuildSlotType>(["standard", "reinforced"]);
 
 const DECORATION_KEYS = new Set<string>([
   "coral_branch",
@@ -87,6 +81,21 @@ function decorationCellKeys(
     const gx = Math.floor(p[0]!);
     const gz = Math.floor(p[2]!);
     set.add(gridCellKey(gx, gz));
+  }
+  return set;
+}
+
+function castleFootprintCellKeys(
+  castle: { position: readonly [number, number]; size: readonly [number, number] },
+  inGrid: (x: number, z: number) => boolean,
+): Set<string> {
+  const set = new Set<string>();
+  const [cx, cz] = castle.position;
+  const [cw, ch] = castle.size;
+  for (let x = cx; x < cx + cw; x++) {
+    for (let z = cz; z < cz + ch; z++) {
+      if (inGrid(x, z)) set.add(gridCellKey(x, z));
+    }
   }
   return set;
 }
@@ -403,80 +412,6 @@ export function validateMapDocument(input: unknown): MapValidationIssue[] {
     }
   }
 
-  if (!Array.isArray(doc.buildSlots)) {
-    push(
-      issues,
-      "shape.buildSlots",
-      "buildSlots",
-      "`buildSlots` must be an array.",
-    );
-  } else {
-    const slots = doc.buildSlots as unknown[];
-    const slotKeys = new Set<string>();
-    for (let bi = 0; bi < slots.length; bi++) {
-      const b = slots[bi];
-      const bPath = `buildSlots[${bi}]`;
-      if (!isObject(b)) {
-        push(issues, "shape.buildSlot", bPath, "Each build slot must be an object.");
-        continue;
-      }
-      const t = b.type;
-      if (
-        typeof t !== "string" ||
-        !BUILD_SLOT_TYPES.has(t as BuildSlotType)
-      ) {
-        push(
-          issues,
-          "buildSlot.type",
-          `${bPath}.type`,
-          "`type` must be \"standard\" | \"reinforced\".",
-        );
-      }
-      const bpos = b.position;
-      if (
-        !Array.isArray(bpos) ||
-        bpos.length !== 2 ||
-        !isIntGridCoord(bpos[0]) ||
-        !isIntGridCoord(bpos[1])
-      ) {
-        push(
-          issues,
-          "buildSlot.position",
-          `${bPath}.position`,
-          "`position` must be [x, z] integers.",
-        );
-        continue;
-      }
-      const key = gridCellKey(bpos[0]!, bpos[1]!);
-      if (slotKeys.has(key)) {
-        push(
-          issues,
-          "buildSlot.dup",
-          `${bPath}.position`,
-          "Duplicate build slot position.",
-        );
-      }
-      slotKeys.add(key);
-      if (!inGrid(bpos[0]!, bpos[1]!)) {
-        push(
-          issues,
-          "grid.bounds",
-          `${bPath}.position`,
-          "Build slot out of grid bounds.",
-        );
-        continue;
-      }
-      if (pathKeysUnion.has(key)) {
-        push(
-          issues,
-          "buildSlot.path",
-          `${bPath}.position`,
-          "Build slot cannot sit on an enemy path cell (docs/map-schema.md).",
-        );
-      }
-    }
-  }
-
   if (!Array.isArray(doc.decorations)) {
     push(
       issues,
@@ -554,7 +489,7 @@ export function validateMapDocument(input: unknown): MapValidationIssue[] {
     }
   }
 
-  const decKeysForSlots =
+  const decorationFloorKeys =
     Array.isArray(doc.decorations) &&
     doc.decorations.every((x) => isObject(x) && Array.isArray((x as { position?: unknown }).position))
       ? decorationCellKeys(
@@ -563,51 +498,27 @@ export function validateMapDocument(input: unknown): MapValidationIssue[] {
         )
       : new Set<string>();
 
-  if (Array.isArray(doc.buildSlots)) {
-    for (let bi = 0; bi < doc.buildSlots.length; bi++) {
-      const b = doc.buildSlots[bi] as { position?: unknown };
-      if (
-        Array.isArray(b.position) &&
-        b.position.length === 2 &&
-        isIntGridCoord(b.position[0]) &&
-        isIntGridCoord(b.position[1])
-      ) {
-        const key = gridCellKey(b.position[0]!, b.position[1]!);
-        if (decKeysForSlots.has(key)) {
-          push(
-            issues,
-            "buildSlot.decoration",
-            `buildSlots[${bi}].position`,
-            "Build slot cannot sit on a decoration tile (docs/map-schema.md).",
-          );
-        }
-      }
-    }
-  }
+  const castleKeysForDefense =
+    isObject(doc.castle) &&
+    Array.isArray(doc.castle.position) &&
+    doc.castle.position.length === 2 &&
+    Array.isArray(doc.castle.size) &&
+    doc.castle.size.length === 2 &&
+    isIntGridCoord(doc.castle.position[0]) &&
+    isIntGridCoord(doc.castle.position[1]) &&
+    isIntGridCoord(doc.castle.size[0]) &&
+    isIntGridCoord(doc.castle.size[1])
+      ? castleFootprintCellKeys(
+          doc.castle as { position: [number, number]; size: [number, number] },
+          inGrid,
+        )
+      : new Set<string>();
 
   if (!Array.isArray(doc.defenses)) {
     push(issues, "shape.defenses", "defenses", "`defenses` must be an array.");
   } else {
     const defs = doc.defenses as unknown[];
     const defensePosKeys = new Set<string>();
-    const slotKeySet = Array.isArray(doc.buildSlots)
-      ? new Set(
-          (doc.buildSlots as { position?: unknown }[])
-            .filter(
-              (s) =>
-                Array.isArray(s.position) &&
-                s.position.length === 2 &&
-                isIntGridCoord(s.position[0]) &&
-                isIntGridCoord(s.position[1]),
-            )
-            .map((s) =>
-              gridCellKey(
-                (s.position as [number, number])[0]!,
-                (s.position as [number, number])[1]!,
-              ),
-            ),
-        )
-      : new Set<string>();
     for (let di = 0; di < defs.length; di++) {
       const d = defs[di];
       const dPath = `defenses[${di}]`;
@@ -655,12 +566,28 @@ export function validateMapDocument(input: unknown): MapValidationIssue[] {
         );
       }
       defensePosKeys.add(dk);
-      if (!slotKeySet.has(dk)) {
+      if (pathKeysUnion.has(dk)) {
         push(
           issues,
-          "defense.slot",
+          "defense.path",
           `${dPath}.position`,
-          "Defense position must match a `buildSlots` entry (docs/map-schema.md § defenses).",
+          "Defense cannot sit on an enemy path cell (docs/map-schema.md).",
+        );
+      }
+      if (decorationFloorKeys.has(dk)) {
+        push(
+          issues,
+          "defense.decoration",
+          `${dPath}.position`,
+          "Defense cannot sit on a decoration tile (docs/map-schema.md).",
+        );
+      }
+      if (castleKeysForDefense.has(dk)) {
+        push(
+          issues,
+          "defense.castle",
+          `${dPath}.position`,
+          "Defense cannot sit on the citadel footprint (docs/map-schema.md).",
         );
       }
       const lvl = d.level;

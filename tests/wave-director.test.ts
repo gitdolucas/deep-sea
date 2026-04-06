@@ -18,7 +18,6 @@ function sessionMap(): MapDocument {
         [3, 5],
       ] },
     ],
-    buildSlots: [],
     defenses: [],
     waves: [
       {

@@ -1,5 +1,4 @@
 import type {
-  BuildSlotDefinition,
   CastleDefinition,
   DecorationDefinition,
   MapDifficulty,
@@ -36,9 +35,22 @@ function decorationOccupiedCellKeys(
   return set;
 }
 
+/** All grid cells covered by the citadel footprint (origin = front-left of `castle.position`). */
+function castleOccupiedCellKeys(castle: CastleDefinition): Set<string> {
+  const set = new Set<string>();
+  const [cx, cz] = castle.position;
+  const [cw, ch] = castle.size;
+  for (let x = cx; x < cx + cw; x++) {
+    for (let z = cz; z < cz + ch; z++) {
+      set.add(gridCellKey(x, z));
+    }
+  }
+  return set;
+}
+
 /**
  * Level layout + wave data from map JSON. Defenses are mutable runtime state;
- * geometry, slots, paths, and waves are treated as fixed for the map.
+ * geometry, paths, and waves are treated as fixed for the map.
  */
 export class MapController {
   readonly id: string;
@@ -49,11 +61,12 @@ export class MapController {
 
   private readonly spawnPoints: readonly SpawnPointDefinition[];
   private readonly pathsById: ReadonlyMap<string, PathDefinition>;
-  private readonly buildSlots: readonly BuildSlotDefinition[];
   /** Grid cells occupied by enemy paths; towers may not be built here. */
   private readonly pathOccupiedCellKeys: ReadonlySet<string>;
   /** Grid cells with a decoration; towers may not be built here. */
   private readonly decorationOccupiedCellKeys: ReadonlySet<string>;
+  /** Citadel footprint; towers may not be built here. */
+  private readonly castleOccupiedCellKeys: ReadonlySet<string>;
   private defenses: DefenseSnapshot[];
   private readonly waves: readonly WaveDefinition[];
   private readonly decorations: readonly DecorationDefinition[];
@@ -66,11 +79,11 @@ export class MapController {
     this.castle = doc.castle;
     this.spawnPoints = doc.spawnPoints;
     this.pathsById = new Map(doc.paths.map((p) => [p.id, p]));
-    this.buildSlots = doc.buildSlots;
     this.pathOccupiedCellKeys = pathCellKeySetUnion(doc.paths);
     this.decorationOccupiedCellKeys = decorationOccupiedCellKeys(
       doc.decorations,
     );
+    this.castleOccupiedCellKeys = castleOccupiedCellKeys(doc.castle);
     this.defenses = doc.defenses.map(cloneDefense);
     this.waves = doc.waves;
     this.decorations = doc.decorations;
@@ -90,10 +103,6 @@ export class MapController {
 
   getPathWaypoints(pathId: string): readonly GridPos[] | undefined {
     return this.pathsById.get(pathId)?.waypoints;
-  }
-
-  getBuildSlots(): readonly BuildSlotDefinition[] {
-    return this.buildSlots;
   }
 
   getDefenses(): readonly DefenseSnapshot[] {
@@ -120,14 +129,15 @@ export class MapController {
   }
 
   /**
-   * True for any in-bounds cell not on an enemy path or decoration tile
-   * (map `buildSlots` are hints only).
+   * True for any in-bounds tile that is not path, decoration, or citadel
+   * (`docs/map-schema.md` — tower placement).
    */
-  isBuildSlotPosition(pos: GridPos): boolean {
+  isLegalTowerTile(pos: GridPos): boolean {
     if (!this.positionInBounds(pos)) return false;
     const key = this.posKeyFromGrid(pos);
     if (this.pathOccupiedCellKeys.has(key)) return false;
     if (this.decorationOccupiedCellKeys.has(key)) return false;
+    if (this.castleOccupiedCellKeys.has(key)) return false;
     return true;
   }
 
@@ -136,10 +146,10 @@ export class MapController {
   }
 
   /**
-   * Places a tower if the tile is off the path, not under a decoration, in bounds, and not occupied.
+   * Places a tower if the tile is a legal placement and not already occupied.
    */
   placeDefense(snapshot: DefenseSnapshot): boolean {
-    if (!this.isBuildSlotPosition(snapshot.position)) return false;
+    if (!this.isLegalTowerTile(snapshot.position)) return false;
     if (this.getDefenseAt(snapshot.position) !== undefined) return false;
     this.defenses.push(cloneDefense(snapshot));
     return true;
@@ -167,19 +177,18 @@ export class MapController {
   tryDecrementDefenseLevel(defenseId: string): boolean {
     const d = this.defenses.find((x) => x.id === defenseId);
     if (!d || d.level <= 1) return false;
-    d.level = ((d.level - 1) as DefenseLevel);
+    d.level = (d.level - 1) as DefenseLevel;
     return true;
   }
 
   /**
-   * Moves an existing defense to another legal empty tile (off path, no decoration).
-   * Does nothing if the cell is invalid, occupied, or unchanged.
+   * Moves an existing defense to another legal empty tile.
    */
   tryMoveDefenseTo(defenseId: string, newPos: GridPos): boolean {
     const d = this.defenses.find((x) => x.id === defenseId);
     if (!d) return false;
     if (this.positionsEqual(d.position, newPos)) return false;
-    if (!this.isBuildSlotPosition(newPos)) return false;
+    if (!this.isLegalTowerTile(newPos)) return false;
     if (this.getDefenseAt(newPos) !== undefined) return false;
     d.position = [newPos[0], newPos[1]];
     return true;

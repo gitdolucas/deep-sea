@@ -19,13 +19,6 @@ export interface PathDefinition {
   waypoints: readonly GridPos[];
 }
 
-export type BuildSlotType = "standard" | "reinforced";
-
-export interface BuildSlotDefinition {
-  position: GridPos;
-  type: BuildSlotType;
-}
-
 export interface WaveGroupDefinition {
   enemyType: EnemyTypeKey;
   count: number;
@@ -76,7 +69,6 @@ export interface MapDocument {
   castle: CastleDefinition;
   spawnPoints: readonly SpawnPointDefinition[];
   paths: readonly PathDefinition[];
-  buildSlots: readonly BuildSlotDefinition[];
   defenses: readonly DefenseSnapshot[];
   waves: readonly WaveDefinition[];
   decorations: readonly DecorationDefinition[];

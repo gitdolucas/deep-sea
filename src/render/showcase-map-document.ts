@@ -4,7 +4,7 @@ import type { DefenseSnapshot } from "../game/types.js";
 
 /**
  * Map JSON for the visual showcase (no gameplay): valid schema, path along z=0,
- * six defenses on build slots for the six tower types.
+ * six defenses on open sand for the six tower types.
  */
 export const SHOWCASE_MAP_DOCUMENT: MapDocument = (() => {
   const gw = 28;
@@ -27,11 +27,6 @@ export const SHOWCASE_MAP_DOCUMENT: MapDocument = (() => {
       targetMode: "closest",
     };
   });
-  const buildSlots = defensePositions.map((position) => ({
-    position: position as [number, number],
-    type: "standard" as const,
-  }));
-
   return {
     id: "visual_showcase",
     name: "Visual showcase",
@@ -50,7 +45,6 @@ export const SHOWCASE_MAP_DOCUMENT: MapDocument = (() => {
         ],
       },
     ],
-    buildSlots,
     defenses,
     waves: [
       {

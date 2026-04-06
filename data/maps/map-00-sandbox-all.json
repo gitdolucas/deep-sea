@@ -58,50 +58,6 @@
       ]
     }
   ],
-  "buildSlots": [
-    {
-      "position": [
-        2,
-        2
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        4,
-        2
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        6,
-        2
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        8,
-        2
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        2,
-        5
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        4,
-        5
-      ],
-      "type": "standard"
-    }
-  ],
   "defenses": [
     {
       "id": "def_test_shotgun",
@@ -128,7 +84,7 @@
       "type": "current_cannon",
       "position": [
         2,
-        5
+        4
       ],
       "level": 1,
       "targetMode": "closest"
@@ -442,134 +398,144 @@
       "scale": 0.89
     },
     {
-      "type": "kelp_cluster",
+      "type": "rock_small",
       "position": [
-        11.67,
+        2.63,
         0,
-        7.71
+        5.27
+      ],
+      "rotation": 0,
+      "scale": 0.91
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        11.31,
+        0,
+        7.27
       ],
       "rotation": 90,
-      "scale": 1.03
-    },
-    {
-      "type": "vent_bubble",
-      "position": [
-        13.57,
-        0,
-        11.69
-      ],
-      "rotation": 180,
-      "scale": 0.82
-    },
-    {
-      "type": "vent_bubble",
-      "position": [
-        5.32,
-        0,
-        3.62
-      ],
-      "rotation": 180,
-      "scale": 1.06
-    },
-    {
-      "type": "trench_edge",
-      "position": [
-        11.41,
-        0,
-        10.55
-      ],
-      "rotation": 90,
-      "scale": 1.07
+      "scale": 1.01
     },
     {
       "type": "shell_pile",
       "position": [
-        4.6,
+        13.5,
         0,
-        3.26
-      ],
-      "rotation": 270,
-      "scale": 0.78
-    },
-    {
-      "type": "rock_small",
-      "position": [
-        5.65,
-        0,
-        6.6
-      ],
-      "rotation": 90,
-      "scale": 0.89
-    },
-    {
-      "type": "rock_small",
-      "position": [
-        14.59,
-        0,
-        6.5
-      ],
-      "rotation": 180,
-      "scale": 1.14
-    },
-    {
-      "type": "trench_edge",
-      "position": [
-        14.61,
-        0,
-        13.54
-      ],
-      "rotation": 270,
-      "scale": 0.78
-    },
-    {
-      "type": "anemone",
-      "position": [
-        11.45,
-        0,
-        9.51
-      ],
-      "rotation": 180,
-      "scale": 1.19
-    },
-    {
-      "type": "vent_bubble",
-      "position": [
-        8.52,
-        0,
-        8.48
-      ],
-      "rotation": 0,
-      "scale": 0.85
-    },
-    {
-      "type": "coral_branch",
-      "position": [
-        3.72,
-        0,
-        13.44
+        11.57
       ],
       "rotation": 270,
       "scale": 0.91
     },
     {
+      "type": "coral_fan",
+      "position": [
+        5.5,
+        0,
+        3.66
+      ],
+      "rotation": 0,
+      "scale": 0.87
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        11.58,
+        0,
+        10.53
+      ],
+      "rotation": 180,
+      "scale": 1.05
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        4.4,
+        0,
+        3.34
+      ],
+      "rotation": 0,
+      "scale": 1.2
+    },
+    {
+      "type": "skull",
+      "position": [
+        5.66,
+        0,
+        6.43
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        14.62,
+        0,
+        6.31
+      ],
+      "rotation": 270,
+      "scale": 1.14
+    },
+    {
+      "type": "anemone",
+      "position": [
+        14.5,
+        0,
+        13.46
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
       "type": "vent_bubble",
       "position": [
-        9.73,
+        11.49,
         0,
-        6.53
+        9.66
       ],
       "rotation": 270,
       "scale": 1.21
     },
     {
-      "type": "kelp_cluster",
+      "type": "trench_edge",
       "position": [
-        14.26,
+        8.58,
         0,
-        2.7
+        8.64
       ],
-      "rotation": 0,
-      "scale": 1.15
+      "rotation": 180,
+      "scale": 1.09
+    },
+    {
+      "type": "anemone",
+      "position": [
+        3.67,
+        0,
+        13.62
+      ],
+      "rotation": 90,
+      "scale": 0.78
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        9.3,
+        0,
+        6.34
+      ],
+      "rotation": 90,
+      "scale": 1
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        14.69,
+        0,
+        2.33
+      ],
+      "rotation": 180,
+      "scale": 1.11
     }
   ]
 }

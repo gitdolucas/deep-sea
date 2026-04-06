@@ -1104,7 +1104,7 @@ export class GameApp {
 
   private canPlaceTower(gx: number, gz: number): boolean {
     const pos = [gx, gz] as const;
-    if (!this.session.map.isBuildSlotPosition(pos)) return false;
+    if (!this.session.map.isLegalTowerTile(pos)) return false;
     if (this.session.map.getDefenseAt(pos) !== undefined) return false;
     return true;
   }

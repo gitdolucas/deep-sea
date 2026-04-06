@@ -16,6 +16,9 @@ import map04SiegeMeridian from "../../data/maps/map-04-siege-meridian.json" with
 import map05NullDepths from "../../data/maps/map-05-null-depths.json" with {
   type: "json",
 };
+import map06RadialHub from "../../data/maps/map-06-radial-hub.json" with {
+  type: "json",
+};
 import type { MapDocument } from "../game/map-types.js";
 
 export type LevelEntry = {
@@ -55,5 +58,10 @@ export const LEVELS: readonly LevelEntry[] = [
     id: map05NullDepths.id,
     name: map05NullDepths.name,
     document: map05NullDepths as unknown as MapDocument,
+  },
+  {
+    id: map06RadialHub.id,
+    name: map06RadialHub.name,
+    document: map06RadialHub as unknown as MapDocument,
   },
 ];

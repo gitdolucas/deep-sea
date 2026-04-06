@@ -30,7 +30,6 @@ type Tool =
   | "path"
   | "spawn"
   | "castle"
-  | "slot"
   | "decoration"
   | "erase_dec"
   | "pop_waypoint";
@@ -39,7 +38,6 @@ const TOOL_HINTS: Record<Tool, string> = {
   path: "Each click appends a waypoint to the active path. Waypoints define the coral lane enemies follow.",
   spawn: "Moves the selected spawn to the clicked tile. New spawns default to the first path id.",
   castle: "Sets the citadel’s grid origin (front-left of the footprint). Adjust width/depth in the sidebar.",
-  slot: "Toggles a build slot on this tile. Slots cannot overlap path or decoration tiles when valid.",
   decoration: "Places a prop at (x, floor y, z) using the type and transform fields on the left.",
   erase_dec: "Removes every decoration whose floor tile matches the cell you click.",
   pop_waypoint: "Click any cell to remove the last waypoint from the active path (keeps at least two).",
@@ -131,7 +129,7 @@ btnCleanup.type = "button";
 btnCleanup.textContent = "Clean up map";
 btnCleanup.className = "map-builder__mini";
 btnCleanup.title =
-  "Strip consecutive duplicate waypoints, drop build slots on paths or decoration tiles (deduped), remove defenses not on a remaining slot.";
+  "Strip consecutive duplicate waypoints; remove defenses on path, decoration, or citadel tiles.";
 
 const inputCastleW = document.createElement("input");
 inputCastleW.type = "number";
@@ -201,7 +199,6 @@ const tools: [string, Tool][] = [
   ["Path", "path"],
   ["Spawn", "spawn"],
   ["Castle origin", "castle"],
-  ["Build slot", "slot"],
   ["Decoration", "decoration"],
   ["Erase deco", "erase_dec"],
   ["Pop WP", "pop_waypoint"],
@@ -245,7 +242,7 @@ function buildKeyRow(): HTMLElement {
     ["Path", "map-builder__swatch--path", "Enemy route"],
     ["Spawn", "map-builder__swatch--spawn", "Lane entry"],
     ["Citadel", "map-builder__swatch--castle", "Castle footprint"],
-    ["Build slot", "map-builder__swatch--slot", "Tower hint"],
+    ["Buildable", "map-builder__swatch--buildable", "Open sand (tower OK)"],
     ["Decoration", "map-builder__swatch--deco", "Blocks build"],
   ];
   for (const [label, swatch, title] of items) {
@@ -439,7 +436,6 @@ const TOOL_LABELS: Record<Tool, string> = {
   path: "Path",
   spawn: "Spawn",
   castle: "Castle",
-  slot: "Build slot",
   decoration: "Decoration",
   erase_dec: "Erase deco",
   pop_waypoint: "Pop waypoint",
@@ -521,28 +517,22 @@ function runCleanupMap(): void {
   });
 
   const pathKeys = pathCellKeySetUnion(newPaths);
+  const [cx, cz] = state.castle.position;
+  const [cw, ch] = state.castle.size;
+  const inCastle = (gx: number, gz: number): boolean =>
+    gx >= cx && gx < cx + cw && gz >= cz && gz < cz + ch;
 
-  const slotSeen = new Set<string>();
-  const newBuildSlots = state.buildSlots.filter((s) => {
-    const key = gridCellKey(s.position[0], s.position[1]);
-    if (pathKeys.has(key)) return false;
-    if (decKeys.has(key)) return false;
-    if (slotSeen.has(key)) return false;
-    slotSeen.add(key);
+  const newDefenses = state.defenses.filter((d) => {
+    const k = gridCellKey(d.position[0], d.position[1]);
+    if (pathKeys.has(k)) return false;
+    if (decKeys.has(k)) return false;
+    if (inCastle(d.position[0], d.position[1])) return false;
     return true;
   });
-
-  const slotKeys = new Set(
-    newBuildSlots.map((s) => gridCellKey(s.position[0], s.position[1])),
-  );
-  const newDefenses = state.defenses.filter((d) =>
-    slotKeys.has(gridCellKey(d.position[0], d.position[1])),
-  );
 
   state = {
     ...state,
     paths: newPaths,
-    buildSlots: newBuildSlots,
     defenses: newDefenses,
   };
 }
@@ -584,9 +574,6 @@ function rebuildGrid(): void {
   const spawnKeys = new Set(
     state.spawnPoints.map((s) => gridCellKey(s.position[0], s.position[1])),
   );
-  const slotKeys = new Set(
-    state.buildSlots.map((s) => gridCellKey(s.position[0], s.position[1])),
-  );
   const decKeys = decorationKeySet();
 
   const [cx, cz] = state.castle.position;
@@ -610,7 +597,9 @@ function rebuildGrid(): void {
       else if (spawnKeys.has(key))
         cell.classList.add("map-builder__cell--spawn");
       if (pathKeys.has(key)) cell.classList.add("map-builder__cell--path");
-      if (slotKeys.has(key)) cell.classList.add("map-builder__cell--slot");
+      const towerOk =
+        !inCastle(gx, gz) && !pathKeys.has(key) && !decKeys.has(key);
+      if (towerOk) cell.classList.add("map-builder__cell--buildable");
       if (decKeys.has(key))
         cell.classList.add("map-builder__cell--decoration");
 
@@ -650,15 +639,6 @@ function onCellClick(gx: number, gz: number): void {
         position: [gx, gz] as [number, number],
       },
     };
-  } else if (tool === "slot") {
-    const key = gridCellKey(gx, gz);
-    const i = state.buildSlots.findIndex(
-      (s) => gridCellKey(s.position[0], s.position[1]) === key,
-    );
-    let slots = [...state.buildSlots];
-    if (i >= 0) slots.splice(i, 1);
-    else slots = [...slots, { position: [gx, gz] as [number, number], type: "standard" as const }];
-    state = { ...state, buildSlots: slots };
   } else if (tool === "decoration") {
     const dec: DecorationDefinition = {
       type: decoType,

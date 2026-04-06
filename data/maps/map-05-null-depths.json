@@ -144,134 +144,6 @@
       ]
     }
   ],
-  "buildSlots": [
-    {
-      "position": [
-        1,
-        5
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        2,
-        9
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        3,
-        14
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        4,
-        7
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        6,
-        10
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        14,
-        5
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        13,
-        9
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        12,
-        14
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        14,
-        7
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        9,
-        4
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        10,
-        6
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        9,
-        10
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        12,
-        19
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        4,
-        19
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        5,
-        20
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        9,
-        20
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        2,
-        18
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        13,
-        18
-      ],
-      "type": "standard"
-    }
-  ],
   "defenses": [],
   "waves": [
     {
@@ -1050,154 +922,184 @@
       "scale": 1.05
     },
     {
-      "type": "coral_branch",
-      "position": [
-        3.53,
-        0,
-        13.67
-      ],
-      "rotation": 0,
-      "scale": 1.05
-    },
-    {
       "type": "shell_pile",
       "position": [
-        1.36,
+        12.35,
         0,
-        13.43
+        14.67
       ],
       "rotation": 270,
-      "scale": 0.97
-    },
-    {
-      "type": "coral_branch",
-      "position": [
-        2.31,
-        0,
-        7.5
-      ],
-      "rotation": 90,
-      "scale": 0.9
-    },
-    {
-      "type": "skull",
-      "position": [
-        3.59,
-        0,
-        6.5
-      ],
-      "rotation": 270,
-      "scale": 0.8
-    },
-    {
-      "type": "trench_edge",
-      "position": [
-        4.63,
-        0,
-        20.62
-      ],
-      "rotation": 0,
-      "scale": 1.15
-    },
-    {
-      "type": "anemone",
-      "position": [
-        15.65,
-        0,
-        20.49
-      ],
-      "rotation": 0,
-      "scale": 0.81
-    },
-    {
-      "type": "kelp_cluster",
-      "position": [
-        13.31,
-        0,
-        4.73
-      ],
-      "rotation": 90,
-      "scale": 1.03
-    },
-    {
-      "type": "vent_bubble",
-      "position": [
-        3.5,
-        0,
-        11.33
-      ],
-      "rotation": 0,
-      "scale": 1.09
-    },
-    {
-      "type": "vent_bubble",
-      "position": [
-        0.4,
-        0,
-        19.34
-      ],
-      "rotation": 0,
-      "scale": 1.03
+      "scale": 1.07
     },
     {
       "type": "rock_large",
       "position": [
-        1.68,
+        3.34,
         0,
-        2.36
+        13.56
+      ],
+      "rotation": 180,
+      "scale": 1.14
+    },
+    {
+      "type": "anemone",
+      "position": [
+        1.69,
+        0,
+        13.57
+      ],
+      "rotation": 180,
+      "scale": 0.79
+    },
+    {
+      "type": "skull",
+      "position": [
+        2.65,
+        0,
+        7.26
       ],
       "rotation": 90,
-      "scale": 1.01
+      "scale": 0.87
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        3.38,
+        0,
+        6.66
+      ],
+      "rotation": 0,
+      "scale": 1.18
     },
     {
       "type": "vent_bubble",
       "position": [
-        11.52,
+        4.54,
         0,
-        19.46
+        20.6
       ],
-      "rotation": 0,
-      "scale": 0.99
+      "rotation": 90,
+      "scale": 0.78
     },
     {
-      "type": "trench_edge",
+      "type": "coral_fan",
       "position": [
-        6.33,
+        15.45,
         0,
-        0.5
+        20.7
       ],
       "rotation": 180,
-      "scale": 1.22
+      "scale": 0.81
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        13.42,
+        0,
+        4.41
+      ],
+      "rotation": 90,
+      "scale": 0.81
     },
     {
       "type": "shell_pile",
       "position": [
-        8.45,
+        3.44,
         0,
-        21.66
+        11.36
       ],
       "rotation": 180,
-      "scale": 1.08
+      "scale": 0.96
     },
     {
       "type": "trench_edge",
       "position": [
-        9.54,
+        0.66,
         0,
-        14.49
+        19.43
       ],
       "rotation": 90,
-      "scale": 1.06
+      "scale": 1.13
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        1.58,
+        0,
+        2.32
+      ],
+      "rotation": 180,
+      "scale": 1.03
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        11.44,
+        0,
+        19.45
+      ],
+      "rotation": 180,
+      "scale": 1.13
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        6.46,
+        0,
+        0.74
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        8.31,
+        0,
+        21.48
+      ],
+      "rotation": 90,
+      "scale": 0.84
     },
     {
       "type": "vent_bubble",
       "position": [
-        10.66,
+        9.64,
         0,
-        19.61
+        14.45
+      ],
+      "rotation": 0,
+      "scale": 1.14
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        10.72,
+        0,
+        19.39
+      ],
+      "rotation": 270,
+      "scale": 1.14
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        12.56,
+        0,
+        2.29
       ],
       "rotation": 90,
-      "scale": 1.22
+      "scale": 1.21
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        8.42,
+        0,
+        4.36
+      ],
+      "rotation": 90,
+      "scale": 1.14
     }
   ]
 }

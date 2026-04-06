@@ -58,36 +58,6 @@
       ]
     }
   ],
-  "buildSlots": [
-    {
-      "position": [
-        3,
-        2
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        5,
-        2
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        3,
-        5
-      ],
-      "type": "standard"
-    },
-    {
-      "position": [
-        5,
-        5
-      ],
-      "type": "standard"
-    }
-  ],
   "defenses": [],
   "waves": [
     {

@@ -52,7 +52,7 @@ A playable vertical slice that proves the core loop: enemies walk a path, the pl
 
 ## Map: The First Trench
 
-Single-path S-curve on a 10x12 grid. One spawn point (top-left), one castle (bottom-right). The S-shape forces enemies to pass near multiple build slots, giving the Arc Spine good chain opportunities.
+Single-path S-curve on a 10x12 grid. One spawn point (top-left), one castle (bottom-right). The S-shape forces enemies near lots of open sand, giving the Arc Spine good chain opportunities.
 
 ### Layout
 
@@ -63,7 +63,7 @@ Single-path S-curve on a 10x12 grid. One spawn point (top-left), one castle (bot
   ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
 1 │   │   │   │   │   │ · │   │   │   │   │  · = Path
   ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
-2 │   │   │   │   │   │ · │   │   │   │   │  ○ = Build slot
+2 │   │   │   │   │   │ · │   │   │   │   │  ○ = Example tower spot (any open sand)
   ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
 3 │   │   │ ○ │   │   │ · │ · │ · │ · │   │
   ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
@@ -123,15 +123,6 @@ Single-path S-curve on a 10x12 grid. One spawn point (top-left), one castle (bot
         [9, 11]
       ]
     }
-  ],
-
-  "buildSlots": [
-    { "position": [2, 3], "type": "standard" },
-    { "position": [4, 5], "type": "standard" },
-    { "position": [6, 5], "type": "standard" },
-    { "position": [3, 8], "type": "standard" },
-    { "position": [5, 8], "type": "standard" },
-    { "position": [9, 10], "type": "standard" }
   ],
 
   "defenses": [],
@@ -265,7 +256,7 @@ A single Arc Spine L1 fires every 1.5s, killing a Stoneclaw (12 HP) in 2 shots i
 | 2    | 10      | 80            | ~140*      | 4                            |
 | 3    | 14      | 112           | ~222*      | 7                            |
 
-*After spending on towers. The player should be placing towers between waves, so actual bank fluctuates. With 6 build slots and 30 cost each, the player can fill the map by mid-wave-3 if efficient.
+*After spending on towers. The player should be placing towers between waves, so actual bank fluctuates. With many buildable tiles and 30 cost per tower, the player can fortify heavily by mid-wave-3 if efficient.
 
 ---
 
@@ -277,8 +268,8 @@ A single Arc Spine L1 fires every 1.5s, killing a Stoneclaw (12 HP) in 2 shots i
 
 | State      | What Happens                                                    |
 |------------|-----------------------------------------------------------------|
-| LOADING    | Parse map JSON, build 3D scene, place path/castle/slots         |
-| PREP       | Player can place towers on build slots. Timer counts down. "TIDE {n}" displayed. Click "Start Wave" or wait for timer. |
+| LOADING    | Parse map JSON, build 3D scene, place path/castle/spawn            |
+| PREP       | Player can place towers on any legal open tile. Timer counts down. "TIDE {n}" displayed. Click "Start Wave" or wait for timer. |
 | WAVE       | Enemies spawn per wave config. Towers fire automatically. Shells drop on kills. |
 | WAVE_END   | Last enemy killed or reaches castle. Brief pause. If waves remain → PREP. If wave 3 done → WIN. |
 | WIN        | "THE DEEP ENDURES" message. Show stats (kills, shells earned, castle HP remaining). |
@@ -292,7 +283,7 @@ Only 3 actions in the MVP:
 
 | Action          | Input              | Result                                  |
 |-----------------|--------------------|-----------------------------------------|
-| Select build slot | Click empty slot  | Opens placement UI (just Arc Spine + cost). Slot highlights. |
+| Select tile      | Click empty legal tile | Opens placement UI (just Arc Spine + cost). Tile highlights. |
 | Place tower     | Click Arc Spine icon | If enough shells: tower appears, shells deducted. If not: flash red, nothing happens. |
 | Start wave      | Click "Send Wave" button | Skip remaining prep timer, start spawning. |
 
@@ -315,7 +306,7 @@ No tower selling. No targeting mode switch. No upgrade. Minimal UI surface.
 - **Wave indicator** — top-center, "TIDE {n}" in pixel font
 - **Castle HP** — top-right, heart icon + current/max
 
-### Build Panel (on slot click)
+### Build Panel (on tile click)
 
 ```
 ┌─────────────────┐
@@ -325,7 +316,7 @@ No tower selling. No targeting mode switch. No upgrade. Minimal UI surface.
 └─────────────────┘
 ```
 
-Small panel near the selected slot. One button. Grayed out if not enough shells.
+Small panel near the selected tile. One button. Grayed out if not enough shells.
 
 ### Wave Start Button (during PREP)
 
@@ -383,7 +374,7 @@ Build these systems in this order. Each step is testable before moving to the ne
 
 ### 1. Scene & Map Loader
 - Parse `first_trench.json`
-- Render grid floor, path tiles, build slots, castle, spawn point
+- Render grid floor, path tiles, castle, spawn point
 - Set up camera
 
 ### 2. Enemy System
@@ -393,7 +384,7 @@ Build these systems in this order. Each step is testable before moving to the ne
 - HP bar rendering
 
 ### 3. Tower Placement
-- Click build slot → show build panel
+- Click valid floor tile → show build panel
 - Place Arc Spine → deduct shells → tower appears on grid
 - Shell counter in HUD
 
@@ -427,10 +418,10 @@ Build these systems in this order. Each step is testable before moving to the ne
 
 The MVP is done when:
 
-- [ ] Map loads from JSON and renders correctly (path, slots, castle, spawn)
+- [ ] Map loads from JSON and renders correctly (path, castle, spawn)
 - [ ] Stonecrabs spawn and walk the S-path at correct speed
 - [ ] Stonecrabs reaching the castle deal 1 damage and are removed (no shell drop)
-- [ ] Player can click a build slot and place an Arc Spine for 30 shells
+- [ ] Player can click a legal tile and place an Arc Spine for 30 shells
 - [ ] Arc Spine targets closest enemy, fires every 1.5s, chain hits 1 additional target
 - [ ] Damage numbers appear: 6 (primary), 4 (chain)
 - [ ] Enemies flash white on hit, show HP bar

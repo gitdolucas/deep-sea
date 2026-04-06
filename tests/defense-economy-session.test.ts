@@ -29,7 +29,6 @@ function mapWithDefense(
         ],
       },
     ],
-    buildSlots: [{ position: [2, 2], type: "standard" }],
     defenses: [
       {
         id: "d1",
@@ -159,7 +158,6 @@ describe("GameSession tryMoveDefenseStep", () => {
           ],
         },
       ],
-      buildSlots: [],
       defenses: [
         {
           id: "t",

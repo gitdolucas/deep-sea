@@ -24,7 +24,6 @@ const FIXTURE: MapDocument = {
       ],
     },
   ],
-  buildSlots: [],
   defenses: [],
   waves: [
     {

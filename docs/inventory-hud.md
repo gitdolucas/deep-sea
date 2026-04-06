@@ -47,7 +47,7 @@ Each card (`[data-defense-card]`) includes:
 
 - **Click** a card or press **1–6** → active placement type; selected card `aria-pressed="true"`.
 - **Placement dock** appears (hint + cancel).
-- Range preview follows pointer over valid empty build slots (see `GameApp` + `attackRangeTiles`).
+- Range preview follows pointer over valid empty tiles (off path, citadel, decorations); see `GameApp` + `attackRangeTiles`.
 
 ### 3–5. Hover, confirm, cancel
 

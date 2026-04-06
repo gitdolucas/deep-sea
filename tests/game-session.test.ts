@@ -20,7 +20,6 @@ function combatMap(): MapDocument {
         ],
       },
     ],
-    buildSlots: [{ position: [2, 2], type: "standard" }],
     defenses: [
       {
         id: "d1",

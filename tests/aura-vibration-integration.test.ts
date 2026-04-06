@@ -71,7 +71,6 @@ describe("vibration zone aura vs map placements", () => {
           ],
         },
       ],
-      buildSlots: [{ position: [2, 2], type: "standard" }],
       defenses: [
         {
           id: "vz",

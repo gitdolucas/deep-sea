@@ -20,7 +20,6 @@ function tinyMap(): MapDocument {
         ],
       },
     ],
-    buildSlots: [],
     defenses: [],
     waves: [],
     decorations: [],

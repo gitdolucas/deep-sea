@@ -1,13 +1,34 @@
 import type { MapDocument } from "../game/map-types.js";
 import { gridCellKey, pathCellKeySetUnion } from "../game/path-cells.js";
 
+function decorationFloorKeySet(doc: MapDocument): Set<string> {
+  const set = new Set<string>();
+  for (const d of doc.decorations) {
+    set.add(
+      gridCellKey(Math.floor(d.position[0]), Math.floor(d.position[2])),
+    );
+  }
+  return set;
+}
+
+function castleFootprintKeySet(doc: MapDocument): Set<string> {
+  const set = new Set<string>();
+  const [cx, cz] = doc.castle.position;
+  const [cw, ch] = doc.castle.size;
+  for (let x = cx; x < cx + cw; x++) {
+    for (let z = cz; z < cz + ch; z++) {
+      set.add(gridCellKey(x, z));
+    }
+  }
+  return set;
+}
+
 /** Decorative 2D top-down grid preview for map JSON (CSS-only “mini map”). */
 export function createMapOverviewElement(doc: MapDocument): HTMLElement {
   const [gw, gd] = doc.gridSize;
   const pathKeys = pathCellKeySetUnion(doc.paths);
-  const buildKeys = new Set(
-    doc.buildSlots.map((s) => gridCellKey(s.position[0], s.position[1])),
-  );
+  const decoKeys = decorationFloorKeySet(doc);
+  const castleKeys = castleFootprintKeySet(doc);
   const spawnKeys = new Set(
     doc.spawnPoints.map((sp) => gridCellKey(sp.position[0], sp.position[1])),
   );
@@ -16,6 +37,18 @@ export function createMapOverviewElement(doc: MapDocument): HTMLElement {
   const [cw, ch] = doc.castle.size;
   const castleRect = (gx: number, gz: number): boolean =>
     gx >= cx && gx < cx + cw && gz >= cz && gz < cz + ch;
+
+  /** Tiles where the player can place towers (path / deco / citadel excluded). */
+  const buildableKeys = new Set<string>();
+  for (let gx = 0; gx < gw; gx++) {
+    for (let gz = 0; gz < gd; gz++) {
+      const key = gridCellKey(gx, gz);
+      if (pathKeys.has(key)) continue;
+      if (decoKeys.has(key)) continue;
+      if (castleKeys.has(key)) continue;
+      buildableKeys.add(key);
+    }
+  }
 
   /** Square shell so the thumb stays 1:1 without stretching map cells (letterbox with blank tiles). */
   const size = Math.max(gw, gd);
@@ -48,7 +81,8 @@ export function createMapOverviewElement(doc: MapDocument): HTMLElement {
       else if (spawnKeys.has(key))
         cell.classList.add("level-overview__cell--spawn");
       if (pathKeys.has(key)) cell.classList.add("level-overview__cell--path");
-      if (buildKeys.has(key)) cell.classList.add("level-overview__cell--build");
+      if (buildableKeys.has(key))
+        cell.classList.add("level-overview__cell--build");
       grid.appendChild(cell);
     }
   }

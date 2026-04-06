@@ -84,8 +84,6 @@ export {
 export { WaveDirector, type WaveDirectorHooks } from "./wave-director.js";
 export type { WavePhase } from "./wave-types.js";
 export type {
-  BuildSlotDefinition,
-  BuildSlotType,
   CastleDefinition,
   DecorationDefinition,
   DecorationTypeKey,

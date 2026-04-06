@@ -22,7 +22,6 @@ data/maps/{map_id}.json
   "castle": { ... },        // citadel placement & state
   "spawnPoints": [ ... ],   // where enemies enter (Null Trench exits)
   "paths": [ ... ],         // coral path definitions (waypoint chains)
-  "buildSlots": [ ... ],    // valid positions for placing towers
   "defenses": [ ... ],      // placed towers & their state
   "waves": [ ... ],         // wave definitions with enemy spawns
   "decorations": [ ... ]    // non-gameplay visual props
@@ -41,16 +40,17 @@ All positions use a **grid-based coordinate system** where each tile is 1 unit.
 
 Origin `[0, 0]` is the **front-left** corner of the map.
 
-### Tower placement vs paths, defenses, and decorations
+### Tower placement vs paths, citadel, defenses, and decorations
 
 A grid tile may hold a defense only if all of the following are true:
 
 - The tile is **in bounds** (`gridSize`).
 - The tile is **not occupied by the enemy path** (any cell a waypoint segment passes through; see path definitions).
+- The tile is **not inside the citadel footprint** — `castle.position` is the front-left corner of the footprint; all cells in the `[width]×[depth]` rectangle are reserved.
 - The tile does **not already have a defense**.
 - The tile is **not occupied by a decoration** — each decoration reserves the horizontal tile at `(position[0], position[2])` (same `x` / `z` grid indices as towers; use integer coordinates in map data). Players cannot place defenses on top of decorations.
 
-`buildSlots` list suggested or highlighted positions for UX; they must still respect the rules above (do not list tiles on paths or under decorations).
+Every other land tile is a valid build location (open sand). There is no separate `buildSlots` list in map JSON.
 
 ---
 
@@ -112,19 +112,6 @@ The **walkable path footprint** on the grid is the **union** of every cell touch
 
 **Multiple paths on the same cells:** If two different path definitions both **include the same run of cells** in their waypoint chains, the union correctly shows a merge (e.g. T or +) on those hub tiles. That is not “the same path” — each `pathId` and each enemy still follows **its** polyline — but the **physical corridor** on the grid is shared where both polylines traverse the same tiles. Avoid placing independent routes on the **same** cells unless that shared geometry is intentional.
 
-### `buildSlots`
-
-Suggested positions for tower placement (UI / map overview). **Buildability** is determined by the rules in [Tower placement vs paths, defenses, and decorations](#tower-placement-vs-paths-defenses-and-decorations) — notably, tiles that host a decoration are never buildable, even if listed here.
-
-```jsonc
-[
-  {
-    "position": [x, z],
-    "type": "standard"       // "standard" | "reinforced" (future: bonus slots)
-  }
-]
-```
-
 ### `defenses`
 
 Towers currently placed on the map. Empty array for a fresh map. Populated during save.
@@ -134,7 +121,7 @@ Towers currently placed on the map. Empty array for a fresh map. Populated durin
   {
     "id": "def_001",
     "type": "string",        // tower type key (see Tower Types below)
-    "position": [x, z],      // must match a buildSlot position
+    "position": [x, z],      // legal tower tile per placement rules above
     "level": 1,              // 1 | 2 | 3
     "targetMode": "string"   // "first" | "last" | "strongest" | "weakest" | "closest"
   }

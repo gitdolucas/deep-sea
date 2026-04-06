@@ -32,10 +32,6 @@ function minimalMap(overrides: Partial<MapDocument> = {}): MapDocument {
         ],
       },
     ],
-    buildSlots: [
-      { position: [1, 1], type: "standard" },
-      { position: [3, 3], type: "standard" },
-    ],
     defenses: [],
     waves: [
       {
@@ -95,15 +91,20 @@ describe("MapController", () => {
       expect(m.positionInBounds([-1, 0])).toBe(false);
     });
 
-    it("isBuildSlotPosition is true for any in-bounds cell off the path", () => {
+    it("isLegalTowerTile is true for in-bounds sand (off path, citadel, decoration)", () => {
       const m = new MapController(minimalMap());
-      expect(m.isBuildSlotPosition([1, 1])).toBe(true);
-      expect(m.isBuildSlotPosition([3, 0])).toBe(true);
-      expect(m.isBuildSlotPosition([0, 0])).toBe(false);
-      expect(m.isBuildSlotPosition([2, 1])).toBe(false);
+      expect(m.isLegalTowerTile([1, 1])).toBe(true);
+      expect(m.isLegalTowerTile([3, 0])).toBe(true);
+      expect(m.isLegalTowerTile([0, 0])).toBe(false);
+      expect(m.isLegalTowerTile([2, 1])).toBe(false);
     });
 
-    it("isBuildSlotPosition is false on decoration tiles (docs/map-schema.md)", () => {
+    it("isLegalTowerTile is false on citadel footprint", () => {
+      const m = new MapController(minimalMap());
+      expect(m.isLegalTowerTile([2, 3])).toBe(false);
+    });
+
+    it("isLegalTowerTile is false on decoration tiles (docs/map-schema.md)", () => {
       const m = new MapController(
         minimalMap({
           decorations: [
@@ -116,8 +117,8 @@ describe("MapController", () => {
           ],
         }),
       );
-      expect(m.isBuildSlotPosition([3, 3])).toBe(false);
-      expect(m.isBuildSlotPosition([1, 1])).toBe(true);
+      expect(m.isLegalTowerTile([3, 3])).toBe(false);
+      expect(m.isLegalTowerTile([1, 1])).toBe(true);
     });
 
     it("decoration occupancy uses floor(x) and floor(z) for non-integer coords", () => {
@@ -133,12 +134,12 @@ describe("MapController", () => {
           ],
         }),
       );
-      expect(m.isBuildSlotPosition([1, 1])).toBe(false);
+      expect(m.isLegalTowerTile([1, 1])).toBe(false);
     });
   });
 
   describe("defenses", () => {
-    it("placeDefense requires a free off-path tile", () => {
+    it("placeDefense requires a free legal tile", () => {
       const m = new MapController(minimalMap());
       const tower = {
         id: "d1",
@@ -159,6 +160,19 @@ describe("MapController", () => {
           id: "d1",
           type: "arc_spine",
           position: [0, 0],
+          level: 1,
+          targetMode: "first",
+        }),
+      ).toBe(false);
+    });
+
+    it("placeDefense rejects citadel tiles", () => {
+      const m = new MapController(minimalMap());
+      expect(
+        m.placeDefense({
+          id: "d1",
+          type: "arc_spine",
+          position: [2, 3],
           level: 1,
           targetMode: "first",
         }),
@@ -201,7 +215,7 @@ describe("MapController", () => {
         type: "bubble_shotgun",
         position: [1, 1],
         level: 1,
-        targetMode: "first",
+        targetMode: "closest",
       });
       expect(m.tryIncrementDefenseLevel("d1")).toBe(true);
       expect(m.getDefenses()[0]!.level).toBe(2);
@@ -247,7 +261,6 @@ describe("MapController", () => {
       expect(m.id).toBe("test");
       expect(m.getSpawnPoint("s1")?.pathIds).toEqual(["p1"]);
       expect(m.getPathWaypoints("p1")?.[0]).toEqual([0, 0]);
-      expect(m.getBuildSlots().length).toBeGreaterThan(0);
       expect(m.getWaveIndex(1)).toBe(0);
       expect(m.getDecorations().length).toBe(0);
     });

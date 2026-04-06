@@ -59,7 +59,7 @@ The first playable build proves the core loop with minimal surface area:
 
 - **1 enemy:** Stoneclaw (12 HP, 2 armor, slow swarm)
 - **1 tower:** Arc Spine L1 (8 damage, chains to 2 targets, 1.5s cooldown)
-- **1 map:** S-shaped single path, 6 build slots
+- **1 map:** S-shaped single path; towers on any open sand (off path / citadel / decorations)
 - **3 waves:** Escalating Stoneclaw count with HP/speed scaling
 - **Economy:** Kill enemies, collect shells, place more towers
 - **Win/Lose:** Survive 3 waves or castle HP hits 0

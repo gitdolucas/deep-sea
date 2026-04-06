@@ -29,7 +29,6 @@ function minimalValidMap(): MapDocument {
         ],
       },
     ],
-    buildSlots: [{ position: [1, 1], type: "standard" }],
     defenses: [],
     waves: [
       {
@@ -83,17 +82,25 @@ describe("validateMapDocument", () => {
     expect(issues.some((i) => i.code === "shape.description")).toBe(true);
   });
 
-  it("rejects build slot on path cell", () => {
+  it("rejects defense on path cell", () => {
     const doc = minimalValidMap();
     const bad: MapDocument = {
       ...doc,
-      buildSlots: [{ position: [0, 0], type: "standard" }],
+      defenses: [
+        {
+          id: "d1",
+          type: "arc_spine",
+          position: [0, 0],
+          level: 1,
+          targetMode: "first",
+        },
+      ],
     };
     const issues = validateMapDocument(bad);
-    expect(issues.some((i) => i.code === "buildSlot.path")).toBe(true);
+    expect(issues.some((i) => i.code === "defense.path")).toBe(true);
   });
 
-  it("rejects build slot on decoration tile", () => {
+  it("rejects defense on decoration tile", () => {
     const doc = minimalValidMap();
     const bad: MapDocument = {
       ...doc,
@@ -105,10 +112,36 @@ describe("validateMapDocument", () => {
           scale: 1,
         },
       ],
-      buildSlots: [{ position: [1, 1], type: "standard" }],
+      defenses: [
+        {
+          id: "d1",
+          type: "arc_spine",
+          position: [1, 1],
+          level: 1,
+          targetMode: "first",
+        },
+      ],
     };
     const issues = validateMapDocument(bad);
-    expect(issues.some((i) => i.code === "buildSlot.decoration")).toBe(true);
+    expect(issues.some((i) => i.code === "defense.decoration")).toBe(true);
+  });
+
+  it("rejects defense on citadel footprint", () => {
+    const doc = minimalValidMap();
+    const bad: MapDocument = {
+      ...doc,
+      defenses: [
+        {
+          id: "d1",
+          type: "arc_spine",
+          position: [2, 3],
+          level: 1,
+          targetMode: "first",
+        },
+      ],
+    };
+    const issues = validateMapDocument(bad);
+    expect(issues.some((i) => i.code === "defense.castle")).toBe(true);
   });
 
   it("rejects wave group with unknown pathId", () => {
