@@ -77,8 +77,41 @@ const preset = (o: Partial<BubbleColumnPresetTuning> & { particleCountMul: numbe
   blending: o.blending ?? "normal",
 });
 
-/** One shipped look for muzzle + impact + splash (base counts/durations still differ per event in code). */
-const DEFAULT_SHARED_BUBBLE_COLUMN_PRESET: Partial<BubbleColumnPresetTuning> & {
+/** Shot origin column — lower density, stronger column noise vs impact. */
+const DEFAULT_BUBBLE_COLUMN_MUZZLE: Partial<BubbleColumnPresetTuning> & {
+  particleCountMul: number;
+} = {
+  particleCountMul: 0.45,
+  lengthMul: 0.6,
+  radiusMul: 5,
+  durationMul: 8,
+  baseY: 0.54,
+  wobble: 0.35,
+  worldRiseMax: 4,
+  risePow: 1.5,
+  releaseLag: 0.1,
+  columnNoiseFreq: 3.5,
+  columnNoiseAmp: 0.475,
+  releaseNoiseFreq: 6,
+  releaseNoiseAmp: 0.22,
+  pointSizeMul: 4.5,
+  pointSizeBase: 0.2,
+  pointSizePhaseMul: 0.22,
+  pointSizeCamDiv: 340,
+  pointSizeZMin: 0.2,
+  pointSizeClampMin: 6,
+  pointSizeClampMax: 96,
+  pointAgeFade: 0.95,
+  pointAlongSpread: 0.61,
+  colorCore: "#d4eefa",
+  colorRim: "#ffffff",
+  renderOrder: 3,
+  depthWrite: false,
+  blending: "normal",
+};
+
+/** Hit + L3 splash columns (same tuning). */
+const DEFAULT_BUBBLE_COLUMN_IMPACT: Partial<BubbleColumnPresetTuning> & {
   particleCountMul: number;
 } = {
   particleCountMul: 4.45,
@@ -113,9 +146,9 @@ const DEFAULT_SHARED_BUBBLE_COLUMN_PRESET: Partial<BubbleColumnPresetTuning> & {
 /** Shipped defaults (tunable via `?bubbleFx=1` → Bubble column). */
 export const DEFAULT_BUBBLE_COLUMN_FX_TUNING: BubbleColumnFxTuning = {
   applyOverrides: true,
-  muzzle: preset({ ...DEFAULT_SHARED_BUBBLE_COLUMN_PRESET }),
-  impact: preset({ ...DEFAULT_SHARED_BUBBLE_COLUMN_PRESET }),
-  impactSplash: preset({ ...DEFAULT_SHARED_BUBBLE_COLUMN_PRESET }),
+  muzzle: preset({ ...DEFAULT_BUBBLE_COLUMN_MUZZLE }),
+  impact: preset({ ...DEFAULT_BUBBLE_COLUMN_IMPACT }),
+  impactSplash: preset({ ...DEFAULT_BUBBLE_COLUMN_IMPACT }),
 };
 
 export const bubbleColumnFxTuning: BubbleColumnFxTuning = {
