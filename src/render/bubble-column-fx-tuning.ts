@@ -20,6 +20,18 @@ export interface BubbleColumnPresetTuning {
   /** Separate higher-frequency noise for “bubble release” feel. */
   releaseNoiseFreq: number;
   releaseNoiseAmp: number;
+  /** Point sprite sizing (same semantics as Bubble Shotgun cluster). */
+  pointSizeMul: number;
+  pointSizeBase: number;
+  pointSizePhaseMul: number;
+  pointSizeCamDiv: number;
+  pointSizeZMin: number;
+  pointSizeClampMin: number;
+  pointSizeClampMax: number;
+  /** Shrinks sprites as column effect ages (0–1). */
+  pointAgeFade: number;
+  /** Extra spread: small bubbles at bottom vs top of column (along). */
+  pointAlongSpread: number;
   colorCore: string;
   colorRim: string;
   renderOrder: number;
@@ -49,6 +61,15 @@ const preset = (o: Partial<BubbleColumnPresetTuning> & { particleCountMul: numbe
   columnNoiseAmp: o.columnNoiseAmp ?? 0.085,
   releaseNoiseFreq: o.releaseNoiseFreq ?? 7.0,
   releaseNoiseAmp: o.releaseNoiseAmp ?? 0.12,
+  pointSizeMul: o.pointSizeMul ?? 20,
+  pointSizeBase: o.pointSizeBase ?? 0.82,
+  pointSizePhaseMul: o.pointSizePhaseMul ?? 0.36,
+  pointSizeCamDiv: o.pointSizeCamDiv ?? 300,
+  pointSizeZMin: o.pointSizeZMin ?? 0.12,
+  pointSizeClampMin: o.pointSizeClampMin ?? 2,
+  pointSizeClampMax: o.pointSizeClampMax ?? 180,
+  pointAgeFade: o.pointAgeFade ?? 0.38,
+  pointAlongSpread: o.pointAlongSpread ?? 0.14,
   colorCore: o.colorCore ?? "#3a9cc8",
   colorRim: o.colorRim ?? "#b2f4ff",
   renderOrder: o.renderOrder ?? 3,
@@ -56,59 +77,45 @@ const preset = (o: Partial<BubbleColumnPresetTuning> & { particleCountMul: numbe
   blending: o.blending ?? "normal",
 });
 
+/** One shipped look for muzzle + impact + splash (base counts/durations still differ per event in code). */
+const DEFAULT_SHARED_BUBBLE_COLUMN_PRESET: Partial<BubbleColumnPresetTuning> & {
+  particleCountMul: number;
+} = {
+  particleCountMul: 4.45,
+  lengthMul: 0.6,
+  radiusMul: 5,
+  durationMul: 8,
+  baseY: 0.54,
+  wobble: 0.35,
+  worldRiseMax: 4,
+  risePow: 1.5,
+  releaseLag: 0.1,
+  columnNoiseFreq: 3.5,
+  columnNoiseAmp: 0.08,
+  releaseNoiseFreq: 6,
+  releaseNoiseAmp: 0.035,
+  pointSizeMul: 4.5,
+  pointSizeBase: 0.2,
+  pointSizePhaseMul: 0.22,
+  pointSizeCamDiv: 340,
+  pointSizeZMin: 0.2,
+  pointSizeClampMin: 6,
+  pointSizeClampMax: 96,
+  pointAgeFade: 0.95,
+  pointAlongSpread: 0.61,
+  colorCore: "#d4eefa",
+  colorRim: "#ffffff",
+  renderOrder: 3,
+  depthWrite: false,
+  blending: "normal",
+};
+
+/** Shipped defaults (tunable via `?bubbleFx=1` → Bubble column). */
 export const DEFAULT_BUBBLE_COLUMN_FX_TUNING: BubbleColumnFxTuning = {
   applyOverrides: true,
-  muzzle: preset({
-    particleCountMul: 1,
-    lengthMul: 1,
-    radiusMul: 1,
-    durationMul: 1,
-    baseY: 0.38,
-    wobble: 0.024,
-    worldRiseMax: 0.62,
-    risePow: 1.15,
-    releaseLag: 0.35,
-    columnNoiseFreq: 2.0,
-    columnNoiseAmp: 0.08,
-    releaseNoiseFreq: 5.5,
-    releaseNoiseAmp: 0.1,
-    colorCore: "#3a9cc8",
-    colorRim: "#b2f4ff",
-  }),
-  impact: preset({
-    particleCountMul: 1,
-    lengthMul: 1,
-    radiusMul: 1,
-    durationMul: 1,
-    baseY: 0.36,
-    wobble: 0.028,
-    worldRiseMax: 0.48,
-    risePow: 1.35,
-    releaseLag: 0.55,
-    columnNoiseFreq: 2.4,
-    columnNoiseAmp: 0.09,
-    releaseNoiseFreq: 9.0,
-    releaseNoiseAmp: 0.16,
-    colorCore: "#3a9cc8",
-    colorRim: "#b2f4ff",
-  }),
-  impactSplash: preset({
-    particleCountMul: 1,
-    lengthMul: 1,
-    radiusMul: 1,
-    durationMul: 1,
-    baseY: 0.36,
-    wobble: 0.032,
-    worldRiseMax: 0.72,
-    risePow: 1.2,
-    releaseLag: 0.42,
-    columnNoiseFreq: 2.6,
-    columnNoiseAmp: 0.1,
-    releaseNoiseFreq: 10.5,
-    releaseNoiseAmp: 0.18,
-    colorCore: "#22a8dd",
-    colorRim: "#66ffff",
-  }),
+  muzzle: preset({ ...DEFAULT_SHARED_BUBBLE_COLUMN_PRESET }),
+  impact: preset({ ...DEFAULT_SHARED_BUBBLE_COLUMN_PRESET }),
+  impactSplash: preset({ ...DEFAULT_SHARED_BUBBLE_COLUMN_PRESET }),
 };
 
 export const bubbleColumnFxTuning: BubbleColumnFxTuning = {

@@ -30,6 +30,15 @@ export type BubbleColumnRenderConfig = {
   columnNoiseAmp: number;
   releaseNoiseFreq: number;
   releaseNoiseAmp: number;
+  pointSizeMul: number;
+  pointSizeBase: number;
+  pointSizePhaseMul: number;
+  pointSizeCamDiv: number;
+  pointSizeZMin: number;
+  pointSizeClampMin: number;
+  pointSizeClampMax: number;
+  pointAgeFade: number;
+  pointAlongSpread: number;
   renderOrder: number;
   depthWrite: boolean;
   blending: THREE.Blending;
@@ -54,6 +63,15 @@ uniform float uColNoiseFreq;
 uniform float uColNoiseAmp;
 uniform float uRelNoiseFreq;
 uniform float uRelNoiseAmp;
+uniform float uPointSizeMul;
+uniform float uPointSizeBase;
+uniform float uPointSizePhaseMul;
+uniform float uPointSizeCamDiv;
+uniform float uPointSizeZMin;
+uniform float uPointSizeClampMin;
+uniform float uPointSizeClampMax;
+uniform float uPointAgeFade;
+uniform float uPointAlongSpread;
 
 varying float vPhase;
 varying float vAlong;
@@ -103,11 +121,19 @@ void main() {
   vec4 mvPosition = viewMatrix * worldPos;
   gl_Position = projectionMatrix * mvPosition;
 
-  float pr = mix(12.0, 26.0, aAlong) * (1.12 - uAge * 0.38);
+  float alongMix = max(
+    0.06,
+    mix(1.0 - uPointAlongSpread, 1.0 + uPointAlongSpread * 0.45, aAlong)
+  );
+  float pr =
+    uPointSizeMul *
+    (uPointSizeBase + uPointSizePhaseMul * aPhase) *
+    alongMix *
+    (1.12 - uAge * uPointAgeFade);
   gl_PointSize = clamp(
-    pr * (300.0 / max(-mvPosition.z, 0.12)),
-    2.0,
-    180.0
+    pr * (uPointSizeCamDiv / max(-mvPosition.z, uPointSizeZMin)),
+    uPointSizeClampMin,
+    uPointSizeClampMax
   );
 }
 `;
@@ -130,6 +156,7 @@ void main() {
   float fade = 1.0 - smoothstep(0.62, 1.0, uAge);
   float alpha = (core * 0.42 + rim * 0.92) * fade * (0.82 + 0.18 * headGlow);
   vec3 col = mix(uColorCore, uColorRim, clamp(rim * 1.1, 0.0, 1.0));
+  col = mix(col, vec3(1.0), 0.14);
   float tw = 0.92 + 0.08 * sin(vPhase * 31.0 + d * 6.0);
   col *= tw;
   gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.88));
@@ -151,6 +178,15 @@ function createColumnShaderMaterial(): THREE.ShaderMaterial {
       uColNoiseAmp: { value: 0.085 },
       uRelNoiseFreq: { value: 7.0 },
       uRelNoiseAmp: { value: 0.12 },
+      uPointSizeMul: { value: 20 },
+      uPointSizeBase: { value: 0.82 },
+      uPointSizePhaseMul: { value: 0.36 },
+      uPointSizeCamDiv: { value: 300 },
+      uPointSizeZMin: { value: 0.12 },
+      uPointSizeClampMin: { value: 2 },
+      uPointSizeClampMax: { value: 180 },
+      uPointAgeFade: { value: 0.38 },
+      uPointAlongSpread: { value: 0.14 },
       uColorCore: { value: new THREE.Color(0x3aa8cc) },
       uColorRim: { value: new THREE.Color(0xb8f8ff) },
     },
@@ -183,6 +219,15 @@ function baseConfigForPreset(event: BubbleColumnFxEvent): Omit<
   | "columnNoiseAmp"
   | "releaseNoiseFreq"
   | "releaseNoiseAmp"
+  | "pointSizeMul"
+  | "pointSizeBase"
+  | "pointSizePhaseMul"
+  | "pointSizeCamDiv"
+  | "pointSizeZMin"
+  | "pointSizeClampMin"
+  | "pointSizeClampMax"
+  | "pointAgeFade"
+  | "pointAlongSpread"
   | "renderOrder"
   | "depthWrite"
   | "blending"
@@ -253,6 +298,15 @@ function mergeTuning(
       columnNoiseAmp: 0.085,
       releaseNoiseFreq: 7.0,
       releaseNoiseAmp: 0.12,
+      pointSizeMul: 20,
+      pointSizeBase: 0.82,
+      pointSizePhaseMul: 0.36,
+      pointSizeCamDiv: 300,
+      pointSizeZMin: 0.12,
+      pointSizeClampMin: 2,
+      pointSizeClampMax: 180,
+      pointAgeFade: 0.38,
+      pointAlongSpread: 0.14,
       renderOrder: 3,
       depthWrite: false,
       blending: THREE.NormalBlending,
@@ -277,6 +331,15 @@ function mergeTuning(
     columnNoiseAmp: pt.columnNoiseAmp,
     releaseNoiseFreq: pt.releaseNoiseFreq,
     releaseNoiseAmp: pt.releaseNoiseAmp,
+    pointSizeMul: pt.pointSizeMul,
+    pointSizeBase: pt.pointSizeBase,
+    pointSizePhaseMul: pt.pointSizePhaseMul,
+    pointSizeCamDiv: pt.pointSizeCamDiv,
+    pointSizeZMin: pt.pointSizeZMin,
+    pointSizeClampMin: pt.pointSizeClampMin,
+    pointSizeClampMax: pt.pointSizeClampMax,
+    pointAgeFade: pt.pointAgeFade,
+    pointAlongSpread: pt.pointAlongSpread,
     renderOrder: pt.renderOrder,
     depthWrite: pt.depthWrite,
     blending:
@@ -398,6 +461,15 @@ function applyConfigToMaterial(
   mat.uniforms.uColNoiseAmp.value = config.columnNoiseAmp;
   mat.uniforms.uRelNoiseFreq.value = config.releaseNoiseFreq;
   mat.uniforms.uRelNoiseAmp.value = config.releaseNoiseAmp;
+  mat.uniforms.uPointSizeMul.value = config.pointSizeMul;
+  mat.uniforms.uPointSizeBase.value = config.pointSizeBase;
+  mat.uniforms.uPointSizePhaseMul.value = config.pointSizePhaseMul;
+  mat.uniforms.uPointSizeCamDiv.value = config.pointSizeCamDiv;
+  mat.uniforms.uPointSizeZMin.value = config.pointSizeZMin;
+  mat.uniforms.uPointSizeClampMin.value = config.pointSizeClampMin;
+  mat.uniforms.uPointSizeClampMax.value = config.pointSizeClampMax;
+  mat.uniforms.uPointAgeFade.value = config.pointAgeFade;
+  mat.uniforms.uPointAlongSpread.value = config.pointAlongSpread;
   (mat.uniforms.uColorCore.value as THREE.Color).set(config.colorCore);
   (mat.uniforms.uColorRim.value as THREE.Color).set(config.colorRim);
   mat.depthWrite = config.depthWrite;
