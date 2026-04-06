@@ -11,6 +11,7 @@
 
 import * as THREE from "three";
 import type { DefenseLevel } from "../game/types.js";
+import { attachVibrationDomeFresnelRim } from "./vibration-dome-fresnel-shader.js";
 import { attachVibrationDomeVertexWobble } from "./vibration-dome-wobble-shader.js";
 
 const TINT = new THREE.Color(0x39ff6e);
@@ -62,6 +63,7 @@ export function createVibrationTransmissionMaterial(
   }
 
   attachVibrationDomeVertexWobble(mat);
+  attachVibrationDomeFresnelRim(mat);
   return mat;
 }
 

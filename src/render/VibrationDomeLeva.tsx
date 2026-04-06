@@ -163,6 +163,35 @@ function VibrationDomeLevaPanel({ onRemount }: { onRemount: () => void }) {
           },
         },
       }),
+      Fresnel: folder({
+        fresnelPower: {
+          value: d.fresnelPower,
+          min: 0.5,
+          max: 12,
+          step: 0.1,
+          label: "Power",
+          onChange: (v: number) => {
+            vibrationDomeTuning.fresnelPower = v;
+          },
+        },
+        fresnelIntensity: {
+          value: d.fresnelIntensity,
+          min: 0,
+          max: 1.5,
+          step: 0.01,
+          label: "Intensity",
+          onChange: (v: number) => {
+            vibrationDomeTuning.fresnelIntensity = v;
+          },
+        },
+        fresnelColor: {
+          value: d.fresnelColor,
+          label: "Color",
+          onChange: (v: string) => {
+            vibrationDomeTuning.fresnelColor = v;
+          },
+        },
+      }),
       Clearcoat: folder({
         clearcoat: {
           value: d.clearcoat,

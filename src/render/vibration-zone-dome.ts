@@ -5,6 +5,7 @@ import {
   createVibrationTransmissionMaterial,
   syncVibrationTransmissionLevelAppearance,
 } from "./mesh-transmission-material.js";
+import { updateVibrationDomeFresnelUniforms } from "./vibration-dome-fresnel-shader.js";
 import { updateVibrationDomeWobbleUniforms } from "./vibration-dome-wobble-shader.js";
 
 /** UserData tag for dispose / transmission list (GameApp). */
@@ -196,5 +197,7 @@ export function updateVibrationZoneDomeMaterial(
   elapsedTime: number,
   _level: DefenseLevel,
 ): void {
-  updateVibrationDomeWobbleUniforms(mat, elapsedTime, getVibrationDomeTuning());
+  const tune = getVibrationDomeTuning();
+  updateVibrationDomeWobbleUniforms(mat, elapsedTime, tune);
+  updateVibrationDomeFresnelUniforms(mat, tune);
 }

@@ -39,6 +39,12 @@ export interface VibrationDomeTuning {
   wobbleRadial: number;
   /** Multiplies elapsed time for animation speed. */
   wobbleTimeScale: number;
+  /** Rim Fresnel (shader): edge falloff exponent. */
+  fresnelPower: number;
+  /** Rim Fresnel strength (additive to outgoing light). */
+  fresnelIntensity: number;
+  /** Rim tint (hex). */
+  fresnelColor: string;
 }
 
 export const DEFAULT_VIBRATION_DOME_TUNING: VibrationDomeTuning = {
@@ -71,6 +77,9 @@ export const DEFAULT_VIBRATION_DOME_TUNING: VibrationDomeTuning = {
   wobbleFreq: 2.2,
   wobbleRadial: 14,
   wobbleTimeScale: 2.85,
+  fresnelPower: 4,
+  fresnelIntensity: 0.22,
+  fresnelColor: "#39ff6e",
 };
 
 const TINT = new THREE.Color(0x39ff6e);
