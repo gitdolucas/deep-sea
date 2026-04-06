@@ -5,7 +5,7 @@ import {
   pathCellVisualKind,
   type PathCellVisualKind,
 } from "../game/path-cells.js";
-import { COLORS } from "./constants.js";
+import { COLORS, WORLD_GROUND_GRID_EXTENT } from "./constants.js";
 
 export type SlotPick = { mesh: THREE.Mesh; gx: number; gz: number };
 
@@ -17,6 +17,16 @@ function gridXZ(gw: number, gd: number): THREE.Vector3 {
 export function mapGridOrigin(doc: MapDocument): THREE.Vector3 {
   const [gw, gd] = doc.gridSize;
   return gridXZ(gw, gd);
+}
+
+/**
+ * Square span for the scene ground grid: same 1-unit spacing and origin as {@link buildMapBoard}
+ * (`size === divisions` ⇒ Three.js `step = 1`), but at least {@link WORLD_GROUND_GRID_EXTENT} so
+ * the grid covers the full world floor while the map uses only a subset of tiles.
+ */
+export function worldGroundGridSpan(doc: MapDocument): number {
+  const [gw, gd] = doc.gridSize;
+  return Math.max(Math.max(gw, gd), WORLD_GROUND_GRID_EXTENT);
 }
 
 const CELL_BOX = new THREE.BoxGeometry(0.96, 0.055, 0.96);

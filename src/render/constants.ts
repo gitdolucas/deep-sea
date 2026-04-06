@@ -48,6 +48,12 @@ export const COLORS = {
   cooldownBarBg: 0x132535,
 } as const;
 
+/**
+ * Decorative ground {@link THREE.GridHelper} span (world units, 1 unit per tile step).
+ * Larger than any map’s `gridSize` so the grid fills the ocean floor beyond the playable tile area.
+ */
+export const WORLD_GROUND_GRID_EXTENT = 256;
+
 export const CHAIN_FX_DURATION = 0.15;
 /** Slightly longer than fastest Tideheart tick (0.08s) so beams overlap — steady beam read. */
 export const TIDEHEART_BEAM_FX_DURATION = 0.14;

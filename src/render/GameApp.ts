@@ -28,8 +28,9 @@ import type {
   DefenseSnapshot,
   DefenseTypeKey,
 } from "../game/types.js";
-import { buildMapBoard, worldFromGrid } from "./board.js";
+import { buildMapBoard, worldFromGrid, worldGroundGridSpan } from "./board.js";
 import { buildDecorationsGroup } from "./decorations.js";
+import { createSeabedOverlay } from "./seabed-overlay.js";
 import {
   COLORS,
   CHAIN_FX_DURATION,
@@ -207,6 +208,9 @@ function makeRangeRingMesh(
   return mesh;
 }
 
+/** Slightly above floor meshes; origin matches {@link buildMapBoard} (map centered at world origin). */
+const SCENE_GRID_VISUAL_Y = 0.02;
+
 export class GameApp {
   readonly session: GameSession;
   private readonly doc: MapDocument;
@@ -264,6 +268,8 @@ export class GameApp {
   private readonly cannonProjectileGroup = new THREE.Group();
   private cannonProjectilePool: THREE.Mesh[] = [];
   private cannonBlastDecals: CannonBlastDecal[] = [];
+  private readonly sceneGridHelper: THREE.GridHelper;
+  private readonly seabedMat: THREE.ShaderMaterial;
   private nextDefenseId = 1;
   private readonly mount: HTMLElement;
   private readonly orbitControls: OrbitControls;
@@ -330,16 +336,19 @@ export class GameApp {
     this.selectionRangeGroup.visible = false;
     this.scene.add(this.selectionRangeGroup);
 
-    const [gw, gd] = doc.gridSize;
-    const gridExtent = Math.max(gw, gd) + 2;
-    const grid = new THREE.GridHelper(
-      gridExtent,
-      gridExtent,
+    const gridSpan = worldGroundGridSpan(doc);
+    this.sceneGridHelper = new THREE.GridHelper(
+      gridSpan,
+      gridSpan,
       COLORS.gridMajor,
       COLORS.gridMinor,
     );
-    grid.position.y = 0.02;
-    this.scene.add(grid);
+    this.sceneGridHelper.position.y = SCENE_GRID_VISUAL_Y;
+    this.scene.add(this.sceneGridHelper);
+
+    const seabed = createSeabedOverlay(doc);
+    this.seabedMat = seabed.material;
+    this.scene.add(seabed.mesh);
 
     this.scene.add(this.bubbleProjectileGroup);
     this.scene.add(this.bubbleColumnGroup);
@@ -531,6 +540,8 @@ export class GameApp {
     this.abortController.abort();
     this.renderer.setAnimationLoop(null);
     this.orbitControls.dispose();
+    this.scene.remove(this.sceneGridHelper);
+    disposeObject3DTree(this.sceneGridHelper);
     for (const c of this.chainLines) {
       this.scene.remove(c.obj);
       c.obj.geometry.dispose();
@@ -1333,6 +1344,7 @@ export class GameApp {
     }
     this.syncDefenseFocusCamera(dt);
     this.orbitControls.update();
+    this.seabedMat.uniforms.uTime.value = this.clock.elapsedTime;
     this.renderer.transmissionResolutionScale =
       getVibrationDomeTuning().transmissionResolutionScale;
     this.renderer.render(this.scene, this.camera);
