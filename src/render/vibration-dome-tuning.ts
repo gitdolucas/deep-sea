@@ -16,6 +16,8 @@ export interface VibrationDomeTuning {
   side: VibrationDomeSide;
   renderOrder: number;
   dispersion: number;
+  /** Physical anisotropy (Three.js `MeshPhysicalMaterial.anisotropy`, 0–1). */
+  anisotropy: number;
   attenuationDistance: number;
   attenuationColor: string;
   baseColor: string;
@@ -53,6 +55,7 @@ export const DEFAULT_VIBRATION_DOME_TUNING: VibrationDomeTuning = {
   side: "front",
   renderOrder: 2,
   dispersion: 0.72,
+  anisotropy: 0,
   attenuationDistance: 40,
   attenuationColor: "#33cc5e",
   baseColor: "#ffffff",
@@ -120,6 +123,40 @@ export function resetVibrationDomeTuning(): void {
   Object.assign(vibrationDomeTuning, DEFAULT_VIBRATION_DOME_TUNING);
 }
 
+/**
+ * Approximates a Drei `MeshTransmissionMaterial` Leva export using engine
+ * `MeshPhysicalMaterial` (no Drei distortion/temporal shaders; `samples`/`bg`
+ * are not mapped). Thickness is scaled vs simulator tier thickness (~1.4–2.2);
+ * tweak `thicknessScale` in-panel if a tier reads thin/thick.
+ */
+export const VIBRATION_DOME_DREI_GLASS_PRESET: Partial<VibrationDomeTuning> = {
+  applyOverrides: true,
+  transmission: 1,
+  /** Target ~3.5 world units: tierThickness × scale; typical tierT ~1.7 → ~2.1 */
+  thicknessScale: 2.05,
+  roughness: 0,
+  metalness: 0,
+  ior: 1.5,
+  opacity: 1,
+  depthWrite: false,
+  side: "front",
+  dispersion: 0.06,
+  anisotropy: 0.1,
+  attenuationDistance: 0.5,
+  attenuationColor: "#ffffff",
+  baseColor: "#c9ffa1",
+  emissiveScale: 0.12,
+  emissiveIntensity: 0.45,
+  clearcoat: 1,
+  clearcoatRoughness: 0,
+  envMapIntensity: 1,
+  transmissionResolutionScale: 1,
+};
+
+export function loadVibrationDomeDreiGlassPreset(): void {
+  Object.assign(vibrationDomeTuning, VIBRATION_DOME_DREI_GLASS_PRESET);
+}
+
 function sideToConstant(side: VibrationDomeSide): number {
   switch (side) {
     case "front":
@@ -153,6 +190,7 @@ export function applyVibrationDomeTuningToMesh(
   mat.side = sideToConstant(t.side);
   mesh.renderOrder = t.renderOrder;
   mat.dispersion = t.dispersion;
+  mat.anisotropy = t.anisotropy;
   mat.attenuationDistance = t.attenuationDistance;
   mat.attenuationColor.set(t.attenuationColor);
   mat.color.set(t.baseColor);

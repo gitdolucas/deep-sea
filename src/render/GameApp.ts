@@ -53,12 +53,18 @@ import {
 } from "./bubble-column-fx.js";
 import {
   disposeCannonAttackFxShared,
+  disposeCannonProjectilePool,
   ensureCannonProjectilePool,
   spawnCannonBlastDecals,
   syncCannonProjectileMeshes,
   updateCannonBlastDecals,
   type CannonBlastDecal,
 } from "./cannon-attack-fx.js";
+import {
+  spawnCannonColumnHits,
+  updateCannonColumnHits,
+  type CannonColumnHitFx,
+} from "./cannon-column-hit-fx.js";
 import { createArcSpineLightningLine } from "./arc-spine-chain-fx.js";
 import {
   spawnArcSpineHitSparkles,
@@ -268,6 +274,8 @@ export class GameApp {
   private readonly cannonProjectileGroup = new THREE.Group();
   private cannonProjectilePool: THREE.Mesh[] = [];
   private cannonBlastDecals: CannonBlastDecal[] = [];
+  private readonly cannonColumnGroup = new THREE.Group();
+  private cannonColumnHits: CannonColumnHitFx[] = [];
   private readonly sceneGridHelper: THREE.GridHelper;
   private readonly seabedMat: THREE.ShaderMaterial;
   private nextDefenseId = 1;
@@ -353,6 +361,7 @@ export class GameApp {
     this.scene.add(this.bubbleProjectileGroup);
     this.scene.add(this.bubbleColumnGroup);
     this.scene.add(this.cannonProjectileGroup);
+    this.scene.add(this.cannonColumnGroup);
 
     const w0 = window.innerWidth;
     const h0 = window.innerHeight;
@@ -580,11 +589,16 @@ export class GameApp {
     );
     this.scene.remove(this.bubbleColumnGroup);
     this.scene.remove(this.cannonProjectileGroup);
-    for (const m of this.cannonProjectilePool) {
-      m.geometry.dispose();
-      (m.material as THREE.Material).dispose();
-    }
+    disposeCannonProjectilePool(this.cannonProjectilePool);
     this.cannonProjectilePool.length = 0;
+    for (let i = this.cannonColumnHits.length - 1; i >= 0; i--) {
+      const c = this.cannonColumnHits[i]!;
+      this.cannonColumnGroup.remove(c.mesh);
+      c.mesh.geometry.dispose();
+      c.mat.dispose();
+    }
+    this.cannonColumnHits.length = 0;
+    this.scene.remove(this.cannonColumnGroup);
     for (let i = this.cannonBlastDecals.length - 1; i >= 0; i--) {
       const d = this.cannonBlastDecals[i]!;
       this.scene.remove(d.mesh);
@@ -1429,7 +1443,13 @@ export class GameApp {
         vis = { root, bar };
         this.enemyObjects.set(id, vis);
       }
-      vis.root.position.set(w.x, w.y, w.z);
+      vis.root.position.set(
+        w.x,
+        w.y + e.getCannonLiftYOffset(),
+        w.z,
+      );
+      const twist = e.getCannonLiftTwistEuler();
+      vis.root.rotation.set(twist.x, twist.y, twist.z);
       const hpRatio = e.maxHp > 0 ? e.hp / e.maxHp : 0;
       vis.bar.setFillRatio(hpRatio);
       vis.bar.group.quaternion.copy(this.camera.quaternion);
@@ -1597,10 +1617,22 @@ export class GameApp {
       this.scene,
       this.clock.elapsedTime,
     );
+    updateCannonColumnHits(
+      this.cannonColumnHits,
+      dt,
+      this.cannonColumnGroup,
+      this.clock.elapsedTime,
+    );
   }
 
   private applyCombatVfx(): void {
     const cannonBlasts: { gx: number; gz: number; radiusTiles: number }[] = [];
+    const cannonColumns: {
+      gx: number;
+      gz: number;
+      fromGx: number;
+      fromGz: number;
+    }[] = [];
     for (const evt of this.session.consumeCombatEvents()) {
       const snap = this.session.map
         .getDefenses()
@@ -1660,6 +1692,7 @@ export class GameApp {
         }
       }
       if (evt.cannonBlast) cannonBlasts.push(evt.cannonBlast);
+      if (evt.cannonColumnHit) cannonColumns.push(evt.cannonColumnHit);
     }
     if (cannonBlasts.length > 0) {
       spawnCannonBlastDecals(
@@ -1667,6 +1700,15 @@ export class GameApp {
         this.doc,
         this.scene,
         this.cannonBlastDecals,
+      );
+    }
+    if (cannonColumns.length > 0) {
+      spawnCannonColumnHits(
+        cannonColumns,
+        this.doc,
+        this.cannonColumnGroup,
+        this.cannonColumnHits,
+        this.clock.elapsedTime,
       );
     }
   }

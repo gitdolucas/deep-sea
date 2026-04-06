@@ -3,11 +3,13 @@ import {
   ARC_BURN_DAMAGE_PER_TICK,
   ARC_BURN_DURATION,
   ARC_BURN_TICK_INTERVAL,
+  CANNON_HIT_STUN_LIFT_SEC,
   INK_BLIND_LINGER_SEC,
   VIBRATION_DOT_DAMAGE_PER_TICK,
   VIBRATION_DOT_TICK,
   VIBRATION_DOT_LINGER_SEC,
 } from "./combat-balance.js";
+import { getCannonLiftFxTuning } from "./cannon-hit-fx-tuning.js";
 
 const ARC_BURN_TICK_COUNT = Math.round(ARC_BURN_DURATION / ARC_BURN_TICK_INTERVAL);
 import { ENEMY_ARMOR } from "./enemy-stats.js";
@@ -17,6 +19,12 @@ const BASE_SPEED_TILES_PER_SEC: Record<EnemyTypeKey, number> = {
   razoreel: 1.1,
   abyssal_colossus: 0.35,
 };
+
+/** Cubic ease-in-out on [0, 1]. */
+function easeInOutCubic(u: number): number {
+  const t = Math.min(1, Math.max(0, u));
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 /**
  * Runtime enemy: path progress, HP, movement, and combat debuffs (docs/combat.md §5).
@@ -42,6 +50,10 @@ export class EnemyController {
   private wasInInkLastFrame = false;
 
   private stunRemaining = 0;
+  /** Render-only lift after Current Cannon hit; decays with stun (docs/combat.md). */
+  private cannonLiftRemainingSec = 0;
+  /** Per-hit phase so twist wobble isn’t synchronized across enemies. */
+  private cannonLiftTwistSeed = 0;
   /** Remaining Arc Spine L3 burn pulses (docs/combat.md §5). */
   private burnTickCharges = 0;
   private burnTickAccum = 0;
@@ -131,16 +143,53 @@ export class EnemyController {
     this.stunRemaining = Math.max(this.stunRemaining, seconds);
   }
 
-  refreshArcBurn(): void {
-    this.burnTickCharges = ARC_BURN_TICK_COUNT;
+  addCannonLiftVisual(seconds: number): void {
+    if (seconds <= 0) return;
+    if (this.cannonLiftRemainingSec <= 0) {
+      this.cannonLiftTwistSeed = Math.random() * Math.PI * 2;
+    }
+    this.cannonLiftRemainingSec = Math.max(this.cannonLiftRemainingSec, seconds);
   }
 
-  applyKnockbackTiles(tiles: number): void {
-    if (tiles <= 0) return;
-    const len = this.totalPathLength();
-    if (len <= 0) return;
-    const delta = tiles / len;
-    this.pathProgress = this.clamp(this.pathProgress - delta, 0, 1);
+  /** World-space Y offset for sprite lift during cannon hit (render only). */
+  getCannonLiftYOffset(): number {
+    if (this.cannonLiftRemainingSec <= 0) return 0;
+    const { peakWorldY, riseSec, fallSec } = getCannonLiftFxTuning();
+    const total = CANNON_HIT_STUN_LIFT_SEC;
+    const rem = this.cannonLiftRemainingSec;
+    const elapsed = total - rem;
+    if (elapsed < riseSec) {
+      return peakWorldY * easeInOutCubic(elapsed / riseSec);
+    }
+    if (rem < fallSec) {
+      return peakWorldY * easeInOutCubic(rem / fallSec);
+    }
+    return peakWorldY;
+  }
+
+  /**
+   * Local Euler twist (radians) while cannon lift is active — wobble on X/Y/Z in the air.
+   */
+  getCannonLiftTwistEuler(): { x: number; y: number; z: number } {
+    if (this.cannonLiftRemainingSec <= 0) {
+      return { x: 0, y: 0, z: 0 };
+    }
+    const t = getCannonLiftFxTuning();
+    const total = CANNON_HIT_STUN_LIFT_SEC;
+    const elapsed = total - this.cannonLiftRemainingSec;
+    const phase = Math.min(1, Math.max(0, elapsed / total));
+    const env = Math.sin(Math.PI * phase);
+    const seed = this.cannonLiftTwistSeed;
+    const el = elapsed;
+    return {
+      x: env * t.twistAmpX * Math.sin(seed + el * t.twistFreqX),
+      y: env * t.twistAmpY * Math.sin(seed * 1.31 + el * t.twistFreqY),
+      z: env * t.twistAmpZ * Math.cos(seed * 0.73 + el * t.twistFreqZ),
+    };
+  }
+
+  refreshArcBurn(): void {
+    this.burnTickCharges = ARC_BURN_TICK_COUNT;
   }
 
   effectiveArmorValue(): number {
@@ -184,6 +233,11 @@ export class EnemyController {
     if (!this.isAlive() || this.waypoints.length < 2) return;
     if (this.stunRemaining > 0) {
       this.stunRemaining -= deltaSeconds;
+    }
+    if (this.cannonLiftRemainingSec > 0) {
+      this.cannonLiftRemainingSec -= deltaSeconds;
+    }
+    if (this.stunRemaining > 0) {
       return;
     }
     const length = this.totalPathLength();

@@ -1,9 +1,8 @@
 import {
+  CANNON_HIT_STUN_LIFT_SEC,
   DIRECT_DAMAGE,
   VIBRATION_SLOW,
   INK_CITADEL_DAMAGE_MULT,
-  CURRENT_CANNON_STUN_SEC,
-  KNOCKBACK_TILES,
   BUBBLE_SPLASH_L3,
   attackRangeTiles,
   auraRadiusTiles,
@@ -117,16 +116,10 @@ export function buildPlacedDefenseTooltipSpec(
       break;
     }
     case "current_cannon": {
-      const kb = KNOCKBACK_TILES[L];
       mechanics.push(
-        `Knockback: ${kb} tile(s) (Colossus immune)`,
-        L === 1
-          ? "L1 knockback: Stoneclaw only"
-          : "L2+ knockback: non-Colossus",
+        `Hit: ${CANNON_HIT_STUN_LIFT_SEC}s stun + lift (Colossus immune to CC)`,
+        "Splash damage in radius — no CC on splash",
       );
-      if (L === 3) {
-        mechanics.push(`L3 stun: ${CURRENT_CANNON_STUN_SEC}s (non-Colossus)`);
-      }
       break;
     }
     case "ink_veil": {

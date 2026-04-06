@@ -26,7 +26,7 @@ A playable vertical slice that proves the core loop: enemies walk a path, the pl
 - Tower upgrades (L2, L3)
 - Other towers (Laser, Shotgun, Vibration, Cannon, Ink)
 - Other enemies (Razoreel, Colossus)
-- Status effects (slow, burn, blind, knockback, stun)
+- Status effects (slow, burn, blind, stun)
 - Combo system
 - Salvage / sell towers
 - Tide Bonus / combo multiplier

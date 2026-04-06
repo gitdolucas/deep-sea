@@ -1,19 +1,19 @@
 # Current Cannon
 
-**Type:** Knockback / Control
+**Type:** Stun / Control  
 **Best Against:** Razoreel
 
 ## Description
 
-Fires concentrated artificial currents that knock lighter enemies backward, resetting their progress. Useless on the Colossus. Devastating on Razoreels.
+Fires concentrated artificial currents that **stun** lighter enemies on a direct hit, freezing their path progress for a short time, with a visible **upward lift** on the sprite and a vertical **current column** VFX at the impact cell. Splash damage hits nearby enemies but applies **no** crowd control. The Abyssal Colossus still takes damage but is **immune to stun/lift** (CC).
 
 ## Upgrade Tiers
 
-| Level | Visual                           | Power    | Behavior                                  |
-|-------|-----------------------------------|----------|-------------------------------------------|
-| L1    | Small current funnel              | Light    | Pushes Stonecrabs only                    |
-| L2    | Reinforced funnel, wider mouth    | Medium   | Pushes all except Colossus                |
-| L3    | Vortex generator, glowing core    | Strong   | Knocks back + stuns briefly               |
+| Level | Visual                           | Power    | Behavior                                                                 |
+|-------|-----------------------------------|----------|--------------------------------------------------------------------------|
+| L1    | Small current funnel              | Light    | Primary hit: stun + lift + column VFX; splash in radius                  |
+| L2    | Reinforced funnel, wider mouth    | Medium   | Stronger damage + larger splash radius                                   |
+| L3    | Vortex generator, glowing core    | Strong   | Strongest damage + largest splash; same **1s** primary stun/lift rule |
 
 ## Sprite Specs
 
@@ -42,7 +42,7 @@ Fires concentrated artificial currents that knock lighter enemies backward, rese
 
 ## Strategic Notes
 
-- Knocks Razoreels back, forcing them to re-traverse the path
-- Completely ineffective against Abyssal Colossus (immune to knockback)
-- At L3, the brief stun adds crowd control on top of displacement
-- Best placed mid-path to maximize the distance enemies must re-travel
+- **Stun** on the primary target stops Razoreels and other non-boss enemies in place so other towers get more time on target
+- **Splash** only deals damage — no stun or lift on secondary targets
+- Abyssal Colossus takes full damage from the blast but ignores stun/lift
+- Best placed where shots **primary** high-priority targets (e.g. Razoreels) while splash chips groups

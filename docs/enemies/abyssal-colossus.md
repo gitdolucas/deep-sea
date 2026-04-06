@@ -48,10 +48,10 @@ The Murk found the deep-trench octopuses and grew them. The Abyssal Colossus str
 - Moves extremely slowly but absorbs massive damage
 - Tentacles can absorb hits meant for the main body
 - Requires sustained, coordinated fire from multiple towers
-- Immune to Current Cannon knockback
+- Immune to Current Cannon crowd control (stun/lift); still takes damage
 - Drains tower ammo/cooldowns, leaving gaps for follow-up waves
 
 ## Counters
 
-- **Strong against:** Current Cannon (immune to knockback), single low-DPS towers
+- **Strong against:** Current Cannon CC (immune to stun/lift), single low-DPS towers
 - **Weak against:** Vibration Zone (slows it even further), Tideheart Laser L3 (piercing sustained DPS)

@@ -3,12 +3,11 @@ import { EnemyController } from "./enemy-controller.js";
 import { TargetingSystem, type TargetingContext } from "./targeting-system.js";
 import type { EconomyController } from "./economy-controller.js";
 import {
+  CANNON_HIT_STUN_LIFT_SEC,
   DIRECT_DAMAGE,
   FIRE_COOLDOWN_SEC,
-  CURRENT_CANNON_STUN_SEC,
   CANNON_SPLASH_RADIUS_TILES,
   CANNON_SPLASH_DAMAGE_FRAC,
-  KNOCKBACK_TILES,
   attackRangeTiles,
 } from "./combat-balance.js";
 import { tileDistanceSq } from "./spatial.js";
@@ -56,6 +55,13 @@ export type TowerAttackResult = {
     gx: number;
     gz: number;
     radiusTiles: number;
+  };
+  /** Upward current column VFX at primary hit (tower cell + impact cell). */
+  cannonColumnHit?: {
+    gx: number;
+    gz: number;
+    fromGx: number;
+    fromGz: number;
   };
 };
 
@@ -138,8 +144,7 @@ export function resolveArcSpineAttack(
 }
 
 /**
- * Current Cannon impact at a locked primary target: direct hit (+ knockback / L3 stun) and
- * splash damage to other enemies near the blast center.
+ * Current Cannon impact: direct hit (stun + lift, no knockback) and splash near blast center.
  */
 export function applyCurrentCannonImpact(
   ctx: CombatResolveContext,
@@ -154,14 +159,9 @@ export function applyCurrentCannonImpact(
   const dealtPrimary = damageAfterArmorEffective(primary, raw);
   primary.applyDamage(dealtPrimary);
 
-  const kb = KNOCKBACK_TILES[snap.level];
   if (primary.enemyType !== "abyssal_colossus") {
-    let allowKb = true;
-    if (snap.level === 1 && primary.enemyType !== "stoneclaw") allowKb = false;
-    if (allowKb) primary.applyKnockbackTiles(kb);
-  }
-  if (snap.level === 3 && primary.enemyType !== "abyssal_colossus") {
-    primary.addStun(CURRENT_CANNON_STUN_SEC);
+    primary.addStun(CANNON_HIT_STUN_LIFT_SEC);
+    primary.addCannonLiftVisual(CANNON_HIT_STUN_LIFT_SEC);
   }
 
   const hits: TowerHitRecord[] = [
@@ -202,6 +202,12 @@ export function applyCurrentCannonImpact(
       gx: blastCenter[0],
       gz: blastCenter[1],
       radiusTiles: splashR,
+    },
+    cannonColumnHit: {
+      gx: blastCenter[0],
+      gz: blastCenter[1],
+      fromGx: snap.position[0],
+      fromGz: snap.position[1],
     },
   };
 }

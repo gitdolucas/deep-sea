@@ -5,6 +5,7 @@ import { GameApp, type MissionEndNavigation } from "./GameApp.js";
 import { LEVELS } from "./levels.js";
 import { createMapOverviewElement } from "./map-overview.js";
 import { shouldMountBubbleAttackFxLeva } from "./bubble-attack-fx-tuning.js";
+import { shouldMountCannonDnaHelixLeva } from "./cannon-dna-helix-tuning.js";
 import { shouldMountVibrationDomeLeva } from "./vibration-dome-tuning.js";
 
 if (shouldMountVibrationDomeLeva()) {
@@ -16,6 +17,12 @@ if (shouldMountVibrationDomeLeva()) {
 if (shouldMountBubbleAttackFxLeva()) {
   void import("./mount-bubble-attack-fx-leva.js").then((m) =>
     m.mountBubbleAttackFxLeva(),
+  );
+}
+
+if (shouldMountCannonDnaHelixLeva()) {
+  void import("./mount-cannon-dna-helix-leva.js").then((m) =>
+    m.mountCannonDnaHelixLeva(),
   );
 }
 

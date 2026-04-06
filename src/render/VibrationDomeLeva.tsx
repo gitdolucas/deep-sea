@@ -3,6 +3,7 @@ import { useReducer } from "react";
 import {
   copyVibrationDomeTuningToClipboard,
   DEFAULT_VIBRATION_DOME_TUNING,
+  loadVibrationDomeDreiGlassPreset,
   resetVibrationDomeTuning,
   vibrationDomeTuning,
   type VibrationDomeSide,
@@ -24,6 +25,10 @@ function VibrationDomeLevaPanel({ onRemount }: { onRemount: () => void }) {
         },
         Reset: button(() => {
           resetVibrationDomeTuning();
+          onRemount();
+        }),
+        "Load Drei glass preset": button(() => {
+          loadVibrationDomeDreiGlassPreset();
           onRemount();
         }),
         "Copy all (JSON)": button(() => {
@@ -73,7 +78,7 @@ function VibrationDomeLevaPanel({ onRemount }: { onRemount: () => void }) {
         ior: {
           value: d.ior,
           min: 1,
-          max: 2.5,
+          max: 5,
           step: 0.02,
           onChange: (v: number) => {
             vibrationDomeTuning.ior = v;
@@ -117,6 +122,15 @@ function VibrationDomeLevaPanel({ onRemount }: { onRemount: () => void }) {
           step: 0.01,
           onChange: (v: number) => {
             vibrationDomeTuning.dispersion = v;
+          },
+        },
+        anisotropy: {
+          value: d.anisotropy,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (v: number) => {
+            vibrationDomeTuning.anisotropy = v;
           },
         },
       }),

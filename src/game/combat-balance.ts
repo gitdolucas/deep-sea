@@ -59,7 +59,8 @@ export const ARC_BURN_DURATION = 3;
 export const VIBRATION_DOT_TICK = 0.3;
 export const VIBRATION_DOT_LINGER_SEC = 1;
 
-export const CURRENT_CANNON_STUN_SEC = 0.8;
+/** Primary-hit stun + render lift duration (docs/combat.md Current Cannon). */
+export const CANNON_HIT_STUN_LIFT_SEC = 1;
 
 /** Enemies within this tile radius of the primary hit take splash damage (no knockback/stun). */
 export const CANNON_SPLASH_RADIUS_TILES: Record<DefenseLevel, number> = {
@@ -70,13 +71,6 @@ export const CANNON_SPLASH_RADIUS_TILES: Record<DefenseLevel, number> = {
 
 /** Splash uses this fraction of the tower’s direct hit raw damage (before armor). */
 export const CANNON_SPLASH_DAMAGE_FRAC = 0.5;
-
-/** Knockback distance in path tiles (docs/combat.md §5). */
-export const KNOCKBACK_TILES: Record<DefenseLevel, number> = {
-  1: 1,
-  2: 2,
-  3: 3,
-};
 
 /** Bubble / cannon projectile speed (tiles / sec) — provisional. */
 export const BUBBLE_PROJECTILE_SPEED = 7.5;

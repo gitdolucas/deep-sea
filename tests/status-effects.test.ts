@@ -52,7 +52,7 @@ describe("status effects (docs/combat.md §5)", () => {
     expect(damageAfterArmorEffective(e, raw)).toBe(4);
   });
 
-  it("current cannon knockback reduces path progress (non-colossus)", () => {
+  it("current cannon primary applies stun — path progress frozen until stun ends (non-colossus)", () => {
     const economy = new EconomyController({ shells: 0 });
     const e = stoneclaw({ pathProgress: 0.9 });
     const enemies = new Map([[e.id, e]]);
@@ -71,11 +71,20 @@ describe("status effects (docs/combat.md §5)", () => {
         targetMode: "first",
       },
     );
-    expect(e.getPathProgress()).toBeLessThan(p);
+    expect(e.getPathProgress()).toBe(p);
+    e.tickMovement(0.05);
+    expect(e.getCannonLiftYOffset()).toBeGreaterThan(0);
+    expect(e.getPathProgress()).toBe(p);
+    // Small steps: one tick ≥ remaining stun applies movement in the same frame.
+    let guard = 0;
+    while (e.getPathProgress() === p && guard++ < 300) {
+      e.tickMovement(0.01);
+    }
+    expect(e.getPathProgress()).toBeGreaterThan(p);
     expect(e.isAlive()).toBe(true);
   });
 
-  it("abyssal colossus ignores cannon knockback", () => {
+  it("abyssal colossus ignores cannon stun/lift (still takes damage)", () => {
     const economy = new EconomyController({ shells: 0 });
     const e = new EnemyController({
       id: "boss",
@@ -92,6 +101,7 @@ describe("status effects (docs/combat.md §5)", () => {
     });
     const enemies = new Map([[e.id, e]]);
     const p = e.getPathProgress();
+    const hpBefore = e.hp;
     resolveCurrentCannonAttack(
       {
         enemies,
@@ -107,6 +117,8 @@ describe("status effects (docs/combat.md §5)", () => {
       },
     );
     expect(e.getPathProgress()).toBe(p);
+    expect(e.getCannonLiftYOffset()).toBe(0);
+    expect(e.hp).toBeLessThan(hpBefore);
   });
 
   it("Arc L3 refresh burn adds tick charges", () => {

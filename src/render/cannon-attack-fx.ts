@@ -1,19 +1,26 @@
 import * as THREE from "three";
 import type { MapDocument } from "../game/map-types.js";
+import { getCannonBlastFxTuning } from "../game/cannon-blast-tuning.js";
+import {
+  getCannonProjectileFxTuning,
+  type CannonProjectileFxTuning,
+} from "../game/cannon-projectile-fx-tuning.js";
 import type { CannonProjectileState } from "../game/cannon-projectiles.js";
+import {
+  getCannonDnaHelixTuning,
+  type CannonDnaHelixTuning,
+} from "./cannon-dna-helix-tuning.js";
 import { worldFromGrid } from "./board.js";
 
-const BOLT_LENGTH = 0.42;
-const BOLT_R_BOT = 0.055;
-const BOLT_R_TOP = 0.02;
-
 const boltVertexShader = `
+uniform float uGeomHeight;
+
 varying vec3 vLocalPos;
 varying float vAxial;
 
 void main() {
   vLocalPos = position;
-  vAxial = position.y / ${BOLT_LENGTH.toFixed(4)} + 0.5;
+  vAxial = position.y / uGeomHeight + 0.5;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
 `;
@@ -22,6 +29,9 @@ const boltFragmentShader = `
 uniform float uTime;
 uniform float uLevel;
 uniform float uScroll;
+uniform float uFadeMul;
+uniform float uRBot;
+uniform float uRTop;
 
 varying vec3 vLocalPos;
 varying float vAxial;
@@ -47,7 +57,7 @@ float noise2(vec2 p) {
 
 void main() {
   float tAx = clamp(vAxial, 0.0, 1.0);
-  float rMax = mix(${BOLT_R_BOT.toFixed(5)}, ${BOLT_R_TOP.toFixed(5)}, tAx);
+  float rMax = mix(uRBot, uRTop, tAx);
   float rNorm = length(vLocalPos.xz) / max(rMax, 0.0001);
   float ang = atan(vLocalPos.z, vLocalPos.x);
 
@@ -79,18 +89,23 @@ void main() {
 
   float alpha = body * (0.32 + 0.12 * lv) + rim * (0.42 + 0.08 * lv);
   alpha *= caps;
-  alpha = clamp(alpha, 0.0, 0.78);
+  alpha = clamp(alpha, 0.0, 0.78) * uFadeMul;
 
   gl_FragColor = vec4(col, alpha);
 }
 `;
 
 function createCannonBoltMaterial(): THREE.ShaderMaterial {
+  const fx = getCannonProjectileFxTuning();
   return new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
       uLevel: { value: 1 },
       uScroll: { value: 0 },
+      uFadeMul: { value: 1 },
+      uGeomHeight: { value: fx.boltGeomHeight },
+      uRBot: { value: fx.boltRadiusBottom },
+      uRTop: { value: fx.boltRadiusTop },
     },
     vertexShader: boltVertexShader,
     fragmentShader: boltFragmentShader,
@@ -103,8 +118,177 @@ function createCannonBoltMaterial(): THREE.ShaderMaterial {
 
 const _fwd = new THREE.Vector3();
 const _axis = new THREE.Vector3(0, 1, 0);
+const _centerW = new THREE.Vector3();
+const _tipAnchorW = new THREE.Vector3();
 
-const BLAST_DURATION = 0.62;
+/** World-space bolt length: short in flight → grows to max → shrinks on hit → min during fade. */
+function cannonBoltLengthWorld(
+  p: CannonProjectileState,
+  fx: CannonProjectileFxTuning,
+): number {
+  const maxLen = Math.max(0.05, fx.boltLength);
+  const startFrac = Math.max(0.02, Math.min(1, fx.boltLengthStartFrac));
+  const minLen = maxLen * startFrac;
+  if (
+    p.shrinkRemaining !== undefined &&
+    p.shrinkDurationSec !== undefined &&
+    p.shrinkDurationSec > 0
+  ) {
+    const t = Math.max(0, p.shrinkRemaining / p.shrinkDurationSec);
+    return minLen + (maxLen - minLen) * t;
+  }
+  if (p.fadeOutRemaining !== undefined) {
+    return minLen;
+  }
+  const prog = p.flightLengthProgress ?? 0;
+  return minLen + (maxLen - minLen) * prog;
+}
+
+const _strandColor = new THREE.Color();
+
+function clampDnaStrands(n: number): number {
+  return Math.max(1, Math.min(16, Math.round(Number(n)) || 1));
+}
+
+function clampDnaSegments(n: number): number {
+  return Math.max(4, Math.min(256, Math.round(Number(n)) || 56));
+}
+
+function strandColorHex(s: number, t: CannonDnaHelixTuning): number {
+  const palette = [
+    t.color0,
+    t.color1,
+    t.color2,
+    t.color3,
+    t.color4,
+    t.color5,
+    t.color6,
+    t.color7,
+  ] as const;
+  _strandColor.setStyle(palette[s % 8]!);
+  return _strandColor.getHex();
+}
+
+function stripCannonDnaHelixLines(boltMesh: THREE.Mesh): void {
+  const oldLines = boltMesh.userData.dnaHelixLines as THREE.Line[] | undefined;
+  if (oldLines) {
+    for (const line of oldLines) {
+      boltMesh.remove(line);
+      line.geometry.dispose();
+      (line.material as THREE.Material).dispose();
+    }
+  }
+  boltMesh.userData.dnaHelixLines = undefined;
+  boltMesh.userData.dnaHelixReady = false;
+  boltMesh.userData.dnaHelixBuild = undefined;
+}
+
+function ensureCannonDnaHelixLines(
+  boltMesh: THREE.Mesh,
+  t: CannonDnaHelixTuning,
+): void {
+  const strands = clampDnaStrands(t.strandCount);
+  const segs = clampDnaSegments(t.segments);
+  const blend =
+    t.blending === "additive" ? THREE.AdditiveBlending : THREE.NormalBlending;
+  const lines: THREE.Line[] = [];
+  for (let s = 0; s < strands; s++) {
+    const geom = new THREE.BufferGeometry();
+    const pos = new Float32Array(3 * segs);
+    geom.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.LineBasicMaterial({
+      color: strandColorHex(s, t),
+      transparent: true,
+      opacity: t.lineOpacity,
+      blending: blend,
+      depthWrite: t.lineDepthWrite,
+    });
+    const line = new THREE.Line(geom, mat);
+    line.renderOrder = t.lineRenderOrder;
+    boltMesh.add(line);
+    lines.push(line);
+  }
+  boltMesh.userData.dnaHelixReady = true;
+  boltMesh.userData.dnaHelixLines = lines;
+  boltMesh.userData.dnaHelixBuild = { strands, segs };
+}
+
+/** Recreate helix geometry when strand count or segment count changes (Leva). */
+export function rebuildCannonDnaHelixIfNeeded(boltMesh: THREE.Mesh): void {
+  const t = getCannonDnaHelixTuning();
+  const strands = clampDnaStrands(t.strandCount);
+  const segs = clampDnaSegments(t.segments);
+  const build = boltMesh.userData.dnaHelixBuild as
+    | { strands: number; segs: number }
+    | undefined;
+  if (
+    boltMesh.userData.dnaHelixReady === true &&
+    build?.strands === strands &&
+    build?.segs === segs
+  ) {
+    return;
+  }
+  stripCannonDnaHelixLines(boltMesh);
+  ensureCannonDnaHelixLines(boltMesh, t);
+}
+
+function updateCannonDnaHelixLines(
+  boltMesh: THREE.Mesh,
+  timeSec: number,
+  traveled: number,
+  level: number,
+  fadeLineOpacityMul: number,
+): void {
+  rebuildCannonDnaHelixIfNeeded(boltMesh);
+  const t = getCannonDnaHelixTuning();
+  const lines = boltMesh.userData.dnaHelixLines as THREE.Line[] | undefined;
+  if (!lines?.length) return;
+  const lv = Math.max(1, Math.min(3, level));
+  const fx = getCannonProjectileFxTuning();
+  const gh = fx.boltGeomHeight;
+  const half = gh * 0.5;
+  const twist =
+    timeSec * (t.timeTwistSpeed + lv * t.timeTwistPerLevel) +
+    traveled * (t.traveledTwistSpeed + lv * t.traveledTwistPerLevel);
+  const strands = lines.length;
+  const spread =
+    ((Math.PI * 2) / Math.max(1, strands)) * t.phaseSpreadMul;
+  const blend =
+    t.blending === "additive" ? THREE.AdditiveBlending : THREE.NormalBlending;
+  for (let s = 0; s < lines.length; s++) {
+    const line = lines[s]!;
+    const mat = line.material as THREE.LineBasicMaterial;
+    mat.color.setHex(strandColorHex(s, t));
+    mat.opacity = t.lineOpacity * fadeLineOpacityMul;
+    mat.blending = blend;
+    mat.depthWrite = t.lineDepthWrite;
+    line.renderOrder = t.lineRenderOrder;
+
+    const geom = line.geometry as THREE.BufferGeometry;
+    const pos = geom.attributes.position as THREE.BufferAttribute;
+    const arr = pos.array as Float32Array;
+    const segs = arr.length / 3;
+    const strandPhase = s * spread;
+    const radius = s % 2 === 0 ? t.radiusA : t.radiusB;
+    for (let i = 0; i < segs; i++) {
+      const t01 = i / (segs - 1);
+      const y = -half + t01 * gh;
+      const wobble =
+        t.wobbleAmplitude *
+        Math.sin(
+          timeSec * t.wobbleTimeFreq +
+            t01 * t.wobbleAxialFreq +
+            s * t.wobbleStrandOffset,
+        );
+      const theta =
+        t.turns * Math.PI * 2 * t01 + twist + strandPhase + wobble;
+      arr[i * 3] = radius * Math.cos(theta);
+      arr[i * 3 + 1] = y;
+      arr[i * 3 + 2] = radius * Math.sin(theta);
+    }
+    pos.needsUpdate = true;
+  }
+}
 
 const blastVertexShader = `
 varying vec2 vLocalXY;
@@ -173,22 +357,42 @@ export type CannonBlastDecal = {
   mat: THREE.ShaderMaterial;
 };
 
+let lastBoltGeomSig = "";
+
+function boltGeomSignature(fx: CannonProjectileFxTuning): string {
+  return [
+    fx.boltGeomHeight,
+    fx.boltRadiusBottom,
+    fx.boltRadiusTop,
+    fx.boltCylinderRadialSegs,
+    fx.boltCylinderHeightSegs,
+  ].join("|");
+}
+
 export function ensureCannonProjectilePool(
   parent: THREE.Group,
   pool: THREE.Mesh[],
   needed: number,
 ): void {
+  const fx = getCannonProjectileFxTuning();
+  const sig = boltGeomSignature(fx);
+  if (sig !== lastBoltGeomSig && pool.length > 0) {
+    disposeCannonProjectilePool(pool);
+    pool.length = 0;
+  }
+  lastBoltGeomSig = sig;
   while (pool.length < needed) {
     const geom = new THREE.CylinderGeometry(
-      BOLT_R_TOP,
-      BOLT_R_BOT,
-      BOLT_LENGTH,
-      8,
-      1,
+      fx.boltRadiusTop,
+      fx.boltRadiusBottom,
+      fx.boltGeomHeight,
+      Math.max(3, Math.round(fx.boltCylinderRadialSegs)),
+      Math.max(1, Math.round(fx.boltCylinderHeightSegs)),
       false,
     );
     const mesh = new THREE.Mesh(geom, createCannonBoltMaterial());
     mesh.renderOrder = 3;
+    rebuildCannonDnaHelixIfNeeded(mesh);
     parent.add(mesh);
     pool.push(mesh);
   }
@@ -205,22 +409,90 @@ export function syncCannonProjectileMeshes(
     if (i < projectiles.length) {
       const p = projectiles[i]!;
       mesh.visible = true;
+      const fx = getCannonProjectileFxTuning();
+      const fadeInMul =
+        p.shrinkRemaining !== undefined ||
+        p.fadeOutRemaining !== undefined
+          ? 1
+          : fx.fadeInSec <= 0
+            ? 1
+            : Math.min(1, p.timeAlive / fx.fadeInSec);
+      const fadeOutMul =
+        p.fadeOutRemaining !== undefined
+          ? fx.fadeOutSec <= 0
+            ? 0
+            : Math.max(0, p.fadeOutRemaining / fx.fadeOutSec)
+          : 1;
+      const fadeMul = fadeInMul * fadeOutMul;
       const mat = mesh.material as THREE.ShaderMaterial;
       mat.uniforms.uTime.value = timeSec;
       mat.uniforms.uLevel.value = p.level;
-      mat.uniforms.uScroll.value = p.traveled * 2.4;
+      mat.uniforms.uScroll.value = p.traveled * fx.boltScrollMult;
+      mat.uniforms.uFadeMul.value = fadeMul;
+      mat.uniforms.uGeomHeight.value = fx.boltGeomHeight;
+      mat.uniforms.uRBot.value = fx.boltRadiusBottom;
+      mat.uniforms.uRTop.value = fx.boltRadiusTop;
       const dirLen = Math.hypot(p.vgx, p.vgz) || 1;
       _fwd.set(p.vgx / dirLen, 0, p.vgz / dirLen);
       mesh.quaternion.setFromUnitVectors(_axis, _fwd);
       const bob =
-        0.48 + 0.04 * Math.sin(timeSec * 14 + i * 0.7 + p.traveled * 2.8);
-      mesh.position.copy(worldFromGrid(p.gx, p.gz, doc, bob));
+        fx.bobBase +
+        fx.bobSinAmp *
+          Math.sin(
+            timeSec * fx.bobSinTimeFreq +
+              i * fx.bobSinIndexPhase +
+              p.traveled * fx.bobSinTravelFreq,
+          );
       const sc =
-        (p.level >= 3 ? 1.12 : 1) *
-        (1 + 0.05 * Math.sin(timeSec * 11 + p.traveled * 4));
-      mesh.scale.set(sc, sc * (0.95 + p.level * 0.04), sc);
+        (p.level >= 3 ? fx.boltLevelScaleL3 : 1) *
+        (1 +
+          fx.boltScaleWaveAmp *
+            Math.sin(
+              timeSec * fx.boltScaleWaveTimeFreq +
+                p.traveled * fx.boltScaleWaveTravelFreq,
+            ));
+      const levelY = fx.boltLevelYBase + p.level * fx.boltLevelYPerLevel;
+      const postHit =
+        p.shrinkRemaining !== undefined || p.fadeOutRemaining !== undefined;
+      if (postHit) {
+        if (mesh.userData.cannonTipAnchorW === undefined) {
+          _centerW.copy(worldFromGrid(p.gx, p.gz, doc, bob));
+          const fullLen = Math.max(0.05, fx.boltLength);
+          const scaleYZ = sc * levelY;
+          mesh.userData.cannonPostHitScaleYZ = scaleYZ;
+          const halfFull = (fullLen * scaleYZ) / 2;
+          _tipAnchorW.copy(_centerW).addScaledVector(_fwd, halfFull);
+          mesh.userData.cannonTipAnchorW = _tipAnchorW.clone();
+        }
+        const tip = mesh.userData.cannonTipAnchorW as THREE.Vector3;
+        const scaleYZ =
+          (mesh.userData.cannonPostHitScaleYZ as number) ?? sc * levelY;
+        const lenW = cannonBoltLengthWorld(p, fx);
+        const halfNow = (lenW * scaleYZ) / 2;
+        mesh.position.copy(tip).addScaledVector(_fwd, -halfNow);
+      } else {
+        mesh.position.copy(worldFromGrid(p.gx, p.gz, doc, bob));
+        delete mesh.userData.cannonTipAnchorW;
+        delete mesh.userData.cannonPostHitScaleYZ;
+      }
+      const lenMul =
+        cannonBoltLengthWorld(p, fx) / Math.max(0.05, fx.boltGeomHeight);
+      mesh.scale.set(
+        sc,
+        sc * levelY * lenMul,
+        sc,
+      );
+      updateCannonDnaHelixLines(
+        mesh,
+        timeSec,
+        p.traveled,
+        p.level,
+        fadeMul,
+      );
     } else {
       mesh.visible = false;
+      delete mesh.userData.cannonTipAnchorW;
+      delete mesh.userData.cannonPostHitScaleYZ;
     }
   }
 }
@@ -231,9 +503,13 @@ export function spawnCannonBlastDecals(
   scene: THREE.Scene,
   decals: CannonBlastDecal[],
 ): void {
+  const bt = getCannonBlastFxTuning();
   for (const e of events) {
-    const rWorld = Math.max(0.35, e.radiusTiles);
-    const geom = new THREE.CircleGeometry(rWorld, 48);
+    const rWorld = Math.max(bt.minRadiusWorld, e.radiusTiles);
+    const geom = new THREE.CircleGeometry(
+      rWorld,
+      Math.max(8, Math.round(bt.circleSegments)),
+    );
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -250,9 +526,9 @@ export function spawnCannonBlastDecals(
     const mesh = new THREE.Mesh(geom, mat);
     mesh.rotation.x = -Math.PI / 2;
     mesh.renderOrder = 2;
-    mesh.position.copy(worldFromGrid(e.gx, e.gz, doc, 0.24));
+    mesh.position.copy(worldFromGrid(e.gx, e.gz, doc, bt.groundYOffset));
     scene.add(mesh);
-    decals.push({ mesh, age: 0, duration: BLAST_DURATION, mat });
+    decals.push({ mesh, age: 0, duration: bt.durationSec, mat });
   }
 }
 
@@ -262,6 +538,8 @@ export function updateCannonBlastDecals(
   scene: THREE.Scene,
   timeSec: number,
 ): void {
+  const bt = getCannonBlastFxTuning();
+  const exp = Math.max(0.5, bt.fadeExponent);
   for (let i = decals.length - 1; i >= 0; i--) {
     const d = decals[i]!;
     d.age += dt;
@@ -275,9 +553,23 @@ export function updateCannonBlastDecals(
       decals.splice(i, 1);
       continue;
     }
-    d.mat.uniforms.uFade.value = 1.0 - k * k * k;
+    d.mat.uniforms.uFade.value = 1.0 - Math.pow(k, exp);
   }
 }
 
 /** No shared bolt materials (each pool mesh owns its ShaderMaterial). */
 export function disposeCannonAttackFxShared(): void {}
+
+/** Disposes bolt cylinder plus DNA helix child lines (not handled by scene.traverse after group remove). */
+export function disposeCannonProjectilePool(pool: THREE.Mesh[]): void {
+  for (const m of pool) {
+    m.traverse((o) => {
+      if (o instanceof THREE.Line) {
+        o.geometry.dispose();
+        (o.material as THREE.Material).dispose();
+      }
+    });
+    m.geometry.dispose();
+    (m.material as THREE.Material).dispose();
+  }
+}
