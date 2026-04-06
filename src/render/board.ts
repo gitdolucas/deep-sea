@@ -81,6 +81,21 @@ function materialKeyForCell(
   return kind ?? "empty";
 }
 
+export type PathCellMaterialKey = PathCellVisualKind | "empty";
+
+/**
+ * One floor tile mesh matching production board styling (for galleries / tooling).
+ * Origin at cell center; Y matches {@link buildMapBoard} cells.
+ */
+export function createPathCellMesh(kind: PathCellMaterialKey): THREE.Mesh {
+  const matKey = kind in CELL_MATERIALS ? kind : "empty";
+  const cell = new THREE.Mesh(CELL_BOX, CELL_MATERIALS[matKey]);
+  const y = CELL_BOX.parameters.height / 2;
+  cell.position.y = y;
+  cell.userData.kind = "grid_cell";
+  return cell;
+}
+
 /**
  * Builds grid cells (raycast targets), spawn portal(s), castle. Towers may be placed on any off-path cell.
  */

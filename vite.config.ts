@@ -23,6 +23,7 @@ export default defineConfig({
       input: {
         main: path.join(rootDir, "index.html"),
         mapBuilder: path.join(rootDir, "map-builder.html"),
+        visualShowcase: path.join(rootDir, "visual-showcase.html"),
       },
     },
   },
