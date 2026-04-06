@@ -22,6 +22,7 @@ import {
   createDefenseTowerMesh,
   syncVibrationZoneDomeForDefense,
 } from "./defense-tower-visuals.js";
+import { syncInkVeilAuraForDefense } from "./ink-veil-aura.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
 import {
   ensureBubbleProjectilePool,
@@ -116,7 +117,11 @@ function makeBarBillboard(
 
 function disposeObject3DTree(root: THREE.Object3D): void {
   root.traverse((obj) => {
-    if (obj instanceof THREE.Mesh || obj instanceof THREE.Line) {
+    if (
+      obj instanceof THREE.Mesh ||
+      obj instanceof THREE.Line ||
+      obj instanceof THREE.Points
+    ) {
       obj.geometry.dispose();
       const mat = obj.material;
       if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
@@ -195,6 +200,8 @@ export class VisualShowcaseApp {
       bar: BarBillboard;
       vibrationDome?: THREE.Mesh;
       vibrationDomeKey?: string;
+      inkVeilAura?: THREE.Group;
+      inkVeilAuraKey?: string;
     }
   >();
 
@@ -385,6 +392,13 @@ export class VisualShowcaseApp {
       const vis = { root, tower, bar };
       this.defenseRoots.set(d.id, vis);
       syncVibrationZoneDomeForDefense(
+        vis,
+        d,
+        this.doc,
+        disposeObject3DTree,
+        this.getFxTimeSec(),
+      );
+      syncInkVeilAuraForDefense(
         vis,
         d,
         this.doc,
@@ -676,6 +690,7 @@ export class VisualShowcaseApp {
       const mat = vis.tower.material as THREE.MeshStandardMaterial;
       mat.emissiveIntensity = 0.22;
       syncVibrationZoneDomeForDefense(vis, d, this.doc, disposeObject3DTree, t);
+      syncInkVeilAuraForDefense(vis, d, this.doc, disposeObject3DTree, t);
     }
 
     this.orbitControls.update();

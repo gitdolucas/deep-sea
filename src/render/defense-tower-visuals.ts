@@ -46,6 +46,9 @@ export type VibrationDomeVis = {
   root: THREE.Group;
   vibrationDome?: THREE.Mesh;
   vibrationDomeKey?: string;
+  /** Ink Veil cyclone / ground pool (see `syncInkVeilAuraForDefense`). */
+  inkVeilAura?: THREE.Group;
+  inkVeilAuraKey?: string;
 };
 
 /**

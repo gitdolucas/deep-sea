@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import Stats from "stats.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { MapDocument } from "../game/map-types.js";
@@ -81,6 +82,7 @@ import {
   createDefenseTowerMesh,
   syncVibrationZoneDomeForDefense,
 } from "./defense-tower-visuals.js";
+import { syncInkVeilAuraForDefense } from "./ink-veil-aura.js";
 import { getVibrationDomeTuning } from "./vibration-dome-tuning.js";
 import { GAMEPLAY_TIPS } from "./gameplay-tips.js";
 import { defenseFocusCardIconInnerHtml } from "./defense-focus-card-icons.js";
@@ -135,7 +137,11 @@ function makeBarBillboard(
 
 function disposeObject3DTree(root: THREE.Object3D): void {
   root.traverse((obj) => {
-    if (obj instanceof THREE.Mesh || obj instanceof THREE.Line) {
+    if (
+      obj instanceof THREE.Mesh ||
+      obj instanceof THREE.Line ||
+      obj instanceof THREE.Points
+    ) {
       obj.geometry.dispose();
       const mat = obj.material;
       if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
@@ -235,6 +241,8 @@ export class GameApp {
       bar: BarBillboard;
       vibrationDome?: THREE.Mesh;
       vibrationDomeKey?: string;
+      inkVeilAura?: THREE.Group;
+      inkVeilAuraKey?: string;
     }
   >();
   private chainLines: { obj: THREE.Mesh; t: number; mat: THREE.ShaderMaterial }[] =
@@ -276,6 +284,7 @@ export class GameApp {
   /** 0 = map rest framing, 1 = defense focus (drives eased FOV + orbit pivot). */
   private defenseFocusViewBlend = 0;
   private readonly missionEndNav: MissionEndNavigation | null;
+  private readonly stats: Stats;
   private readonly armoryOpenStorageKey = "deepSeaArmoryOpen";
   private armoryExpanded = true;
   private armoryGridBuilt = false;
@@ -302,6 +311,13 @@ export class GameApp {
     /** Internal framebuffer for MeshPhysicalMaterial transmission (three manages RT size). */
     this.renderer.transmissionResolutionScale = 0.72;
     this.mount.appendChild(this.renderer.domElement);
+
+    this.stats = new Stats();
+    this.stats.dom.style.position = "fixed";
+    this.stats.dom.style.left = "0";
+    this.stats.dom.style.top = "0";
+    this.stats.dom.style.zIndex = "10000";
+    document.body.appendChild(this.stats.dom);
 
     this.scene.background = new THREE.Color(COLORS.background);
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -531,6 +547,7 @@ export class GameApp {
     this.stopGameplayTips();
     this.abortController.abort();
     this.renderer.setAnimationLoop(null);
+    this.stats.dom.remove();
     this.orbitControls.dispose();
     this.scene.remove(this.sceneGridHelper);
     disposeObject3DTree(this.sceneGridHelper);
@@ -1312,6 +1329,7 @@ export class GameApp {
   }
 
   private frame(): void {
+    this.stats.begin();
     const dt = this.clock.getDelta();
     if (this.session.getOutcome() === "playing") {
       const focus =
@@ -1345,6 +1363,7 @@ export class GameApp {
     this.renderer.transmissionResolutionScale =
       getVibrationDomeTuning().transmissionResolutionScale;
     this.renderer.render(this.scene, this.camera);
+    this.stats.end();
   }
 
   /**
@@ -1482,6 +1501,13 @@ export class GameApp {
       mat.emissiveIntensity = selected ? baseEmit + 0.32 : baseEmit;
 
       syncVibrationZoneDomeForDefense(
+        vis,
+        d,
+        this.doc,
+        disposeObject3DTree,
+        this.clock.elapsedTime,
+      );
+      syncInkVeilAuraForDefense(
         vis,
         d,
         this.doc,
