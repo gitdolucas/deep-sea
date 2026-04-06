@@ -113,7 +113,14 @@
       <p>
         Simulation is not running — path tiles, defenses, creatures, and combat
         VFX samples only. Pan with drag; no mission HUD. Use FX tick to scrub
-        all effects (0–1).
+        all effects (0–1). The Leva panel (bottom-right) exposes every VFX
+        tuner: Bubble Shotgun, Current Cannon, Vibration Zone dome, seabed,
+        and scrub timing.
+      </p>
+      <p style="margin-top: 8px">
+        Bubble Shotgun: tick ≈ 0–0.55 shows the in-flight shell volley (teardrop
+        point clusters from tower toward aim); above ~0.55 only the impact
+        column and pop ring on the hit cell run.
       </p>
     </div>
     <div class="showcase-fx-tick">
@@ -125,14 +132,14 @@
           min="0"
           max="1"
           step="0.001"
-          value="0.35"
+          value="0.18"
           aria-valuemin="0"
           aria-valuemax="1"
           aria-label="FX progression from 0 to 1"
         />
       </label>
       <div class="showcase-fx-tick__meta">
-        <span id="showcaseFxTickValue">0.350</span>
+        <span id="showcaseFxTickValue">0.180</span>
         <span aria-hidden="true">→</span>
         <span title="Virtual seconds at tick 1">8 s loop</span>
       </div>

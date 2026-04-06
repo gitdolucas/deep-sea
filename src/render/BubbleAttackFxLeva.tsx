@@ -11,10 +11,9 @@ import { bubbleColumnLevaFolders } from "./bubble-column-fx-leva.js";
 
 const d = DEFAULT_BUBBLE_ATTACK_FX_TUNING;
 
-function BubbleAttackFxLevaPanel({ onRemount }: { onRemount: () => void }) {
-  useControls(
-    "Bubble Shotgun FX",
-    () => ({
+/** Control tree for Leva — reused by `VisualShowcaseLeva` master panel. */
+export function bubbleAttackFxLevaSchema(onRemount: () => void) {
+  return {
       General: folder({
         "Rebuild cluster geometry": button(() => {
           bumpBubbleAttackFxGeometryRev();
@@ -581,10 +580,15 @@ function BubbleAttackFxLevaPanel({ onRemount }: { onRemount: () => void }) {
         },
       }),
       ...bubbleColumnLevaFolders(),
-    }),
-    [],
-  );
+  };
+}
 
+function BubbleAttackFxLevaPanel({ onRemount }: { onRemount: () => void }) {
+  useControls(
+    "Bubble Shotgun FX",
+    () => bubbleAttackFxLevaSchema(onRemount),
+    [onRemount],
+  );
   return null;
 }
 

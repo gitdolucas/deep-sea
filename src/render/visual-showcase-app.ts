@@ -2,9 +2,11 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { MapDocument } from "../game/map-types.js";
+import type { BubbleColumnFxEvent } from "../game/bubble-column-fx-events.js";
 import type { BubbleProjectileState } from "../game/bubble-projectiles.js";
+import { spawnBubbleVolley } from "../game/bubble-projectiles.js";
 import type { CannonProjectileState } from "../game/cannon-projectiles.js";
-import type { EnemyTypeKey } from "../game/types.js";
+import type { EnemyTypeKey, GridPos } from "../game/types.js";
 import { validateMapDocument } from "../game/map-validation.js";
 import {
   buildMapBoard,
@@ -23,8 +25,17 @@ import {
 import { createEnemyVisual } from "./enemy-visuals.js";
 import {
   ensureBubbleProjectilePool,
+  spawnBubblePopRings,
   syncBubbleProjectileMeshes,
+  updateBubblePopRings,
+  type BubblePopRing,
 } from "./bubble-attack-fx.js";
+import { getBubbleAttackFxTuning } from "./bubble-attack-fx-tuning.js";
+import {
+  spawnBubbleColumns,
+  updateBubbleColumns,
+  type ActiveBubbleColumn,
+} from "./bubble-column-fx.js";
 import {
   ensureCannonProjectilePool,
   spawnCannonBlastDecals,
@@ -50,6 +61,8 @@ import {
   createTideheartLaserBeam,
 } from "./tideheart-laser-beam-fx.js";
 import { getVibrationDomeTuning } from "./vibration-dome-tuning.js";
+import { registerVisualShowcaseRuntime } from "./visual-showcase-runtime.js";
+import { getShowcaseFxLoopSeconds } from "./visual-showcase-tuning.js";
 
 const SCENE_GRID_VISUAL_Y = 0.02;
 
@@ -126,8 +139,11 @@ const PATH_GALLERY_KINDS: readonly PathCellMaterialKey[] = [
   "junction",
 ];
 
-/** Virtual seconds when `fxTick === 1` — all showcase shaders and FX sample from `fxTick * this`. */
-const SHOWCASE_FX_LOOP_SEC = 8;
+/** Bubble Shotgun showcase: L1 volley from tower → aim; matches impact column offset in `bubble-projectiles`. */
+const BUBBLE_SHOTGUN_TOWER: GridPos = [17, 8];
+const BUBBLE_SHOTGUN_AIM: GridPos = [23, 8];
+const BUBBLE_SHOTGUN_FLIGHT_END_TICK = 0.55;
+const BUBBLE_COLUMN_VEL_TILES = 0.4;
 
 /**
  * Renders the full game scene (board, defenses, enemies, FX samples) without `GameSession.tick()`.
@@ -140,12 +156,19 @@ export class VisualShowcaseApp {
   private readonly camera: THREE.PerspectiveCamera;
   private readonly mount: HTMLElement;
   /** Single scrub control for all VFX / shader time (0 = start of loop, 1 = end). */
-  private fxTick = 0.35;
+  /** Default highlights Bubble Shotgun mid-flight (volley visible before impact at ~0.55). */
+  private fxTick = 0.18;
   private readonly orbitControls: OrbitControls;
   private readonly seabedMat: THREE.ShaderMaterial;
   private readonly abortController = new AbortController();
   private readonly bubbleProjectileGroup = new THREE.Group();
+  private readonly bubbleColumnGroup = new THREE.Group();
   private bubbleProjectilePool: THREE.Points[] = [];
+  private bubbleColumnActive: ActiveBubbleColumn[] = [];
+  private bubbleColumnFreePool: THREE.Points[] = [];
+  private bubblePopRings: BubblePopRing[] = [];
+  private readonly bubbleShotgunBase: readonly BubbleProjectileState[];
+  private readonly bubbleShotgunFlightDist: number;
   private readonly cannonProjectileGroup = new THREE.Group();
   private cannonProjectilePool: THREE.Mesh[] = [];
   private cannonBlastDecals: CannonBlastDecal[] = [];
@@ -183,6 +206,15 @@ export class VisualShowcaseApp {
     this.doc = doc;
     this.mount = mount;
 
+    const aimDx = BUBBLE_SHOTGUN_AIM[0] - BUBBLE_SHOTGUN_TOWER[0];
+    const aimDz = BUBBLE_SHOTGUN_AIM[1] - BUBBLE_SHOTGUN_TOWER[1];
+    this.bubbleShotgunFlightDist = Math.max(0.2, Math.hypot(aimDx, aimDz));
+    this.bubbleShotgunBase = spawnBubbleVolley(
+      BUBBLE_SHOTGUN_TOWER,
+      BUBBLE_SHOTGUN_AIM,
+      1,
+    );
+
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -219,6 +251,7 @@ export class VisualShowcaseApp {
     this.scene.add(seabed.mesh);
 
     this.scene.add(this.bubbleProjectileGroup);
+    this.scene.add(this.bubbleColumnGroup);
     this.scene.add(this.cannonProjectileGroup);
     this.scene.add(this.cannonColumnGroup);
 
@@ -254,10 +287,22 @@ export class VisualShowcaseApp {
     window.addEventListener("resize", () => this.onResize(), ac);
     window.visualViewport?.addEventListener("resize", () => this.onResize(), ac);
 
+    registerVisualShowcaseRuntime({
+      setFxTick: (v) => {
+        this.fxTick = Math.max(0, Math.min(1, v));
+      },
+      getFxTick: () => this.fxTick,
+      syncFxTickToDom: () => {
+        this.syncFxTickToDom();
+      },
+      getSeabedMaterial: () => this.seabedMat,
+    });
+
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
   dispose(): void {
+    registerVisualShowcaseRuntime(null);
     this.abortController.abort();
     this.renderer.setAnimationLoop(null);
     this.orbitControls.dispose();
@@ -266,7 +311,20 @@ export class VisualShowcaseApp {
   }
 
   private getFxTimeSec(): number {
-    return this.fxTick * SHOWCASE_FX_LOOP_SEC;
+    return this.fxTick * getShowcaseFxLoopSeconds();
+  }
+
+  private syncFxTickToDom(): void {
+    if (typeof document === "undefined") return;
+    const input = document.getElementById(
+      "showcaseFxTick",
+    ) as HTMLInputElement | null;
+    const valueOut = document.getElementById("showcaseFxTickValue");
+    if (input) {
+      input.value = String(this.fxTick);
+      input.setAttribute("aria-valuenow", String(this.fxTick));
+    }
+    if (valueOut) valueOut.textContent = this.fxTick.toFixed(3);
   }
 
   private wireFxTickControls(): void {
@@ -274,18 +332,14 @@ export class VisualShowcaseApp {
     const input = document.getElementById(
       "showcaseFxTick",
     ) as HTMLInputElement | null;
-    const valueOut = document.getElementById("showcaseFxTickValue");
     if (input) {
       const v = Number(input.value);
       if (Number.isFinite(v)) this.fxTick = Math.max(0, Math.min(1, v));
-      const syncLabel = () => {
-        if (valueOut) valueOut.textContent = this.fxTick.toFixed(3);
-      };
-      syncLabel();
+      this.syncFxTickToDom();
       input.addEventListener("input", () => {
         const n = Number(input.value);
         this.fxTick = Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
-        syncLabel();
+        this.syncFxTickToDom();
       });
     }
   }
@@ -396,38 +450,52 @@ export class VisualShowcaseApp {
       width: beamWidthForTideheartLevel(2),
     });
 
-    const bubbleSamples: BubbleProjectileState[] = [
-      {
-        gx: 20,
-        gz: 8,
-        vgx: 0.15,
-        vgz: 0.95,
-        directDamage: 4,
-        splash: 0,
-        traveled: 1.1,
-        maxTravel: 8,
-      },
-      {
-        gx: 21.2,
-        gz: 8.3,
-        vgx: -0.2,
-        vgz: 0.88,
-        directDamage: 4,
-        splash: 0,
-        traveled: 0.6,
-        maxTravel: 8,
-      },
-    ];
     ensureBubbleProjectilePool(
       this.bubbleProjectileGroup,
       this.bubbleProjectilePool,
-      bubbleSamples.length,
+      this.bubbleShotgunBase.length,
     );
     syncBubbleProjectileMeshes(
       this.bubbleProjectilePool,
-      bubbleSamples,
+      this.buildBubbleShotgunProjectiles(),
       doc,
       this.getFxTimeSec(),
+    );
+
+    const sdx = BUBBLE_SHOTGUN_AIM[0] - BUBBLE_SHOTGUN_TOWER[0];
+    const sdz = BUBBLE_SHOTGUN_AIM[1] - BUBBLE_SHOTGUN_TOWER[1];
+    const slen = Math.hypot(sdx, sdz) || 1;
+    const sux = sdx / slen;
+    const suz = sdz / slen;
+    const bubbleColumnEvent: BubbleColumnFxEvent = {
+      preset: "bubble_shotgun_impact",
+      seed: 0x5f356495,
+      from: [BUBBLE_SHOTGUN_AIM[0], BUBBLE_SHOTGUN_AIM[1]],
+      to: [
+        BUBBLE_SHOTGUN_AIM[0] + sux * BUBBLE_COLUMN_VEL_TILES,
+        BUBBLE_SHOTGUN_AIM[1] + suz * BUBBLE_COLUMN_VEL_TILES,
+      ],
+      axis: "segment",
+      splash: false,
+    };
+    spawnBubbleColumns(
+      [bubbleColumnEvent],
+      doc,
+      this.bubbleColumnGroup,
+      this.bubbleColumnActive,
+      this.bubbleColumnFreePool,
+    );
+    spawnBubblePopRings(
+      [
+        {
+          gx: BUBBLE_SHOTGUN_AIM[0],
+          gz: BUBBLE_SHOTGUN_AIM[1],
+          splash: false,
+        },
+      ],
+      doc,
+      this.scene,
+      this.bubblePopRings,
     );
 
     const cannonSamples: CannonProjectileState[] = [
@@ -480,6 +548,31 @@ export class VisualShowcaseApp {
     );
   }
 
+  private buildBubbleShotgunProjectiles(): BubbleProjectileState[] {
+    const tick = this.fxTick;
+    if (tick > BUBBLE_SHOTGUN_FLIGHT_END_TICK) {
+      return [];
+    }
+    const flightT = Math.min(1, tick / BUBBLE_SHOTGUN_FLIGHT_END_TICK);
+    const dist = this.bubbleShotgunFlightDist * flightT;
+    const sx = BUBBLE_SHOTGUN_TOWER[0];
+    const sz = BUBBLE_SHOTGUN_TOWER[1];
+    return this.bubbleShotgunBase.map((p) => ({
+      ...p,
+      traveled: dist,
+      gx: sx + p.vgx * dist,
+      gz: sz + p.vgz * dist,
+    }));
+  }
+
+  private bubbleShotgunImpactU(): number {
+    return Math.max(
+      0,
+      (this.fxTick - BUBBLE_SHOTGUN_FLIGHT_END_TICK) /
+        (1 - BUBBLE_SHOTGUN_FLIGHT_END_TICK),
+    );
+  }
+
   private frame(): void {
     const t = this.getFxTimeSec();
 
@@ -502,36 +595,32 @@ export class VisualShowcaseApp {
       );
     }
 
-    const wobbleA = Math.sin(t * 2.2);
-    const wobbleB = Math.cos(t * 2.6);
-    const bubbleSamples: BubbleProjectileState[] = [
-      {
-        gx: 20,
-        gz: 8,
-        vgx: 0.15,
-        vgz: 0.95,
-        directDamage: 4,
-        splash: 0,
-        traveled: 1.1 + wobbleA * 0.08,
-        maxTravel: 8,
-      },
-      {
-        gx: 21.2,
-        gz: 8.3,
-        vgx: -0.2,
-        vgz: 0.88,
-        directDamage: 4,
-        splash: 0,
-        traveled: 0.6 + wobbleB * 0.06,
-        maxTravel: 8,
-      },
-    ];
     syncBubbleProjectileMeshes(
       this.bubbleProjectilePool,
-      bubbleSamples,
+      this.buildBubbleShotgunProjectiles(),
       this.doc,
       t,
     );
+
+    const bubbleImpactU = this.bubbleShotgunImpactU();
+    const popDur = getBubbleAttackFxTuning().popDuration;
+    for (const a of this.bubbleColumnActive) {
+      const showColumn = bubbleImpactU > 0.02;
+      a.points.visible = showColumn;
+      a.age = bubbleImpactU * a.duration * 0.999;
+    }
+    updateBubbleColumns(
+      this.bubbleColumnGroup,
+      this.bubbleColumnActive,
+      this.bubbleColumnFreePool,
+      0,
+      t,
+    );
+    for (const r of this.bubblePopRings) {
+      r.age = bubbleImpactU * popDur * 0.999;
+      r.mesh.visible = bubbleImpactU > 0.001;
+    }
+    updateBubblePopRings(this.bubblePopRings, 0, this.scene);
 
     const cannonSamples: CannonProjectileState[] = [
       {

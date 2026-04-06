@@ -1,4 +1,5 @@
 import { validateMapDocument } from "../game/map-validation.js";
+import { mountVisualShowcaseLeva } from "./mount-visual-showcase-leva.js";
 import { SHOWCASE_MAP_DOCUMENT } from "./showcase-map-document.js";
 import { VisualShowcaseApp } from "./visual-showcase-app.js";
 
@@ -13,3 +14,4 @@ if (!mount) {
 }
 
 void new VisualShowcaseApp(SHOWCASE_MAP_DOCUMENT, mount);
+mountVisualShowcaseLeva();

@@ -8,12 +8,11 @@ import {
   type VibrationDomeSide,
 } from "./vibration-dome-tuning.js";
 
-function VibrationDomeLevaPanel({ onRemount }: { onRemount: () => void }) {
+/** Control tree for Leva — reused by `VisualShowcaseLeva` master panel. */
+export function vibrationDomeLevaSchema(onRemount: () => void) {
   const d = DEFAULT_VIBRATION_DOME_TUNING;
 
-  useControls(
-    "Vibration Zone dome",
-    () => ({
+  return {
       General: folder({
         applyOverrides: {
           value: d.applyOverrides,
@@ -320,10 +319,15 @@ function VibrationDomeLevaPanel({ onRemount }: { onRemount: () => void }) {
           },
         },
       }),
-    }),
-    [],
-  );
+  };
+}
 
+function VibrationDomeLevaPanel({ onRemount }: { onRemount: () => void }) {
+  useControls(
+    "Vibration Zone dome",
+    () => vibrationDomeLevaSchema(onRemount),
+    [onRemount],
+  );
   return null;
 }
 

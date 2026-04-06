@@ -69,10 +69,9 @@ async function copyFullCannonFxJson(): Promise<boolean> {
   }
 }
 
-function CannonDnaHelixLevaPanel({ onRemount }: { onRemount: () => void }) {
-  useControls(
-    "Current Cannon DNA Helix",
-    () => ({
+/** Control tree for Leva — reused by `VisualShowcaseLeva` master panel. */
+export function cannonDnaHelixLevaSchema(onRemount: () => void) {
+  return {
       General: folder({
         Reset: button(() => {
           resetCannonDnaHelixTuning();
@@ -860,10 +859,15 @@ function CannonDnaHelixLevaPanel({ onRemount }: { onRemount: () => void }) {
           },
         },
       }),
-    }),
+  };
+}
+
+function CannonDnaHelixLevaPanel({ onRemount }: { onRemount: () => void }) {
+  useControls(
+    "Current Cannon DNA Helix",
+    () => cannonDnaHelixLevaSchema(onRemount),
     [onRemount],
   );
-
   return null;
 }
 
