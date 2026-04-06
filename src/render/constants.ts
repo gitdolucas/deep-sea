@@ -43,6 +43,10 @@ export const COLORS = {
   rangePreviewPrimary: 0x00d4ff,
   /** Arc Spine chain hop radius ring (placement preview). */
   rangePreviewChain: 0xffaa66,
+  /** Tile footprint while placing — invalid tile or insufficient shells. */
+  placementPreviewBlocked: 0xff3b4a,
+  /** Tile footprint while placing — legal tile and can afford build. */
+  placementPreviewAllowed: 0x4dc8ff,
   /** World-space enemy HP bar (fill). */
   enemyHpBarFill: 0xff9d9d,
   enemyHpBarBg: 0x1a2030,

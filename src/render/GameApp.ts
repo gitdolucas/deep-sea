@@ -222,6 +222,11 @@ export class GameApp {
   private cellPickEntries: { mesh: THREE.Mesh; gx: number; gz: number }[] =
     [];
   private readonly rangePreviewGroup = new THREE.Group();
+  /** Semi-transparent tile tint while placing (blue = legal + affordable, red = blocked or broke). */
+  private readonly placementFootprintGroup = new THREE.Group();
+  private readonly placementFootprintMesh: THREE.Mesh;
+  /** Last hover validity for placement rings + footprint; avoids re-tinting every pointermove frame. */
+  private placementHoverAllowed: boolean | null = null;
   /** Attack radius while hovering an existing tower (tile space, matches {@link attackRangeTiles}). */
   private readonly towerHoverRangeGroup = new THREE.Group();
   private towerHoverRangeCacheKey: string | null = null;
@@ -337,6 +342,20 @@ export class GameApp {
     this.rangePreviewGroup.visible = false;
     this.scene.add(this.rangePreviewGroup);
 
+    const fpGeom = new THREE.PlaneGeometry(0.92, 0.92);
+    const fpMat = new THREE.MeshBasicMaterial({
+      color: COLORS.placementPreviewAllowed,
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    this.placementFootprintMesh = new THREE.Mesh(fpGeom, fpMat);
+    this.placementFootprintMesh.rotation.x = -Math.PI / 2;
+    this.placementFootprintGroup.add(this.placementFootprintMesh);
+    this.placementFootprintGroup.visible = false;
+    this.scene.add(this.placementFootprintGroup);
+
     this.towerHoverRangeGroup.visible = false;
     this.scene.add(this.towerHoverRangeGroup);
 
@@ -420,7 +439,14 @@ export class GameApp {
     );
     this.renderer.domElement.addEventListener(
       "pointerleave",
-      () => this.hideTowerHoverTip(),
+      () => {
+        this.hideTowerHoverTip();
+        if (this.placementType !== null) {
+          this.rangePreviewGroup.visible = false;
+          this.placementFootprintGroup.visible = false;
+          this.placementHoverAllowed = null;
+        }
+      },
       ac,
     );
     window.addEventListener("pointerup", (ev) => this.onSlotPointerUp(ev), ac);
@@ -703,15 +729,13 @@ export class GameApp {
 
   private onArmoryDefenseClick(type: DefenseTypeKey): void {
     if (this.session.getOutcome() !== "playing") return;
-    const cost = buildCostL1(type);
-    const shells = this.session.economy.getShells();
     if (this.placementType === type) {
       this.clearPlacementMode();
       return;
     }
-    if (shells < cost) return;
     this.clearSelection();
     this.placementType = type;
+    this.placementHoverAllowed = null;
     this.rebuildPlacementRangeRings();
     this.syncOrbitWithPlacement();
     this.refreshInventoryUi();
@@ -719,10 +743,37 @@ export class GameApp {
 
   private clearPlacementMode(): void {
     this.placementType = null;
+    this.placementHoverAllowed = null;
     this.rangePreviewGroup.visible = false;
+    this.placementFootprintGroup.visible = false;
     this.rebuildPlacementRangeRings();
     this.syncOrbitWithPlacement();
     this.refreshInventoryUi();
+  }
+
+  /**
+   * Mutates ring materials already built for {@link rangePreviewGroup} (primary then optional chain).
+   */
+  private applyPlacementRangeRingTint(allowed: boolean): void {
+    const primary = allowed
+      ? COLORS.rangePreviewPrimary
+      : COLORS.placementPreviewBlocked;
+    const chain = allowed ? COLORS.rangePreviewChain : 0xff8066;
+    const primaryOp = allowed ? 0.45 : 0.36;
+    const chainOp = allowed ? 0.35 : 0.28;
+    let i = 0;
+    for (const c of this.rangePreviewGroup.children) {
+      if (!(c instanceof THREE.Mesh)) continue;
+      const mat = c.material as THREE.MeshBasicMaterial;
+      if (this.placementType === "arc_spine" && i === 1) {
+        mat.color.setHex(chain);
+        mat.opacity = chainOp;
+      } else {
+        mat.color.setHex(primary);
+        mat.opacity = primaryOp;
+      }
+      i++;
+    }
   }
 
   private readArmoryExpandedInitial(): boolean {
@@ -1044,7 +1095,9 @@ export class GameApp {
   private selectDefense(id: string): void {
     if (this.placementType !== null) {
       this.placementType = null;
+      this.placementHoverAllowed = null;
       this.rangePreviewGroup.visible = false;
+      this.placementFootprintGroup.visible = false;
       this.rebuildPlacementRangeRings();
       this.syncOrbitWithPlacement();
     }
@@ -1158,24 +1211,57 @@ export class GameApp {
       this.session.getOutcome() !== "playing"
     ) {
       this.rangePreviewGroup.visible = false;
+      this.placementFootprintGroup.visible = false;
+      this.placementHoverAllowed = null;
       return;
     }
     if (!insideCanvas) {
       this.rangePreviewGroup.visible = false;
+      this.placementFootprintGroup.visible = false;
+      this.placementHoverAllowed = null;
       return;
     }
     const cell = this.pickGridCell(e);
     if (!cell) {
       this.rangePreviewGroup.visible = false;
+      this.placementFootprintGroup.visible = false;
+      this.placementHoverAllowed = null;
       return;
     }
-    if (!this.canPlaceTower(cell.gx, cell.gz)) {
-      this.rangePreviewGroup.visible = false;
-      return;
-    }
+
+    const placing = this.placementType;
+    const cost = buildCostL1(placing);
+    const shells = this.session.economy.getShells();
+    const placeOk = this.canPlaceTower(cell.gx, cell.gz);
+    const afford = shells >= cost;
+    const allowed = placeOk && afford;
+
     const w = worldFromGrid(cell.gx, cell.gz, this.doc, 0.14);
     this.rangePreviewGroup.position.set(w.x, w.y, w.z);
     this.rangePreviewGroup.visible = true;
+
+    const wf = worldFromGrid(
+      cell.gx,
+      cell.gz,
+      this.doc,
+      SCENE_GRID_VISUAL_Y + 0.038,
+    );
+    this.placementFootprintGroup.position.set(wf.x, wf.y, wf.z);
+    this.placementFootprintGroup.visible = true;
+
+    const fpMat = this.placementFootprintMesh.material as THREE.MeshBasicMaterial;
+    if (allowed) {
+      fpMat.color.setHex(COLORS.placementPreviewAllowed);
+      fpMat.opacity = 0.38;
+    } else {
+      fpMat.color.setHex(COLORS.placementPreviewBlocked);
+      fpMat.opacity = 0.44;
+    }
+
+    if (this.placementHoverAllowed !== allowed) {
+      this.placementHoverAllowed = allowed;
+      this.applyPlacementRangeRingTint(allowed);
+    }
   }
 
   private onSlotPointerDown(e: PointerEvent): void {
@@ -1290,7 +1376,7 @@ export class GameApp {
         .join(" ");
 
       if (btn) {
-        btn.disabled = !playing || (!canAfford && !selected);
+        btn.disabled = !playing;
         if (
           !btn.classList.contains("defense-hotbar__btn") &&
           !btn.classList.contains("defense-inventory__btn")
@@ -1323,9 +1409,25 @@ export class GameApp {
 
     const dock = document.getElementById("placementDock");
     const hint = document.getElementById("placementHint");
+    const invCancel = document.getElementById(
+      "invCancel",
+    ) as HTMLButtonElement | null;
     const placing = selectedType !== null;
     if (dock) dock.hidden = !placing;
-    hint?.classList.toggle("visible", placing);
+    if (invCancel) invCancel.hidden = !placing;
+    if (hint) {
+      hint.classList.toggle("visible", placing);
+      if (placing && selectedType !== null) {
+        const cost = buildCostL1(selectedType);
+        const short = Math.max(0, cost - shells);
+        hint.textContent =
+          shells < cost
+            ? `Preview: need ${short} more shells to build here. Cancel or Esc exits.`
+            : "Preview: blue tile = can place; red = blocked or unaffordable. Cancel or Esc exits.";
+      } else {
+        hint.textContent = "";
+      }
+    }
   }
 
   private frame(): void {
