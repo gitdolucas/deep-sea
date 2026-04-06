@@ -111,13 +111,35 @@ describe("GameSession", () => {
     expect(session.getLivingEnemyCount()).toBe(1);
     session.tick(0.05);
     const cols = session.consumeBubbleColumnFxEvents();
-    expect(cols.some((e) => e.preset === "bubble_shotgun_muzzle")).toBe(
-      true,
-    );
-    const muzzle = cols.find((e) => e.preset === "bubble_shotgun_muzzle")!;
-    expect(muzzle.axis).toBe("segment");
+    expect(
+      cols.some(
+        (e) =>
+          e.preset === "bubble_shotgun_muzzle" &&
+          e.axis === "world_up" &&
+          e.from[0] === 0 &&
+          e.from[1] === 0,
+      ),
+    ).toBe(true);
+    expect(cols.some((e) => e.preset === "bubble_shotgun_muzzle")).toBe(true);
+    const muzzle = cols.find(
+      (e) => e.preset === "bubble_shotgun_muzzle" && e.axis === "segment",
+    )!;
     expect(muzzle.from[0]).toBe(2);
     expect(muzzle.to).toBeDefined();
+  });
+
+  it("emits upward bubble column FX at each enemy spawn", () => {
+    const session = new GameSession(combatMap());
+    session.tick(0.01);
+    const cols = session.consumeBubbleColumnFxEvents();
+    const spawns = cols.filter(
+      (e) =>
+        e.preset === "bubble_shotgun_muzzle" &&
+        e.axis === "world_up" &&
+        e.splash === false,
+    );
+    expect(spawns.length).toBeGreaterThanOrEqual(1);
+    expect(spawns[0]!.from).toEqual([0, 0]);
   });
 
   it("bubble shotgun does not spawn projectiles when no enemy is in attack range", () => {

@@ -95,6 +95,14 @@ export class GameSession {
     this.waveDirector = new WaveDirector(this.map, {
       spawnEnemy: (e) => {
         this.enemies.set(e.id, e);
+        const from = e.getGridPosition();
+        this.bubbleColumnFxEvents.push({
+          preset: "bubble_shotgun_muzzle",
+          seed: (this.nextBubbleColumnFxSeed++ * 0x9e3779b9) >>> 0,
+          from,
+          axis: "world_up",
+          splash: false,
+        });
       },
       assignEnemyId: () => `enemy_${this.nextEnemyId++}`,
     });

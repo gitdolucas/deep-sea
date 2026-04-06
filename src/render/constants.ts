@@ -18,7 +18,8 @@ export const COLORS = {
   pathEdge: 0xff6b6b,
   slot: 0x00d4ff,
   slotSelected: 0x66eeff,
-  spawn: 0x0a0a14,
+  /** Spawn tile + portal accent (visible “red cell” lane entry). */
+  spawn: 0xcc2a2a,
   castle: 0x112f55,
   crystal: 0x00d4ff,
   /** docs/style-bible.md — Stoneclaw */

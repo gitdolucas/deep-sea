@@ -1,0 +1,1762 @@
+{
+  "id": "map_06_radial_hub",
+  "name": "Radial Confluence",
+  "description": "Eight trench mouths on one hub—straight lanes for the tide-walkers, zig trenches for the eels, and stepped ridges for the deep tanks. Built from your radial sketch; keep lanes honest where paths almost touch.",
+  "difficulty": "hard",
+  "startingShells": 75,
+  "gridSize": [
+    33,
+    33
+  ],
+  "castle": {
+    "position": [
+      16,
+      16
+    ],
+    "hp": 15,
+    "size": [
+      1,
+      1
+    ]
+  },
+  "spawnPoints": [
+    {
+      "id": "spawn_n",
+      "position": [
+        16,
+        0
+      ],
+      "pathIds": [
+        "path_n"
+      ]
+    },
+    {
+      "id": "spawn_s",
+      "position": [
+        16,
+        32
+      ],
+      "pathIds": [
+        "path_s"
+      ]
+    },
+    {
+      "id": "spawn_e",
+      "position": [
+        32,
+        16
+      ],
+      "pathIds": [
+        "path_e"
+      ]
+    },
+    {
+      "id": "spawn_w",
+      "position": [
+        0,
+        16
+      ],
+      "pathIds": [
+        "path_w"
+      ]
+    },
+    {
+      "id": "spawn_ne",
+      "position": [
+        22,
+        10
+      ],
+      "pathIds": [
+        "path_ne"
+      ]
+    },
+    {
+      "id": "spawn_nw",
+      "position": [
+        10,
+        10
+      ],
+      "pathIds": [
+        "path_nw"
+      ]
+    },
+    {
+      "id": "spawn_se",
+      "position": [
+        22,
+        22
+      ],
+      "pathIds": [
+        "path_se"
+      ]
+    },
+    {
+      "id": "spawn_sw",
+      "position": [
+        10,
+        22
+      ],
+      "pathIds": [
+        "path_sw"
+      ]
+    }
+  ],
+  "paths": [
+    {
+      "id": "path_n",
+      "waypoints": [
+        [
+          16,
+          0
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "path_s",
+      "waypoints": [
+        [
+          16,
+          32
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "path_e",
+      "waypoints": [
+        [
+          32,
+          16
+        ],
+        [
+          29,
+          16
+        ],
+        [
+          29,
+          14
+        ],
+        [
+          26,
+          14
+        ],
+        [
+          26,
+          16
+        ],
+        [
+          23,
+          16
+        ],
+        [
+          23,
+          18
+        ],
+        [
+          20,
+          18
+        ],
+        [
+          20,
+          16
+        ],
+        [
+          18,
+          16
+        ],
+        [
+          17,
+          16
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "path_w",
+      "waypoints": [
+        [
+          0,
+          16
+        ],
+        [
+          3,
+          16
+        ],
+        [
+          3,
+          14
+        ],
+        [
+          6,
+          14
+        ],
+        [
+          6,
+          16
+        ],
+        [
+          9,
+          16
+        ],
+        [
+          9,
+          18
+        ],
+        [
+          12,
+          18
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          16
+        ],
+        [
+          15,
+          16
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "path_ne",
+      "waypoints": [
+        [
+          22,
+          10
+        ],
+        [
+          21,
+          10
+        ],
+        [
+          21,
+          11
+        ],
+        [
+          20,
+          11
+        ],
+        [
+          20,
+          12
+        ],
+        [
+          19,
+          12
+        ],
+        [
+          19,
+          13
+        ],
+        [
+          18,
+          13
+        ],
+        [
+          18,
+          14
+        ],
+        [
+          18,
+          15
+        ],
+        [
+          18,
+          16
+        ],
+        [
+          17,
+          16
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "path_nw",
+      "waypoints": [
+        [
+          10,
+          10
+        ],
+        [
+          11,
+          10
+        ],
+        [
+          11,
+          11
+        ],
+        [
+          12,
+          11
+        ],
+        [
+          12,
+          12
+        ],
+        [
+          13,
+          12
+        ],
+        [
+          13,
+          13
+        ],
+        [
+          14,
+          13
+        ],
+        [
+          14,
+          14
+        ],
+        [
+          14,
+          15
+        ],
+        [
+          14,
+          16
+        ],
+        [
+          15,
+          16
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "path_se",
+      "waypoints": [
+        [
+          22,
+          22
+        ],
+        [
+          21,
+          22
+        ],
+        [
+          21,
+          21
+        ],
+        [
+          20,
+          21
+        ],
+        [
+          20,
+          20
+        ],
+        [
+          19,
+          20
+        ],
+        [
+          19,
+          19
+        ],
+        [
+          18,
+          19
+        ],
+        [
+          18,
+          18
+        ],
+        [
+          18,
+          17
+        ],
+        [
+          18,
+          16
+        ],
+        [
+          17,
+          16
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "path_sw",
+      "waypoints": [
+        [
+          10,
+          22
+        ],
+        [
+          11,
+          22
+        ],
+        [
+          11,
+          21
+        ],
+        [
+          12,
+          21
+        ],
+        [
+          12,
+          20
+        ],
+        [
+          13,
+          20
+        ],
+        [
+          13,
+          19
+        ],
+        [
+          14,
+          19
+        ],
+        [
+          14,
+          18
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          14,
+          16
+        ],
+        [
+          15,
+          16
+        ],
+        [
+          16,
+          16
+        ]
+      ]
+    }
+  ],
+  "defenses": [],
+  "waves": [
+    {
+      "wave": 1,
+      "prepTime": 20,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_n",
+          "pathId": "path_n",
+          "interval": 1.4,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_s",
+          "pathId": "path_s",
+          "interval": 1.4,
+          "delay": 0.5,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_e",
+          "pathId": "path_e",
+          "interval": 2,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_w",
+          "pathId": "path_w",
+          "interval": 2,
+          "delay": 2.5,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_ne",
+          "pathId": "path_ne",
+          "interval": 1,
+          "delay": 6,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "prepTime": 16,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 5,
+          "spawnId": "spawn_n",
+          "pathId": "path_n",
+          "interval": 1.2,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 5,
+          "spawnId": "spawn_s",
+          "pathId": "path_s",
+          "interval": 1.2,
+          "delay": 0.3,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_e",
+          "pathId": "path_e",
+          "interval": 1.8,
+          "delay": 3,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_w",
+          "pathId": "path_w",
+          "interval": 1.8,
+          "delay": 3.5,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_nw",
+          "pathId": "path_nw",
+          "interval": 1,
+          "delay": 5,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_se",
+          "pathId": "path_se",
+          "interval": 1,
+          "delay": 7,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 3,
+      "prepTime": 18,
+      "isBoss": true,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 6,
+          "spawnId": "spawn_n",
+          "pathId": "path_n",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 6,
+          "spawnId": "spawn_s",
+          "pathId": "path_s",
+          "interval": 1,
+          "delay": 0.2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_e",
+          "pathId": "path_e",
+          "interval": 1.5,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_w",
+          "pathId": "path_w",
+          "interval": 1.5,
+          "delay": 2.5,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_sw",
+          "pathId": "path_sw",
+          "interval": 1,
+          "delay": 4,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_ne",
+          "pathId": "path_ne",
+          "interval": 1,
+          "delay": 8,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    }
+  ],
+  "decorations": [
+    {
+      "type": "trench_edge",
+      "position": [
+        30.74,
+        0,
+        19.43
+      ],
+      "rotation": 270,
+      "scale": 1.07
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        17.48,
+        0,
+        4.5
+      ],
+      "rotation": 270,
+      "scale": 0.93
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        19.36,
+        0,
+        27.6
+      ],
+      "rotation": 270,
+      "scale": 1.15
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        25.58,
+        0,
+        20.37
+      ],
+      "rotation": 180,
+      "scale": 1.14
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        22.49,
+        0,
+        21.37
+      ],
+      "rotation": 270,
+      "scale": 1.13
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        14.53,
+        0,
+        20.52
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "skull",
+      "position": [
+        22.3,
+        0,
+        16.4
+      ],
+      "rotation": 90,
+      "scale": 0.82
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        15.68,
+        0,
+        19.72
+      ],
+      "rotation": 180,
+      "scale": 1.04
+    },
+    {
+      "type": "skull",
+      "position": [
+        12.38,
+        0,
+        25.29
+      ],
+      "rotation": 270,
+      "scale": 0.9
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        9.63,
+        0,
+        3.37
+      ],
+      "rotation": 0,
+      "scale": 1.21
+    },
+    {
+      "type": "skull",
+      "position": [
+        27.73,
+        0,
+        16.63
+      ],
+      "rotation": 270,
+      "scale": 0.78
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        5.29,
+        0,
+        26.43
+      ],
+      "rotation": 90,
+      "scale": 1.13
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        29.44,
+        0,
+        0.46
+      ],
+      "rotation": 180,
+      "scale": 1
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        0.65,
+        0,
+        12.33
+      ],
+      "rotation": 90,
+      "scale": 1.13
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        32.47,
+        0,
+        25.68
+      ],
+      "rotation": 270,
+      "scale": 1.01
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        0.53,
+        0,
+        24.35
+      ],
+      "rotation": 90,
+      "scale": 0.84
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        3.5,
+        0,
+        18.28
+      ],
+      "rotation": 0,
+      "scale": 0.95
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        18.37,
+        0,
+        31.62
+      ],
+      "rotation": 270,
+      "scale": 1.09
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        19.51,
+        0,
+        30.48
+      ],
+      "rotation": 0,
+      "scale": 0.8
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        30.41,
+        0,
+        11.39
+      ],
+      "rotation": 0,
+      "scale": 1.2
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        27.66,
+        0,
+        2.7
+      ],
+      "rotation": 90,
+      "scale": 0.99
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        26.69,
+        0,
+        12.52
+      ],
+      "rotation": 180,
+      "scale": 1.01
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        1.65,
+        0,
+        13.47
+      ],
+      "rotation": 0,
+      "scale": 1.16
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        3.35,
+        0,
+        25.38
+      ],
+      "rotation": 270,
+      "scale": 1.08
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        6.34,
+        0,
+        29.66
+      ],
+      "rotation": 180,
+      "scale": 1.13
+    },
+    {
+      "type": "anemone",
+      "position": [
+        9.29,
+        0,
+        10.74
+      ],
+      "rotation": 0,
+      "scale": 0.91
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        1.44,
+        0,
+        7.38
+      ],
+      "rotation": 90,
+      "scale": 0.82
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        13.68,
+        0,
+        15.45
+      ],
+      "rotation": 90,
+      "scale": 1.1
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        4.63,
+        0,
+        7.7
+      ],
+      "rotation": 0,
+      "scale": 1.1
+    },
+    {
+      "type": "skull",
+      "position": [
+        31.41,
+        0,
+        25.64
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        7.36,
+        0,
+        2.58
+      ],
+      "rotation": 270,
+      "scale": 1.12
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        31.63,
+        0,
+        10.37
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        11.54,
+        0,
+        9.27
+      ],
+      "rotation": 90,
+      "scale": 1.19
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        14.69,
+        0,
+        31.58
+      ],
+      "rotation": 180,
+      "scale": 1.06
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        19.73,
+        0,
+        31.7
+      ],
+      "rotation": 270,
+      "scale": 1.01
+    },
+    {
+      "type": "skull",
+      "position": [
+        22.39,
+        0,
+        28.72
+      ],
+      "rotation": 0,
+      "scale": 0.91
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        19.68,
+        0,
+        10.27
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        23.72,
+        0,
+        13.33
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "anemone",
+      "position": [
+        32.3,
+        0,
+        27.3
+      ],
+      "rotation": 90,
+      "scale": 0.95
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        21.59,
+        0,
+        5.56
+      ],
+      "rotation": 180,
+      "scale": 1.14
+    },
+    {
+      "type": "skull",
+      "position": [
+        31.69,
+        0,
+        26.33
+      ],
+      "rotation": 180,
+      "scale": 1.22
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        12.51,
+        0,
+        14.28
+      ],
+      "rotation": 0,
+      "scale": 0.89
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        32.32,
+        0,
+        29.52
+      ],
+      "rotation": 180,
+      "scale": 0.84
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        10.54,
+        0,
+        26.62
+      ],
+      "rotation": 90,
+      "scale": 0.78
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        6.64,
+        0,
+        13.48
+      ],
+      "rotation": 0,
+      "scale": 0.95
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        7.39,
+        0,
+        28.3
+      ],
+      "rotation": 0,
+      "scale": 0.84
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        26.35,
+        0,
+        19.26
+      ],
+      "rotation": 270,
+      "scale": 1.03
+    },
+    {
+      "type": "skull",
+      "position": [
+        3.41,
+        0,
+        28.36
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        3.53,
+        0,
+        5.56
+      ],
+      "rotation": 0,
+      "scale": 1.02
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        28.49,
+        0,
+        30.45
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        4.56,
+        0,
+        21.5
+      ],
+      "rotation": 90,
+      "scale": 0.83
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        21.42,
+        0,
+        32.35
+      ],
+      "rotation": 90,
+      "scale": 1.12
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        13.26,
+        0,
+        3.56
+      ],
+      "rotation": 0,
+      "scale": 1.11
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        0.44,
+        0,
+        6.54
+      ],
+      "rotation": 90,
+      "scale": 0.81
+    },
+    {
+      "type": "anemone",
+      "position": [
+        26.44,
+        0,
+        2.38
+      ],
+      "rotation": 180,
+      "scale": 1.16
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        10.47,
+        0,
+        24.47
+      ],
+      "rotation": 270,
+      "scale": 1.18
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        11.38,
+        0,
+        6.53
+      ],
+      "rotation": 0,
+      "scale": 1.11
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        8.51,
+        0,
+        30.45
+      ],
+      "rotation": 0,
+      "scale": 0.99
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        22.49,
+        0,
+        14.54
+      ],
+      "rotation": 270,
+      "scale": 0.82
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        13.29,
+        0,
+        14.4
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        12.31,
+        0,
+        0.58
+      ],
+      "rotation": 90,
+      "scale": 0.93
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        18.57,
+        0,
+        7.58
+      ],
+      "rotation": 180,
+      "scale": 1.08
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        31.56,
+        0,
+        8.46
+      ],
+      "rotation": 180,
+      "scale": 1.2
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        21.53,
+        0,
+        26.38
+      ],
+      "rotation": 0,
+      "scale": 1.22
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        32.67,
+        0,
+        1.51
+      ],
+      "rotation": 90,
+      "scale": 0.97
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        30.27,
+        0,
+        10.49
+      ],
+      "rotation": 0,
+      "scale": 1.1
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        21.59,
+        0,
+        17.47
+      ],
+      "rotation": 180,
+      "scale": 0.78
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        17.44,
+        0,
+        19.73
+      ],
+      "rotation": 90,
+      "scale": 1.19
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        29.59,
+        0,
+        13.34
+      ],
+      "rotation": 270,
+      "scale": 1.19
+    },
+    {
+      "type": "skull",
+      "position": [
+        3.52,
+        0,
+        20.72
+      ],
+      "rotation": 0,
+      "scale": 0.83
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        9.37,
+        0,
+        4.48
+      ],
+      "rotation": 270,
+      "scale": 1.16
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        1.35,
+        0,
+        29.6
+      ],
+      "rotation": 270,
+      "scale": 1.2
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        15.43,
+        0,
+        1.57
+      ],
+      "rotation": 90,
+      "scale": 0.81
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        10.31,
+        0,
+        17.4
+      ],
+      "rotation": 90,
+      "scale": 0.83
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        15.57,
+        0,
+        15.32
+      ],
+      "rotation": 180,
+      "scale": 1.02
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        3.43,
+        0,
+        26.52
+      ],
+      "rotation": 90,
+      "scale": 0.95
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        0.59,
+        0,
+        1.43
+      ],
+      "rotation": 270,
+      "scale": 1.12
+    },
+    {
+      "type": "skull",
+      "position": [
+        11.71,
+        0,
+        26.56
+      ],
+      "rotation": 270,
+      "scale": 0.95
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        20.39,
+        0,
+        0.66
+      ],
+      "rotation": 0,
+      "scale": 1.02
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        3.71,
+        0,
+        17.68
+      ],
+      "rotation": 270,
+      "scale": 1.22
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        3.61,
+        0,
+        8.66
+      ],
+      "rotation": 270,
+      "scale": 1.05
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        13.66,
+        0,
+        11.72
+      ],
+      "rotation": 90,
+      "scale": 0.85
+    },
+    {
+      "type": "skull",
+      "position": [
+        27.4,
+        0,
+        22.56
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        20.38,
+        0,
+        28.72
+      ],
+      "rotation": 270,
+      "scale": 1.01
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        26.73,
+        0,
+        30.7
+      ],
+      "rotation": 270,
+      "scale": 0.93
+    },
+    {
+      "type": "anemone",
+      "position": [
+        7.62,
+        0,
+        19.31
+      ],
+      "rotation": 0,
+      "scale": 1.16
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        30.4,
+        0,
+        28.56
+      ],
+      "rotation": 0,
+      "scale": 1.11
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        7.26,
+        0,
+        12.28
+      ],
+      "rotation": 0,
+      "scale": 0.92
+    },
+    {
+      "type": "anemone",
+      "position": [
+        28.72,
+        0,
+        18.71
+      ],
+      "rotation": 270,
+      "scale": 1.11
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        24.37,
+        0,
+        4.6
+      ],
+      "rotation": 270,
+      "scale": 0.95
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        17.38,
+        0,
+        32.39
+      ],
+      "rotation": 0,
+      "scale": 0.8
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        1.56,
+        0,
+        2.68
+      ],
+      "rotation": 90,
+      "scale": 1.07
+    },
+    {
+      "type": "skull",
+      "position": [
+        20.61,
+        0,
+        31.32
+      ],
+      "rotation": 270,
+      "scale": 1.01
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        27.73,
+        0,
+        30.39
+      ],
+      "rotation": 270,
+      "scale": 0.81
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        11.65,
+        0,
+        23.46
+      ],
+      "rotation": 0,
+      "scale": 0.95
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        23.45,
+        0,
+        5.63
+      ],
+      "rotation": 180,
+      "scale": 0.95
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        9.42,
+        0,
+        11.46
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        21.39,
+        0,
+        15.74
+      ],
+      "rotation": 0,
+      "scale": 1.16
+    },
+    {
+      "type": "anemone",
+      "position": [
+        22.34,
+        0,
+        2.53
+      ],
+      "rotation": 180,
+      "scale": 1.03
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        20.35,
+        0,
+        24.48
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        19.52,
+        0,
+        1.62
+      ],
+      "rotation": 0,
+      "scale": 0.84
+    },
+    {
+      "type": "skull",
+      "position": [
+        25.47,
+        0,
+        13.62
+      ],
+      "rotation": 180,
+      "scale": 0.99
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        2.46,
+        0,
+        17.52
+      ],
+      "rotation": 180,
+      "scale": 1.12
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        20.33,
+        0,
+        8.46
+      ],
+      "rotation": 180,
+      "scale": 1.22
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        1.54,
+        0,
+        22.43
+      ],
+      "rotation": 90,
+      "scale": 1.09
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        5.32,
+        0,
+        30.3
+      ],
+      "rotation": 180,
+      "scale": 1.05
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        9.44,
+        0,
+        12.49
+      ],
+      "rotation": 90,
+      "scale": 0.95
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        14.4,
+        0,
+        6.67
+      ],
+      "rotation": 0,
+      "scale": 1.12
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        15.42,
+        0,
+        7.63
+      ],
+      "rotation": 90,
+      "scale": 1.12
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        6.7,
+        0,
+        18.63
+      ],
+      "rotation": 180,
+      "scale": 1.01
+    }
+  ]
+}
