@@ -4,7 +4,9 @@ import { worldFromGrid } from "./board.js";
 import { COLORS } from "./constants.js";
 
 const SPARKLE_COUNT = 22;
-const BURST_DURATION_SEC = 0.28;
+/** Exported for visual showcase scrub sync (matches burst lifetime). */
+export const ARC_SPINE_SPARKLE_BURST_DURATION_SEC = 0.28;
+const BURST_DURATION_SEC = ARC_SPINE_SPARKLE_BURST_DURATION_SEC;
 const SPEED_MIN = 0.95;
 const SPEED_MAX = 2.55;
 const DRAG = 0.94;

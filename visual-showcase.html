@@ -65,6 +65,46 @@
       .showcase-legend p {
         margin: 0;
       }
+      .showcase-fx-tick {
+        position: fixed;
+        z-index: 2;
+        right: max(12px, env(safe-area-inset-right, 0px));
+        top: max(12px, env(safe-area-inset-top, 0px));
+        width: min(280px, calc(100vw - 24px));
+        padding: 12px 14px;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: var(--mist);
+        background: rgba(4, 14, 28, 0.82);
+        border: 1px solid rgba(62, 232, 255, 0.22);
+        border-radius: 10px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .showcase-fx-tick label {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--bio);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.65rem;
+      }
+      .showcase-fx-tick input[type="range"] {
+        width: 100%;
+        accent-color: var(--bio);
+        cursor: pointer;
+      }
+      .showcase-fx-tick__meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        font-family: ui-monospace, monospace;
+        font-size: 0.72rem;
+        color: rgba(180, 210, 228, 0.9);
+      }
     </style>
   </head>
   <body>
@@ -72,8 +112,30 @@
       <h1>Visual reference</h1>
       <p>
         Simulation is not running — path tiles, defenses, creatures, and combat
-        VFX samples only. Pan with drag; no mission HUD.
+        VFX samples only. Pan with drag; no mission HUD. Use FX tick to scrub
+        all effects (0–1).
       </p>
+    </div>
+    <div class="showcase-fx-tick">
+      <label for="showcaseFxTick">
+        FX tick
+        <input
+          id="showcaseFxTick"
+          type="range"
+          min="0"
+          max="1"
+          step="0.001"
+          value="0.35"
+          aria-valuemin="0"
+          aria-valuemax="1"
+          aria-label="FX progression from 0 to 1"
+        />
+      </label>
+      <div class="showcase-fx-tick__meta">
+        <span id="showcaseFxTickValue">0.350</span>
+        <span aria-hidden="true">→</span>
+        <span title="Virtual seconds at tick 1">8 s loop</span>
+      </div>
     </div>
     <div id="showcaseMount" aria-label="Visual showcase scene"></div>
     <script type="module" src="/src/render/visual-showcase.ts"></script>

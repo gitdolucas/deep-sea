@@ -39,6 +39,7 @@ import {
 } from "./cannon-column-hit-fx.js";
 import { createArcSpineLightningLine } from "./arc-spine-chain-fx.js";
 import {
+  ARC_SPINE_SPARKLE_BURST_DURATION_SEC,
   spawnArcSpineHitSparkles,
   updateArcSpineHitSparkles,
   type ArcSpineHitSparkleBurst,
@@ -125,16 +126,21 @@ const PATH_GALLERY_KINDS: readonly PathCellMaterialKey[] = [
   "junction",
 ];
 
+/** Virtual seconds when `fxTick === 1` — all showcase shaders and FX sample from `fxTick * this`. */
+const SHOWCASE_FX_LOOP_SEC = 8;
+
 /**
  * Renders the full game scene (board, defenses, enemies, FX samples) without `GameSession.tick()`.
+ * Global FX progression is driven by `fxTick` in [0, 1] (slider), not wall-clock time.
  */
 export class VisualShowcaseApp {
   private readonly doc: MapDocument;
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.PerspectiveCamera;
-  private readonly timer = new THREE.Timer();
   private readonly mount: HTMLElement;
+  /** Single scrub control for all VFX / shader time (0 = start of loop, 1 = end). */
+  private fxTick = 0.35;
   private readonly orbitControls: OrbitControls;
   private readonly seabedMat: THREE.ShaderMaterial;
   private readonly abortController = new AbortController();
@@ -157,9 +163,6 @@ export class VisualShowcaseApp {
     width: number;
   }[] = [];
   private arcSpineSparkles: ArcSpineHitSparkleBurst[] = [];
-  private lastBlastRespawn = 0;
-  private lastColumnRespawn = 0;
-  private lastSparkleRespawn = 0;
   private enemyBars: THREE.Group[] = [];
   private defenseRoots = new Map<
     string,
@@ -219,9 +222,7 @@ export class VisualShowcaseApp {
     this.scene.add(this.cannonProjectileGroup);
     this.scene.add(this.cannonColumnGroup);
 
-    if (typeof document !== "undefined") {
-      this.timer.connect(document);
-    }
+    this.wireFxTickControls();
 
     const aspect = window.innerWidth / window.innerHeight;
     this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 200);
@@ -244,7 +245,6 @@ export class VisualShowcaseApp {
     this.orbitControls.maxDistance = 72;
     this.orbitControls.update();
 
-    this.timer.update();
     this.placePathCellGallery();
     this.placeDefensesFromMap();
     this.placeEnemies();
@@ -261,10 +261,33 @@ export class VisualShowcaseApp {
     this.abortController.abort();
     this.renderer.setAnimationLoop(null);
     this.orbitControls.dispose();
-    this.timer.disconnect();
-    this.timer.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
+  }
+
+  private getFxTimeSec(): number {
+    return this.fxTick * SHOWCASE_FX_LOOP_SEC;
+  }
+
+  private wireFxTickControls(): void {
+    if (typeof document === "undefined") return;
+    const input = document.getElementById(
+      "showcaseFxTick",
+    ) as HTMLInputElement | null;
+    const valueOut = document.getElementById("showcaseFxTickValue");
+    if (input) {
+      const v = Number(input.value);
+      if (Number.isFinite(v)) this.fxTick = Math.max(0, Math.min(1, v));
+      const syncLabel = () => {
+        if (valueOut) valueOut.textContent = this.fxTick.toFixed(3);
+      };
+      syncLabel();
+      input.addEventListener("input", () => {
+        const n = Number(input.value);
+        this.fxTick = Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
+        syncLabel();
+      });
+    }
   }
 
   private onResize(): void {
@@ -312,7 +335,7 @@ export class VisualShowcaseApp {
         d,
         this.doc,
         disposeObject3DTree,
-        this.timer.getElapsed(),
+        this.getFxTimeSec(),
       );
     }
   }
@@ -404,7 +427,7 @@ export class VisualShowcaseApp {
       this.bubbleProjectilePool,
       bubbleSamples,
       doc,
-      this.timer.getElapsed(),
+      this.getFxTimeSec(),
     );
 
     const cannonSamples: CannonProjectileState[] = [
@@ -430,7 +453,7 @@ export class VisualShowcaseApp {
       this.cannonProjectilePool,
       cannonSamples,
       doc,
-      this.timer.getElapsed(),
+      this.getFxTimeSec(),
     );
 
     spawnCannonBlastDecals(
@@ -444,7 +467,7 @@ export class VisualShowcaseApp {
       doc,
       this.cannonColumnGroup,
       this.cannonColumnHits,
-      this.timer.getElapsed(),
+      this.getFxTimeSec(),
     );
 
     spawnArcSpineHitSparkles(
@@ -458,9 +481,7 @@ export class VisualShowcaseApp {
   }
 
   private frame(): void {
-    this.timer.update();
-    const dt = this.timer.getDelta();
-    const t = this.timer.getElapsed();
+    const t = this.getFxTimeSec();
 
     this.seabedMat.uniforms.uTime.value = t;
 
@@ -481,6 +502,8 @@ export class VisualShowcaseApp {
       );
     }
 
+    const wobbleA = Math.sin(t * 2.2);
+    const wobbleB = Math.cos(t * 2.6);
     const bubbleSamples: BubbleProjectileState[] = [
       {
         gx: 20,
@@ -489,7 +512,7 @@ export class VisualShowcaseApp {
         vgz: 0.95,
         directDamage: 4,
         splash: 0,
-        traveled: 1.1 + Math.sin(t * 0.7) * 0.08,
+        traveled: 1.1 + wobbleA * 0.08,
         maxTravel: 8,
       },
       {
@@ -499,7 +522,7 @@ export class VisualShowcaseApp {
         vgz: 0.88,
         directDamage: 4,
         splash: 0,
-        traveled: 0.6 + Math.cos(t * 0.9) * 0.06,
+        traveled: 0.6 + wobbleB * 0.06,
         maxTravel: 8,
       },
     ];
@@ -519,9 +542,9 @@ export class VisualShowcaseApp {
         defenseId: "showcase_current_cannon",
         targetEnemyId: "showcase_dummy",
         level: 2,
-        traveled: 1.4 + Math.sin(t * 0.5) * 0.04,
+        traveled: 1.4 + Math.sin(t * 1.8) * 0.04,
         timeAlive: 0.9,
-        flightLengthProgress: 0.68,
+        flightLengthProgress: 0.55 + this.fxTick * 0.25,
       },
     ];
     syncCannonProjectileMeshes(
@@ -531,54 +554,28 @@ export class VisualShowcaseApp {
       t,
     );
 
-    updateCannonBlastDecals(
-      this.cannonBlastDecals,
-      dt,
-      this.scene,
-      t,
-    );
-    if (this.cannonBlastDecals.length === 0 && t - this.lastBlastRespawn > 2.5) {
-      this.lastBlastRespawn = t;
-      spawnCannonBlastDecals(
-        [{ gx: 16, gz: 10, radiusTiles: 2.2 }],
-        this.doc,
-        this.scene,
-        this.cannonBlastDecals,
-      );
+    for (const d of this.cannonBlastDecals) {
+      d.age = this.fxTick * d.duration * 0.999;
     }
+    updateCannonBlastDecals(this.cannonBlastDecals, 0, this.scene, t);
 
+    for (const x of this.cannonColumnHits) {
+      x.age = this.fxTick * x.duration * 0.999;
+    }
     updateCannonColumnHits(
       this.cannonColumnHits,
-      dt,
+      0,
       this.cannonColumnGroup,
       t,
     );
-    if (this.cannonColumnHits.length === 0 && t - this.lastColumnRespawn > 3) {
-      this.lastColumnRespawn = t;
-      spawnCannonColumnHits(
-        [{ gx: 14, gz: 10, fromGx: 14, fromGz: 4 }],
-        this.doc,
-        this.cannonColumnGroup,
-        this.cannonColumnHits,
-        t,
-      );
-    }
 
-    updateArcSpineHitSparkles(this.arcSpineSparkles, dt, this.scene);
-    if (
-      this.arcSpineSparkles.length === 0 &&
-      t - this.lastSparkleRespawn > 0.35
-    ) {
-      this.lastSparkleRespawn = t;
-      spawnArcSpineHitSparkles(
-        20,
-        12,
-        this.doc,
-        this.scene,
-        this.arcSpineSparkles,
-        1,
+    for (const b of this.arcSpineSparkles) {
+      b.t = Math.max(
+        1e-6,
+        (1 - this.fxTick) * ARC_SPINE_SPARKLE_BURST_DURATION_SEC,
       );
     }
+    updateArcSpineHitSparkles(this.arcSpineSparkles, 0, this.scene);
 
     for (const g of this.enemyBars) {
       g.quaternion.copy(this.camera.quaternion);
@@ -589,13 +586,7 @@ export class VisualShowcaseApp {
       vis.bar.group.quaternion.copy(this.camera.quaternion);
       const mat = vis.tower.material as THREE.MeshStandardMaterial;
       mat.emissiveIntensity = 0.22;
-      syncVibrationZoneDomeForDefense(
-        vis,
-        d,
-        this.doc,
-        disposeObject3DTree,
-        t,
-      );
+      syncVibrationZoneDomeForDefense(vis, d, this.doc, disposeObject3DTree, t);
     }
 
     this.orbitControls.update();

@@ -3,7 +3,7 @@ import type { DefenseLevel } from "../game/types.js";
 
 /**
  * Tideheart Laser — tight additive beam (docs/defenses/tideheart-laser.md).
- * Cyan aura (#00d4ff), dim at L1, brighter L2, white-hot core at L3.
+ * Thin hot white core, saturated red ring; tight falloff (little radial spread).
  */
 const beamVertexShader = `
 varying vec2 vUv;
@@ -20,7 +20,8 @@ uniform float uLevel;
 
 varying vec2 vUv;
 
-const vec3 COL_CYAN = vec3(0.0, 0.831, 1.0);
+const vec3 COL_WHITE_CORE = vec3(1.0, 1.0, 1.0);
+const vec3 COL_RED_BLOOM = vec3(1.0, 0.1, 0.16);
 
 float hash(float p) {
   return fract(sin(p * 127.173) * 43758.5453);
@@ -30,9 +31,11 @@ void main() {
   float lv = clamp(uLevel, 1.0, 3.0);
   float crossDist = abs(vUv.y - 0.5) * 2.0;
 
-  float coreR = mix(0.22, 0.12, (lv - 1.0) * 0.5);
+  // Tight white spine — narrow radius, falls off quickly.
+  float coreR = mix(0.11, 0.055, (lv - 1.0) * 0.5);
   float core = 1.0 - smoothstep(0.0, coreR, crossDist);
-  float halo = 1.0 - smoothstep(0.12, 1.05, crossDist);
+  // Less radial spread: ribbon ends before UV edge.
+  float halo = 1.0 - smoothstep(0.02, 0.52, crossDist);
 
   float flow = vUv.x * (9.0 + lv * 2.0) - uTime * (2.2 + 0.4 * lv);
   float wobble = sin(flow + crossDist * 6.0) * 0.5 + 0.5;
@@ -43,18 +46,22 @@ void main() {
   float caps = smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x);
 
   float dim = mix(0.38, 1.0, (lv - 1.0) * 0.31);
-  vec3 col = COL_CYAN * (0.35 + 0.18 * lv) * core * dim;
 
-  if (lv >= 2.5) {
-    vec3 whiteCore = vec3(1.0, 0.99, 0.97);
-    col = mix(col, whiteCore, core * core * 0.88);
-  } else if (lv >= 1.5) {
-    col = mix(col, vec3(0.75, 0.96, 1.0), core * 0.42);
-  }
+  // Narrow red ring outside the white spine (tight bloom, not wide wash).
+  float edgeBlend = smoothstep(coreR * 0.65, min(coreR + 0.26, 0.44), crossDist);
+  vec3 col = mix(COL_WHITE_CORE, COL_RED_BLOOM, edgeBlend * edgeBlend * edgeBlend);
 
-  col *= n;
+  float bloomSpread = (1.0 - core) * halo;
+  float alongPulse = 0.82 + 0.18 * sin(flow * 1.1 + crossDist * 4.0);
+  col = mix(col, COL_RED_BLOOM * 1.45, bloomSpread * 0.72 * alongPulse);
 
-  float alpha = halo * (0.34 + 0.14 * lv) * mix(0.65, 1.0, core);
+  // Expressive white: hot center spike (thin + bright).
+  float coreSpike = pow(max(core, 0.0), 0.55);
+  col = mix(col, COL_WHITE_CORE * (1.18 + 0.14 * lv), coreSpike * coreSpike);
+
+  col *= n * dim;
+
+  float alpha = halo * (0.36 + 0.15 * lv) * mix(0.55, 1.0, pow(max(core, 0.0), 0.7));
   alpha *= caps;
   alpha *= uFade;
 
