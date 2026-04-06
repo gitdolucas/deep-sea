@@ -85,21 +85,31 @@ const CARDINAL: readonly GridPos[] = [
   [0, -1],
 ];
 
+/** Cardinal grid steps to adjacent path cells (same order as {@link CARDINAL}). */
+export function pathCellNeighborOffsets(
+  gx: number,
+  gz: number,
+  pathSet: ReadonlySet<string>,
+): GridPos[] {
+  const out: GridPos[] = [];
+  for (const [dx, dz] of CARDINAL) {
+    if (pathSet.has(gridCellKey(gx + dx, gz + dz))) {
+      out.push([dx, dz]);
+    }
+  }
+  return out;
+}
+
 /**
  * Shape of a path cell for visuals (only defined when (gx,gz) lies on the path).
  */
 export function pathCellVisualKind(
   gx: number,
   gz: number,
-  pathSet: Set<string>,
+  pathSet: ReadonlySet<string>,
 ): PathCellVisualKind | null {
   if (!pathSet.has(gridCellKey(gx, gz))) return null;
-  const neighbors: GridPos[] = [];
-  for (const [dx, dz] of CARDINAL) {
-    if (pathSet.has(gridCellKey(gx + dx, gz + dz))) {
-      neighbors.push([dx, dz]);
-    }
-  }
+  const neighbors = pathCellNeighborOffsets(gx, gz, pathSet);
   const n = neighbors.length;
   if (n <= 1) return "end";
   if (n >= 3) return "junction";

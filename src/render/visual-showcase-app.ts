@@ -239,7 +239,9 @@ export class VisualShowcaseApp {
     sun.position.set(8, 18, 10);
     this.scene.add(sun);
 
-    const { root: boardRoot } = buildMapBoard(doc);
+    const { root: boardRoot } = buildMapBoard(doc, {
+      showCellLabels: false,
+    });
     this.scene.add(boardRoot);
     this.scene.add(buildDecorationsGroup(doc));
 

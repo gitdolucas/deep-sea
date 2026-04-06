@@ -58,9 +58,19 @@ export {
   gridCellKey,
   pathCellKeySet,
   pathCellKeySetUnion,
+  pathCellNeighborOffsets,
   pathCellVisualKind,
   type PathCellVisualKind,
 } from "./path-cells.js";
+export {
+  classifyMapCellSurface,
+  createMapCellSurfaceContext,
+  mapCellTopTextureKey,
+  pathNeighborOffsetsTextureKey,
+  type MapCellSurface,
+  type MapCellSurfaceContext,
+  type MapCellSurfaceKind,
+} from "./map-cell-surface.js";
 export {
   TargetingSystem,
   TARGET_MODE_CYCLE_ORDER,

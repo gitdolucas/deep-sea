@@ -4,6 +4,7 @@ import {
   gridCellKey,
   pathCellKeySet,
   pathCellKeySetUnion,
+  pathCellNeighborOffsets,
   pathCellVisualKind,
 } from "../src/game/path-cells.js";
 
@@ -47,6 +48,29 @@ describe("cellsAlongSegment", () => {
       [3, 3],
       [3, 4],
       [3, 5],
+    ]);
+  });
+});
+
+describe("pathCellNeighborOffsets", () => {
+  it("lists on-path cardinals in +x, −x, +z, −z scan order", () => {
+    const horizontal = pathCellKeySet([
+      [2, 0],
+      [3, 0],
+      [4, 0],
+    ]);
+    expect(pathCellNeighborOffsets(3, 0, horizontal)).toEqual([
+      [1, 0],
+      [-1, 0],
+    ]);
+    const vertical = pathCellKeySet([
+      [2, 1],
+      [2, 2],
+      [2, 3],
+    ]);
+    expect(pathCellNeighborOffsets(2, 2, vertical)).toEqual([
+      [0, 1],
+      [0, -1],
     ]);
   });
 });
