@@ -76,7 +76,14 @@ const CELL_MATERIALS: Record<
     emissive: new THREE.Color(COLORS.pathCellEnd),
     emissiveIntensity: 0.06,
   }),
-  junction: new THREE.MeshStandardMaterial({
+  tee: new THREE.MeshStandardMaterial({
+    color: COLORS.pathCellJunction,
+    roughness: 0.75,
+    metalness: 0.06,
+    emissive: new THREE.Color(COLORS.pathCellJunction),
+    emissiveIntensity: 0.05,
+  }),
+  cross: new THREE.MeshStandardMaterial({
     color: COLORS.pathCellJunction,
     roughness: 0.75,
     metalness: 0.06,
@@ -87,7 +94,11 @@ const CELL_MATERIALS: Record<
 
 const SIDE_MATERIALS: Record<MapCellSurfaceKind, THREE.MeshStandardMaterial> =
   {
-    sand: CELL_MATERIALS.empty,
+    sand: new THREE.MeshStandardMaterial({
+      color: COLORS.cellSand,
+      roughness: 0.88,
+      metalness: 0.05,
+    }),
     path: CELL_MATERIALS.straight, // unused fallback; path uses shape below
     decoration: new THREE.MeshStandardMaterial({
       color: 0x3a2858,
@@ -112,12 +123,6 @@ function sideMaterialForSurface(surface: MapCellSurface): THREE.MeshStandardMate
     return CELL_MATERIALS[k];
   }
   return SIDE_MATERIALS[surface.surfaceKind];
-}
-
-function materialKeyForCell(
-  kind: PathCellVisualKind | null,
-): keyof typeof CELL_MATERIALS {
-  return kind ?? "empty";
 }
 
 export type PathCellMaterialKey = PathCellVisualKind | "empty";

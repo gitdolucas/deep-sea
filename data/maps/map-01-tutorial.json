@@ -4,36 +4,89 @@
   "description": "A single narrow channel and gentle waves. Learn paths, build slots, and your first Arc Spine.",
   "difficulty": "normal",
   "startingShells": 50,
-  "gridSize": [7, 11],
+  "gridSize": [
+    7,
+    11
+  ],
   "castle": {
-    "position": [6, 10],
+    "position": [
+      6,
+      10
+    ],
     "hp": 20,
-    "size": [1, 1]
+    "size": [
+      1,
+      1
+    ]
   },
   "spawnPoints": [
     {
       "id": "spawn_trench",
-      "position": [0, 0],
-      "pathIds": ["path_main"]
+      "position": [
+        0,
+        0
+      ],
+      "pathIds": [
+        "path_main"
+      ]
     }
   ],
   "paths": [
     {
       "id": "path_main",
       "waypoints": [
-        [0, 0],
-        [4, 0],
-        [4, 7],
-        [6, 7],
-        [6, 10]
+        [
+          0,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          6,
+          10
+        ]
       ]
     }
   ],
   "buildSlots": [
-    { "position": [3, 2], "type": "standard" },
-    { "position": [5, 2], "type": "standard" },
-    { "position": [3, 5], "type": "standard" },
-    { "position": [5, 5], "type": "standard" }
+    {
+      "position": [
+        3,
+        2
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        5,
+        2
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        3,
+        5
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        5,
+        5
+      ],
+      "type": "standard"
+    }
   ],
   "defenses": [],
   "waves": [
@@ -89,5 +142,146 @@
       ]
     }
   ],
-  "decorations": []
+  "decorations": [
+    {
+      "type": "shell_pile",
+      "position": [
+        5.64,
+        0,
+        3.67
+      ],
+      "rotation": 0,
+      "scale": 1.22
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        2.69,
+        0,
+        1.37
+      ],
+      "rotation": 180,
+      "scale": 0.96
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        2.41,
+        0,
+        3.49
+      ],
+      "rotation": 90,
+      "scale": 1.15
+    },
+    {
+      "type": "skull",
+      "position": [
+        6.35,
+        0,
+        4.51
+      ],
+      "rotation": 270,
+      "scale": 0.87
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        5.62,
+        0,
+        6.36
+      ],
+      "rotation": 0,
+      "scale": 1.18
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        1.28,
+        0,
+        5.51
+      ],
+      "rotation": 0,
+      "scale": 1.1
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        3.63,
+        0,
+        4.37
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        3.37,
+        0,
+        9.41
+      ],
+      "rotation": 270,
+      "scale": 1.03
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        1.63,
+        0,
+        10.52
+      ],
+      "rotation": 0,
+      "scale": 1.03
+    },
+    {
+      "type": "anemone",
+      "position": [
+        2.55,
+        0,
+        10.33
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        5.7,
+        0,
+        9.66
+      ],
+      "rotation": 180,
+      "scale": 1.07
+    },
+    {
+      "type": "anemone",
+      "position": [
+        2.65,
+        0,
+        7.48
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        5.61,
+        0,
+        4.58
+      ],
+      "rotation": 270,
+      "scale": 0.82
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        4.58,
+        0,
+        10.38
+      ],
+      "rotation": 180,
+      "scale": 0.91
+    }
+  ]
 }

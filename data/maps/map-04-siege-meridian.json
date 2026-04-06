@@ -4,62 +4,195 @@
   "description": "Wide twin trenches converge into a long citadel run. All surface breeds roll in together—ending with something vast from the deep.",
   "difficulty": "normal",
   "startingShells": 55,
-  "gridSize": [13, 18],
+  "gridSize": [
+    13,
+    18
+  ],
   "castle": {
-    "position": [6, 17],
+    "position": [
+      6,
+      17
+    ],
     "hp": 20,
-    "size": [1, 1]
+    "size": [
+      1,
+      1
+    ]
   },
   "spawnPoints": [
     {
       "id": "spawn_left",
-      "position": [0, 0],
-      "pathIds": ["path_left"]
+      "position": [
+        0,
+        0
+      ],
+      "pathIds": [
+        "path_left"
+      ]
     },
     {
       "id": "spawn_right",
-      "position": [12, 0],
-      "pathIds": ["path_right"]
+      "position": [
+        12,
+        0
+      ],
+      "pathIds": [
+        "path_right"
+      ]
     }
   ],
   "paths": [
     {
       "id": "path_left",
       "waypoints": [
-        [0, 0],
-        [0, 8],
-        [4, 8],
-        [4, 13],
-        [6, 13],
-        [6, 17]
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          4,
+          13
+        ],
+        [
+          6,
+          13
+        ],
+        [
+          6,
+          17
+        ]
       ]
     },
     {
       "id": "path_right",
       "waypoints": [
-        [12, 0],
-        [12, 7],
-        [8, 7],
-        [8, 13],
-        [6, 13],
-        [6, 17]
+        [
+          12,
+          0
+        ],
+        [
+          12,
+          7
+        ],
+        [
+          8,
+          7
+        ],
+        [
+          8,
+          13
+        ],
+        [
+          6,
+          13
+        ],
+        [
+          6,
+          17
+        ]
       ]
     }
   ],
   "buildSlots": [
-    { "position": [1, 2], "type": "standard" },
-    { "position": [1, 4], "type": "standard" },
-    { "position": [3, 6], "type": "standard" },
-    { "position": [3, 10], "type": "standard" },
-    { "position": [5, 10], "type": "standard" },
-    { "position": [2, 11], "type": "standard" },
-    { "position": [9, 3], "type": "standard" },
-    { "position": [10, 5], "type": "standard" },
-    { "position": [9, 9], "type": "standard" },
-    { "position": [7, 10], "type": "standard" },
-    { "position": [11, 11], "type": "standard" },
-    { "position": [5, 15], "type": "standard" },
-    { "position": [7, 15], "type": "standard" }
+    {
+      "position": [
+        1,
+        2
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        1,
+        4
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        3,
+        6
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        3,
+        10
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        5,
+        10
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        2,
+        11
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        9,
+        3
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        10,
+        5
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        9,
+        9
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        7,
+        10
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        11,
+        11
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        5,
+        15
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        7,
+        15
+      ],
+      "type": "standard"
+    }
   ],
   "defenses": [],
   "waves": [
@@ -336,5 +469,356 @@
       ]
     }
   ],
-  "decorations": []
+  "decorations": [
+    {
+      "type": "shell_pile",
+      "position": [
+        0.44,
+        0,
+        11.58
+      ],
+      "rotation": 180,
+      "scale": 0.84
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        10.68,
+        0,
+        17.63
+      ],
+      "rotation": 90,
+      "scale": 1.18
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        4.3,
+        0,
+        2.5
+      ],
+      "rotation": 90,
+      "scale": 1.1
+    },
+    {
+      "type": "skull",
+      "position": [
+        9.27,
+        0,
+        0.69
+      ],
+      "rotation": 0,
+      "scale": 1
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        2.29,
+        0,
+        10.56
+      ],
+      "rotation": 90,
+      "scale": 1.1
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        4.28,
+        0,
+        16.3
+      ],
+      "rotation": 0,
+      "scale": 0.81
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        12.73,
+        0,
+        14.31
+      ],
+      "rotation": 270,
+      "scale": 0.91
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        9.4,
+        0,
+        16.44
+      ],
+      "rotation": 0,
+      "scale": 0.8
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        12.72,
+        0,
+        13.44
+      ],
+      "rotation": 270,
+      "scale": 0.79
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        2.61,
+        0,
+        2.67
+      ],
+      "rotation": 270,
+      "scale": 1.22
+    },
+    {
+      "type": "skull",
+      "position": [
+        0.4,
+        0,
+        17.46
+      ],
+      "rotation": 0,
+      "scale": 1
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        12.64,
+        0,
+        12.55
+      ],
+      "rotation": 0,
+      "scale": 0.82
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        4.59,
+        0,
+        4.34
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "trench_edge",
+      "position": [
+        9.72,
+        0,
+        12.31
+      ],
+      "rotation": 270,
+      "scale": 0.84
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        9.27,
+        0,
+        6.69
+      ],
+      "rotation": 0,
+      "scale": 1
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        8.56,
+        0,
+        2.5
+      ],
+      "rotation": 180,
+      "scale": 0.81
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        8.43,
+        0,
+        15.64
+      ],
+      "rotation": 90,
+      "scale": 1.02
+    },
+    {
+      "type": "anemone",
+      "position": [
+        9.71,
+        0,
+        14.57
+      ],
+      "rotation": 270,
+      "scale": 1.15
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        11.73,
+        0,
+        16.3
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "anemone",
+      "position": [
+        5.71,
+        0,
+        7.37
+      ],
+      "rotation": 180,
+      "scale": 0.85
+    },
+    {
+      "type": "anemone",
+      "position": [
+        7.53,
+        0,
+        9.41
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        10.71,
+        0,
+        3.6
+      ],
+      "rotation": 180,
+      "scale": 1.04
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        2.3,
+        0,
+        1.71
+      ],
+      "rotation": 90,
+      "scale": 1.16
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        6.64,
+        0,
+        8.61
+      ],
+      "rotation": 0,
+      "scale": 0.85
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        1.71,
+        0,
+        6.66
+      ],
+      "rotation": 180,
+      "scale": 0.97
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        4.65,
+        0,
+        14.4
+      ],
+      "rotation": 90,
+      "scale": 1.16
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        1.49,
+        0,
+        14.32
+      ],
+      "rotation": 270,
+      "scale": 1.16
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        5.36,
+        0,
+        5.45
+      ],
+      "rotation": 270,
+      "scale": 1.09
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        7.55,
+        0,
+        6.48
+      ],
+      "rotation": 90,
+      "scale": 0.89
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        1.64,
+        0,
+        10.59
+      ],
+      "rotation": 0,
+      "scale": 0.85
+    },
+    {
+      "type": "skull",
+      "position": [
+        5.71,
+        0,
+        2.36
+      ],
+      "rotation": 180,
+      "scale": 1.19
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        11.37,
+        0,
+        3.29
+      ],
+      "rotation": 270,
+      "scale": 1.2
+    },
+    {
+      "type": "anemone",
+      "position": [
+        0.57,
+        0,
+        9.37
+      ],
+      "rotation": 180,
+      "scale": 0.78
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        1.6,
+        0,
+        0.66
+      ],
+      "rotation": 270,
+      "scale": 1.01
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        3.36,
+        0,
+        7.64
+      ],
+      "rotation": 270,
+      "scale": 1.06
+    }
+  ]
 }

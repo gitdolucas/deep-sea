@@ -4,40 +4,111 @@
   "description": "A longer reef channel with an extra bend. Staggered crab tides teach you to pace damage between clusters.",
   "difficulty": "normal",
   "startingShells": 50,
-  "gridSize": [9, 13],
+  "gridSize": [
+    9,
+    13
+  ],
   "castle": {
-    "position": [8, 12],
+    "position": [
+      8,
+      12
+    ],
     "hp": 20,
-    "size": [1, 1]
+    "size": [
+      1,
+      1
+    ]
   },
   "spawnPoints": [
     {
       "id": "spawn_trench",
-      "position": [0, 0],
-      "pathIds": ["path_main"]
+      "position": [
+        0,
+        0
+      ],
+      "pathIds": [
+        "path_main"
+      ]
     }
   ],
   "paths": [
     {
       "id": "path_main",
       "waypoints": [
-        [0, 0],
-        [6, 0],
-        [6, 4],
-        [2, 4],
-        [2, 9],
-        [8, 9],
-        [8, 12]
+        [
+          0,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          9
+        ],
+        [
+          8,
+          9
+        ],
+        [
+          8,
+          12
+        ]
       ]
     }
   ],
   "buildSlots": [
-    { "position": [1, 1], "type": "standard" },
-    { "position": [5, 2], "type": "standard" },
-    { "position": [7, 2], "type": "standard" },
-    { "position": [1, 6], "type": "standard" },
-    { "position": [3, 6], "type": "standard" },
-    { "position": [7, 10], "type": "standard" }
+    {
+      "position": [
+        1,
+        1
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        5,
+        2
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        7,
+        2
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        1,
+        6
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        3,
+        6
+      ],
+      "type": "standard"
+    },
+    {
+      "position": [
+        7,
+        10
+      ],
+      "type": "standard"
+    }
   ],
   "defenses": [],
   "waves": [
@@ -130,5 +201,166 @@
       ]
     }
   ],
-  "decorations": []
+  "decorations": [
+    {
+      "type": "anemone",
+      "position": [
+        8.4,
+        0,
+        4.33
+      ],
+      "rotation": 0,
+      "scale": 1.22
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        8.69,
+        0,
+        6.39
+      ],
+      "rotation": 180,
+      "scale": 0.91
+    },
+    {
+      "type": "skull",
+      "position": [
+        7.39,
+        0,
+        7.56
+      ],
+      "rotation": 0,
+      "scale": 1.13
+    },
+    {
+      "type": "skull",
+      "position": [
+        0.28,
+        0,
+        3.73
+      ],
+      "rotation": 0,
+      "scale": 0.79
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        8.27,
+        0,
+        2.5
+      ],
+      "rotation": 0,
+      "scale": 1.19
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        7.31,
+        0,
+        6.65
+      ],
+      "rotation": 90,
+      "scale": 1.11
+    },
+    {
+      "type": "skull",
+      "position": [
+        4.58,
+        0,
+        3.39
+      ],
+      "rotation": 180,
+      "scale": 1.02
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        4.33,
+        0,
+        10.42
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "skull",
+      "position": [
+        3.44,
+        0,
+        3.56
+      ],
+      "rotation": 180,
+      "scale": 1.19
+    },
+    {
+      "type": "skull",
+      "position": [
+        8.54,
+        0,
+        0.54
+      ],
+      "rotation": 90,
+      "scale": 1.18
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        1.7,
+        0,
+        9.32
+      ],
+      "rotation": 180,
+      "scale": 0.81
+    },
+    {
+      "type": "skull",
+      "position": [
+        2.5,
+        0,
+        2.51
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        0.46,
+        0,
+        8.5
+      ],
+      "rotation": 180,
+      "scale": 1.21
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        5.26,
+        0,
+        3.53
+      ],
+      "rotation": 0,
+      "scale": 0.85
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        6.58,
+        0,
+        7.63
+      ],
+      "rotation": 180,
+      "scale": 0.91
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        7.66,
+        0,
+        11.68
+      ],
+      "rotation": 90,
+      "scale": 0.79
+    }
+  ]
 }

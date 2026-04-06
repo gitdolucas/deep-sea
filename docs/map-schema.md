@@ -101,6 +101,17 @@ Each path is an ordered array of waypoints from spawn to castle. Enemies follow 
 
 Enemies interpolate between waypoints in order. The segment between each pair of waypoints is a straight line — use more waypoints for curves.
 
+#### Path footprint and tiling (union)
+
+The **walkable path footprint** on the grid is the **union** of every cell touched by any `paths[*].waypoints` segment (axis-aligned steps between consecutive waypoints, plus diagonals if authored).
+
+**Floor rendering** (and any “local shape” such as straight / corner / T / +) is derived only from that **union**, not from individual `pathId` values:
+
+- For each path tile, consider the four cardinals `(+x, −x, +z, −z)`. An arm is “on” if the neighbor in that direction is also on the union (`pathConnectionMask` in `src/game/path-cells.ts`, same bit order as `PATH_CONNECTION_ORDER`).
+- Topology on that union is orthogonal autotile: **end** (one arm), **straight** (two opposite arms), **corner** (two perpendicular arms), **tee** (three arms), **cross** (four arms).
+
+**Multiple paths on the same cells:** If two different path definitions both **include the same run of cells** in their waypoint chains, the union correctly shows a merge (e.g. T or +) on those hub tiles. That is not “the same path” — each `pathId` and each enemy still follows **its** polyline — but the **physical corridor** on the grid is shared where both polylines traverse the same tiles. Avoid placing independent routes on the **same** cells unless that shared geometry is intentional.
+
 ### `buildSlots`
 
 Suggested positions for tower placement (UI / map overview). **Buildability** is determined by the rules in [Tower placement vs paths, defenses, and decorations](#tower-placement-vs-paths-defenses-and-decorations) — notably, tiles that host a decoration are never buildable, even if listed here.

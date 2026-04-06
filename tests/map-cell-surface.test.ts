@@ -115,7 +115,7 @@ describe("mapCellTopTextureKey", () => {
     expect(
       mapCellTopTextureKey({
         surfaceKind: "path",
-        pathShape: "junction",
+        pathShape: "tee",
         pathNeighborOffsets: [
           [1, 0],
           [-1, 0],
@@ -123,7 +123,7 @@ describe("mapCellTopTextureKey", () => {
         ],
         label: "path",
       }),
-    ).toBe("path:junction:-1,0|0,1|1,0");
+    ).toBe("path:tee:-1,0|0,1|1,0");
     expect(
       mapCellTopTextureKey({
         surfaceKind: "sand",

@@ -33,7 +33,7 @@ function configureTopCapCanvasTexture(tex: THREE.CanvasTexture): void {
 function baseColorForSurface(surface: MapCellSurface): number {
   switch (surface.surfaceKind) {
     case "sand":
-      return COLORS.cellEmpty;
+      return COLORS.cellSand;
     case "path": {
       const sh = surface.pathShape ?? "straight";
       switch (sh) {
@@ -43,7 +43,8 @@ function baseColorForSurface(surface: MapCellSurface): number {
           return COLORS.pathCellCorner;
         case "end":
           return COLORS.pathCellEnd;
-        case "junction":
+        case "tee":
+        case "cross":
           return COLORS.pathCellJunction;
         default:
           return COLORS.pathCellStraight;
@@ -103,6 +104,21 @@ function drawPathArms(
   }
 }
 
+/** Same staggered squares as decoration caps; yellow flecks on {@link COLORS.cellSand}. */
+function drawSandSquareMotif(c: CanvasRenderingContext2D): void {
+  c.fillStyle = "rgba(248, 232, 95, 0.22)";
+  for (let i = 0; i < 6; i++) {
+    c.fillRect(12 + i * 18, 20 + (i % 3) * 28, 8, 8);
+  }
+}
+
+function drawDecorationSquareMotif(c: CanvasRenderingContext2D): void {
+  c.fillStyle = "rgba(255, 255, 255, 0.12)";
+  for (let i = 0; i < 6; i++) {
+    c.fillRect(12 + i * 18, 20 + (i % 3) * 28, 8, 8);
+  }
+}
+
 export function createCellTopCapTexture(surface: MapCellSurface): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = CAP_SIZE;
@@ -113,11 +129,10 @@ export function createCellTopCapTexture(surface: MapCellSurface): THREE.CanvasTe
   c.fillRect(0, 0, CAP_SIZE, CAP_SIZE);
   if (surface.surfaceKind === "path" && surface.pathNeighborOffsets?.length) {
     drawPathArms(c, surface.pathNeighborOffsets);
+  } else if (surface.surfaceKind === "sand") {
+    drawSandSquareMotif(c);
   } else if (surface.surfaceKind === "decoration") {
-    c.fillStyle = "rgba(255, 255, 255, 0.12)";
-    for (let i = 0; i < 6; i++) {
-      c.fillRect(12 + i * 18, 20 + (i % 3) * 28, 8, 8);
-    }
+    drawDecorationSquareMotif(c);
   } else if (surface.surfaceKind === "castle") {
     c.strokeStyle = "rgba(0, 212, 255, 0.35)";
     c.lineWidth = 4;

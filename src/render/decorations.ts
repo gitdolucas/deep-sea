@@ -4,7 +4,7 @@ import type {
   DecorationTypeKey,
   MapDocument,
 } from "../game/map-types.js";
-import { mapGridOrigin } from "./board.js";
+import { worldFromGrid } from "./board.js";
 import { COLORS } from "./constants.js";
 
 /** Top of grid cell tiles — matches `CELL_BOX` height in board.ts. */
@@ -236,9 +236,20 @@ function placeholderFor(type: DecorationTypeKey): THREE.Object3D {
   return root;
 }
 
-function placeDecoration(obj: THREE.Object3D, def: DecorationDefinition, origin: THREE.Vector3): void {
-  const [gx, hy, gz] = def.position;
-  obj.position.set(gx - origin.x, hy + FLOOR_TOP_Y, gz - origin.z);
+/** Integer (gx,gz) matches floor cell centers in {@link buildMapBoard}; fractional parts offset from center (see docs/map-schema.md trunc rule). */
+function placeDecoration(obj: THREE.Object3D, def: DecorationDefinition, doc: MapDocument): void {
+  const gx = def.position[0];
+  const hy = def.position[1];
+  const gz = def.position[2];
+  const ix = Math.trunc(gx);
+  const iz = Math.trunc(gz);
+  const fx = gx - ix;
+  const fz = gz - iz;
+  const EPS = 1e-5;
+  const dx = Math.abs(fx) < EPS ? 0 : fx - 0.5;
+  const dz = Math.abs(fz) < EPS ? 0 : fz - 0.5;
+  const base = worldFromGrid(ix, iz, doc, hy + FLOOR_TOP_Y);
+  obj.position.set(base.x + dx, base.y, base.z + dz);
   obj.rotation.y = THREE.MathUtils.degToRad(def.rotation);
   const s = def.scale;
   obj.scale.setScalar(s);
@@ -250,10 +261,9 @@ function placeDecoration(obj: THREE.Object3D, def: DecorationDefinition, origin:
 export function buildDecorationsGroup(doc: MapDocument): THREE.Group {
   const group = new THREE.Group();
   group.name = "decorations";
-  const origin = mapGridOrigin(doc);
   for (const def of doc.decorations) {
     const mesh = placeholderFor(def.type);
-    placeDecoration(mesh, def, origin);
+    placeDecoration(mesh, def, doc);
     group.add(mesh);
   }
   return group;

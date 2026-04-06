@@ -29,7 +29,7 @@ export interface MapCellSurface {
   readonly pathShape: PathCellVisualKind | null;
   /**
    * Cardinal steps to adjacent path cells; empty or null when not on the path graph.
-   * Used to orient straight / corner / junction cap art to the grid (+x / +z).
+   * Used to orient straight / corner / tee / cross cap art to the grid (+x / +z).
    */
   readonly pathNeighborOffsets: readonly GridPos[] | null;
   /** Short debug label (single token). */

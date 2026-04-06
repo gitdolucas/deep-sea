@@ -2,8 +2,10 @@
 export const COLORS = {
   background: 0x050d1a,
   floor: 0x0a1628,
-  /** Off-path grid cell tile. */
+  /** Off-path grid cell tile (neutral; gallery / path “empty” mesh). */
   cellEmpty: 0x0c1a2e,
+  /** Playable sand tiles — warm yellow-tinted floor vs {@link COLORS.cellEmpty}. */
+  cellSand: 0x2d2516,
   /** Path segment (two opposite neighbors on path). */
   pathCellStraight: 0x1a3a2a,
   /** Path turn (two perpendicular neighbors). */

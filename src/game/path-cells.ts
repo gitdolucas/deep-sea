@@ -76,23 +76,70 @@ export function pathCellKeySet(waypoints: readonly GridPos[]): Set<string> {
   return set;
 }
 
-export type PathCellVisualKind = "straight" | "corner" | "end" | "junction";
+/**
+ * Orthogonal path tile topology for union footprint rendering (I / L / T / + on merged
+ * `pathKeys`). Not per-`pathId` — see docs/map-schema.md “Path footprint and tiling”.
+ */
+export type PathCellVisualKind =
+  | "straight"
+  | "corner"
+  | "end"
+  | "tee"
+  | "cross";
 
-const CARDINAL: readonly GridPos[] = [
+/**
+ * Cardinal steps for autotiling bit order. Bit *i* in {@link pathConnectionMask} is set iff
+ * the neighbor at `(gx + dx, gz + dz)` is in the **union** `pathKeys`.
+ *
+ * Order: `+x`, `-x`, `+z`, `-z` (grid axes from docs/map-schema.md).
+ */
+export const PATH_CONNECTION_ORDER: readonly GridPos[] = [
   [1, 0],
   [-1, 0],
   [0, 1],
   [0, -1],
 ];
 
-/** Cardinal grid steps to adjacent path cells (same order as {@link CARDINAL}). */
+/**
+ * 4-bit connection mask for union path footprint (0..15). Union semantics: a cell shows
+ * a true arm iff **some** path polyline continues to that neighbor on the merged corridor.
+ * Shared segments between two `pathId`s are truthful when both definitions include those cells.
+ */
+export function pathConnectionMask(
+  gx: number,
+  gz: number,
+  pathSet: ReadonlySet<string>,
+): number {
+  let m = 0;
+  for (let i = 0; i < PATH_CONNECTION_ORDER.length; i++) {
+    const [dx, dz] = PATH_CONNECTION_ORDER[i]!;
+    if (pathSet.has(gridCellKey(gx + dx, gz + dz))) {
+      m |= 1 << i;
+    }
+  }
+  return m;
+}
+
+/** Inverse of {@link pathConnectionMask} for tests and tooling (bit order matches {@link PATH_CONNECTION_ORDER}). */
+export function pathNeighborOffsetsFromMask(mask: number): GridPos[] {
+  const out: GridPos[] = [];
+  for (let i = 0; i < PATH_CONNECTION_ORDER.length; i++) {
+    if ((mask >>> i) & 1) {
+      const step = PATH_CONNECTION_ORDER[i]!;
+      out.push([step[0]!, step[1]!]);
+    }
+  }
+  return out;
+}
+
+/** Cardinal grid steps to adjacent path cells (same order as {@link PATH_CONNECTION_ORDER}). */
 export function pathCellNeighborOffsets(
   gx: number,
   gz: number,
   pathSet: ReadonlySet<string>,
 ): GridPos[] {
   const out: GridPos[] = [];
-  for (const [dx, dz] of CARDINAL) {
+  for (const [dx, dz] of PATH_CONNECTION_ORDER) {
     if (pathSet.has(gridCellKey(gx + dx, gz + dz))) {
       out.push([dx, dz]);
     }
@@ -101,7 +148,7 @@ export function pathCellNeighborOffsets(
 }
 
 /**
- * Shape of a path cell for visuals (only defined when (gx,gz) lies on the path).
+ * Shape of a path cell for visuals (only defined when (gx,gz) lies on the path union).
  */
 export function pathCellVisualKind(
   gx: number,
@@ -112,7 +159,8 @@ export function pathCellVisualKind(
   const neighbors = pathCellNeighborOffsets(gx, gz, pathSet);
   const n = neighbors.length;
   if (n <= 1) return "end";
-  if (n >= 3) return "junction";
+  if (n === 4) return "cross";
+  if (n === 3) return "tee";
   const d0 = neighbors[0]!;
   const d1 = neighbors[1]!;
   const opposite = d0[0] + d1[0] === 0 && d0[1] + d1[1] === 0;

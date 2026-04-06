@@ -141,7 +141,8 @@ const PATH_GALLERY_KINDS: readonly PathCellMaterialKey[] = [
   "straight",
   "corner",
   "end",
-  "junction",
+  "tee",
+  "cross",
 ];
 
 /** Bubble Shotgun showcase: L1 volley from tower → aim; matches impact column offset in `bubble-projectiles`. */

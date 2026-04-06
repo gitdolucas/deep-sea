@@ -54,12 +54,15 @@ export {
   type MapValidationIssue,
 } from "./map-validation.js";
 export {
+  PATH_CONNECTION_ORDER,
   cellsAlongSegment,
   gridCellKey,
   pathCellKeySet,
   pathCellKeySetUnion,
   pathCellNeighborOffsets,
   pathCellVisualKind,
+  pathConnectionMask,
+  pathNeighborOffsetsFromMask,
   type PathCellVisualKind,
 } from "./path-cells.js";
 export {
