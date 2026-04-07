@@ -796,6 +796,26 @@
           "delay": 1.05,
           "hpMultiplier": 1.036,
           "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_ne_long",
+          "pathId": "path_ne_long",
+          "interval": 1.25,
+          "delay": 2.2,
+          "hpMultiplier": 1.038,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_se_long",
+          "pathId": "path_se_long",
+          "interval": 1.25,
+          "delay": 3,
+          "hpMultiplier": 1.038,
+          "speedMultiplier": 1
         }
       ]
     },
@@ -852,6 +872,26 @@
           "interval": 0.9,
           "delay": 1.4,
           "hpMultiplier": 1.048,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 5,
+          "spawnId": "spawn_sw_long",
+          "pathId": "path_sw_long",
+          "interval": 1.15,
+          "delay": 2.5,
+          "hpMultiplier": 1.052,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 5,
+          "spawnId": "spawn_sw_short",
+          "pathId": "path_sw_short",
+          "interval": 1.15,
+          "delay": 3.2,
+          "hpMultiplier": 1.052,
           "speedMultiplier": 1
         }
       ]
@@ -1372,6 +1412,1876 @@
       ],
       "rotation": -20,
       "scale": 1
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        24,
+        0,
+        6
+      ],
+      "rotation": 0,
+      "scale": 0.86
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        19,
+        0,
+        5
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        27,
+        0,
+        7
+      ],
+      "rotation": 180,
+      "scale": 0.9
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        9,
+        0,
+        17
+      ],
+      "rotation": 270,
+      "scale": 0.92
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        16,
+        0,
+        18
+      ],
+      "rotation": 0,
+      "scale": 0.94
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        23,
+        0,
+        8
+      ],
+      "rotation": 90,
+      "scale": 0.96
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        2,
+        0,
+        4
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "anemone",
+      "position": [
+        25,
+        0,
+        19
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "skull",
+      "position": [
+        25,
+        0,
+        11
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        19,
+        0,
+        6
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        1,
+        0,
+        16
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        7,
+        0,
+        2
+      ],
+      "rotation": 270,
+      "scale": 0.94
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        1,
+        0,
+        14
+      ],
+      "rotation": 0,
+      "scale": 0.96
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        10,
+        0,
+        9
+      ],
+      "rotation": 90,
+      "scale": 0.98
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        15,
+        0,
+        7
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        15,
+        0,
+        19
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "anemone",
+      "position": [
+        19,
+        0,
+        7
+      ],
+      "rotation": 0,
+      "scale": 0.9
+    },
+    {
+      "type": "skull",
+      "position": [
+        1,
+        0,
+        5
+      ],
+      "rotation": 90,
+      "scale": 0.92
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        11,
+        0,
+        6
+      ],
+      "rotation": 180,
+      "scale": 0.94
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        4,
+        0,
+        15
+      ],
+      "rotation": 270,
+      "scale": 0.96
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        4,
+        0,
+        1
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        16,
+        0,
+        7
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        16,
+        0,
+        0
+      ],
+      "rotation": 180,
+      "scale": 0.88
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        12,
+        0,
+        17
+      ],
+      "rotation": 270,
+      "scale": 0.9
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        24,
+        0,
+        1
+      ],
+      "rotation": 0,
+      "scale": 0.92
+    },
+    {
+      "type": "anemone",
+      "position": [
+        3,
+        0,
+        4
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "skull",
+      "position": [
+        4,
+        0,
+        16
+      ],
+      "rotation": 180,
+      "scale": 0.96
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        5,
+        0,
+        10
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        19,
+        0,
+        2
+      ],
+      "rotation": 0,
+      "scale": 0.86
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        24,
+        0,
+        8
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        21,
+        0,
+        9
+      ],
+      "rotation": 180,
+      "scale": 0.9
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        12,
+        0,
+        13
+      ],
+      "rotation": 270,
+      "scale": 0.92
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        2,
+        0,
+        10
+      ],
+      "rotation": 0,
+      "scale": 0.94
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        9,
+        0,
+        5
+      ],
+      "rotation": 90,
+      "scale": 0.96
+    },
+    {
+      "type": "anemone",
+      "position": [
+        23,
+        0,
+        16
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "skull",
+      "position": [
+        18,
+        0,
+        14
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        15,
+        0,
+        16
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        26,
+        0,
+        11
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        19,
+        0,
+        15
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        22,
+        0,
+        0
+      ],
+      "rotation": 270,
+      "scale": 0.94
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        15,
+        0,
+        17
+      ],
+      "rotation": 0,
+      "scale": 0.96
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        7,
+        0,
+        17
+      ],
+      "rotation": 90,
+      "scale": 0.98
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        9,
+        0,
+        1
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "anemone",
+      "position": [
+        23,
+        0,
+        0
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "skull",
+      "position": [
+        27,
+        0,
+        17
+      ],
+      "rotation": 0,
+      "scale": 0.9
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        19,
+        0,
+        1
+      ],
+      "rotation": 90,
+      "scale": 0.92
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        6,
+        0,
+        13
+      ],
+      "rotation": 180,
+      "scale": 0.94
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        18,
+        0,
+        8
+      ],
+      "rotation": 270,
+      "scale": 0.96
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        18,
+        0,
+        17
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        12,
+        0,
+        4
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        27,
+        0,
+        4
+      ],
+      "rotation": 180,
+      "scale": 0.88
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        6,
+        0,
+        16
+      ],
+      "rotation": 270,
+      "scale": 0.9
+    },
+    {
+      "type": "anemone",
+      "position": [
+        14,
+        0,
+        13
+      ],
+      "rotation": 0,
+      "scale": 0.92
+    },
+    {
+      "type": "skull",
+      "position": [
+        26,
+        0,
+        15
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        7,
+        0,
+        12
+      ],
+      "rotation": 180,
+      "scale": 0.96
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        10,
+        0,
+        10
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        14,
+        0,
+        4
+      ],
+      "rotation": 0,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        15,
+        0,
+        5
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        3,
+        0,
+        6
+      ],
+      "rotation": 180,
+      "scale": 0.9
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        4,
+        0,
+        0
+      ],
+      "rotation": 270,
+      "scale": 0.92
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        23,
+        0,
+        15
+      ],
+      "rotation": 0,
+      "scale": 0.94
+    },
+    {
+      "type": "anemone",
+      "position": [
+        1,
+        0,
+        18
+      ],
+      "rotation": 90,
+      "scale": 0.96
+    },
+    {
+      "type": "skull",
+      "position": [
+        0,
+        0,
+        3
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        17,
+        0,
+        10
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        27,
+        0,
+        11
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        1,
+        0,
+        15
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        2,
+        0,
+        8
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        6,
+        0,
+        3
+      ],
+      "rotation": 270,
+      "scale": 0.94
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        22,
+        0,
+        18
+      ],
+      "rotation": 0,
+      "scale": 0.96
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        4,
+        0,
+        2
+      ],
+      "rotation": 90,
+      "scale": 0.98
+    },
+    {
+      "type": "anemone",
+      "position": [
+        16,
+        0,
+        2
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "skull",
+      "position": [
+        11,
+        0,
+        1
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        26,
+        0,
+        7
+      ],
+      "rotation": 0,
+      "scale": 0.9
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        24,
+        0,
+        13
+      ],
+      "rotation": 90,
+      "scale": 0.92
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        16,
+        0,
+        14
+      ],
+      "rotation": 180,
+      "scale": 0.94
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        15,
+        0,
+        1
+      ],
+      "rotation": 270,
+      "scale": 0.96
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        23,
+        0,
+        11
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        10,
+        0,
+        16
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        21,
+        0,
+        16
+      ],
+      "rotation": 180,
+      "scale": 0.88
+    },
+    {
+      "type": "anemone",
+      "position": [
+        5,
+        0,
+        19
+      ],
+      "rotation": 270,
+      "scale": 0.9
+    },
+    {
+      "type": "skull",
+      "position": [
+        0,
+        0,
+        9
+      ],
+      "rotation": 0,
+      "scale": 0.92
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        3,
+        0,
+        13
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        5,
+        0,
+        9
+      ],
+      "rotation": 180,
+      "scale": 0.96
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        25,
+        0,
+        8
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        25,
+        0,
+        7
+      ],
+      "rotation": 0,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        25,
+        0,
+        18
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        18,
+        0,
+        1
+      ],
+      "rotation": 180,
+      "scale": 0.9
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        10,
+        0,
+        18
+      ],
+      "rotation": 270,
+      "scale": 0.92
+    },
+    {
+      "type": "anemone",
+      "position": [
+        25,
+        0,
+        9
+      ],
+      "rotation": 0,
+      "scale": 0.94
+    },
+    {
+      "type": "skull",
+      "position": [
+        6,
+        0,
+        12
+      ],
+      "rotation": 90,
+      "scale": 0.96
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        19,
+        0,
+        9
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        17,
+        0,
+        1
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        11,
+        0,
+        7
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        27,
+        0,
+        2
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        17,
+        0,
+        19
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        2,
+        0,
+        9
+      ],
+      "rotation": 270,
+      "scale": 0.94
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        24,
+        0,
+        15
+      ],
+      "rotation": 0,
+      "scale": 0.96
+    },
+    {
+      "type": "anemone",
+      "position": [
+        12,
+        0,
+        0
+      ],
+      "rotation": 90,
+      "scale": 0.98
+    },
+    {
+      "type": "skull",
+      "position": [
+        5,
+        0,
+        15
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        2,
+        0,
+        19
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        2,
+        0,
+        6
+      ],
+      "rotation": 0,
+      "scale": 0.9
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        18,
+        0,
+        15
+      ],
+      "rotation": 90,
+      "scale": 0.92
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        12,
+        0,
+        6
+      ],
+      "rotation": 180,
+      "scale": 0.94
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        3,
+        0,
+        15
+      ],
+      "rotation": 270,
+      "scale": 0.96
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        15,
+        0,
+        14
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        6,
+        0,
+        10
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "anemone",
+      "position": [
+        13,
+        0,
+        16
+      ],
+      "rotation": 180,
+      "scale": 0.88
+    },
+    {
+      "type": "skull",
+      "position": [
+        14,
+        0,
+        10
+      ],
+      "rotation": 270,
+      "scale": 0.9
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        27,
+        0,
+        15
+      ],
+      "rotation": 0,
+      "scale": 0.92
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        22,
+        0,
+        4
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        14,
+        0,
+        14
+      ],
+      "rotation": 180,
+      "scale": 0.96
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        11,
+        0,
+        17
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        26,
+        0,
+        19
+      ],
+      "rotation": 0,
+      "scale": 0.86
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        15,
+        0,
+        8
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        14,
+        0,
+        5
+      ],
+      "rotation": 180,
+      "scale": 0.9
+    },
+    {
+      "type": "anemone",
+      "position": [
+        5,
+        0,
+        18
+      ],
+      "rotation": 270,
+      "scale": 0.92
+    },
+    {
+      "type": "skull",
+      "position": [
+        22,
+        0,
+        14
+      ],
+      "rotation": 0,
+      "scale": 0.94
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        23,
+        0,
+        13
+      ],
+      "rotation": 90,
+      "scale": 0.96
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        7,
+        0,
+        14
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        19,
+        0,
+        14
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        0,
+        0,
+        14
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        18,
+        0,
+        19
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        23,
+        0,
+        3
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        8,
+        0,
+        12
+      ],
+      "rotation": 270,
+      "scale": 0.94
+    },
+    {
+      "type": "anemone",
+      "position": [
+        11,
+        0,
+        12
+      ],
+      "rotation": 0,
+      "scale": 0.96
+    },
+    {
+      "type": "skull",
+      "position": [
+        12,
+        0,
+        7
+      ],
+      "rotation": 90,
+      "scale": 0.98
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        4,
+        0,
+        14
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        10,
+        0,
+        19
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        21,
+        0,
+        13
+      ],
+      "rotation": 0,
+      "scale": 0.9
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        21,
+        0,
+        0
+      ],
+      "rotation": 90,
+      "scale": 0.92
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        2,
+        0,
+        18
+      ],
+      "rotation": 180,
+      "scale": 0.94
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        14,
+        0,
+        12
+      ],
+      "rotation": 270,
+      "scale": 0.96
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        3,
+        0,
+        5
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "anemone",
+      "position": [
+        0,
+        0,
+        8
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "skull",
+      "position": [
+        20,
+        0,
+        18
+      ],
+      "rotation": 180,
+      "scale": 0.88
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        21,
+        0,
+        10
+      ],
+      "rotation": 270,
+      "scale": 0.9
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        22,
+        0,
+        15
+      ],
+      "rotation": 0,
+      "scale": 0.92
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        25,
+        0,
+        14
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        25,
+        0,
+        10
+      ],
+      "rotation": 180,
+      "scale": 0.96
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        1,
+        0,
+        3
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        24,
+        0,
+        3
+      ],
+      "rotation": 0,
+      "scale": 0.86
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        19,
+        0,
+        8
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "anemone",
+      "position": [
+        5,
+        0,
+        7
+      ],
+      "rotation": 180,
+      "scale": 0.9
+    },
+    {
+      "type": "skull",
+      "position": [
+        25,
+        0,
+        5
+      ],
+      "rotation": 270,
+      "scale": 0.92
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        9,
+        0,
+        6
+      ],
+      "rotation": 0,
+      "scale": 0.94
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        21,
+        0,
+        7
+      ],
+      "rotation": 90,
+      "scale": 0.96
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        6,
+        0,
+        0
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        4,
+        0,
+        19
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        2,
+        0,
+        0
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        26,
+        0,
+        0
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        15,
+        0,
+        6
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "anemone",
+      "position": [
+        19,
+        0,
+        10
+      ],
+      "rotation": 270,
+      "scale": 0.94
+    },
+    {
+      "type": "skull",
+      "position": [
+        27,
+        0,
+        6
+      ],
+      "rotation": 0,
+      "scale": 0.96
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        15,
+        0,
+        18
+      ],
+      "rotation": 90,
+      "scale": 0.98
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        2,
+        0,
+        7
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        19,
+        0,
+        16
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        6,
+        0,
+        15
+      ],
+      "rotation": 0,
+      "scale": 0.9
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        23,
+        0,
+        19
+      ],
+      "rotation": 90,
+      "scale": 0.92
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        25,
+        0,
+        17
+      ],
+      "rotation": 180,
+      "scale": 0.94
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        14,
+        0,
+        1
+      ],
+      "rotation": 270,
+      "scale": 0.96
+    },
+    {
+      "type": "anemone",
+      "position": [
+        1,
+        0,
+        7
+      ],
+      "rotation": 0,
+      "scale": 0.98
+    },
+    {
+      "type": "skull",
+      "position": [
+        7,
+        0,
+        0
+      ],
+      "rotation": 90,
+      "scale": 0.86
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        2,
+        0,
+        15
+      ],
+      "rotation": 180,
+      "scale": 0.88
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        21,
+        0,
+        4
+      ],
+      "rotation": 270,
+      "scale": 0.9
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        12,
+        0,
+        15
+      ],
+      "rotation": 0,
+      "scale": 0.92
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        27,
+        0,
+        5
+      ],
+      "rotation": 90,
+      "scale": 0.94
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        1,
+        0,
+        13
+      ],
+      "rotation": 180,
+      "scale": 0.96
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        7,
+        0,
+        13
+      ],
+      "rotation": 270,
+      "scale": 0.98
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        19,
+        0,
+        13
+      ],
+      "rotation": 0,
+      "scale": 0.86
+    },
+    {
+      "type": "anemone",
+      "position": [
+        2,
+        0,
+        2
+      ],
+      "rotation": 90,
+      "scale": 0.88
+    },
+    {
+      "type": "skull",
+      "position": [
+        15,
+        0,
+        12
+      ],
+      "rotation": 180,
+      "scale": 0.9
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        5,
+        0,
+        8
+      ],
+      "rotation": 270,
+      "scale": 0.92
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        7,
+        0,
+        10
+      ],
+      "rotation": 0,
+      "scale": 0.94
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        20,
+        0,
+        7
+      ],
+      "rotation": 90,
+      "scale": 0.96
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        22,
+        0,
+        19
+      ],
+      "rotation": 180,
+      "scale": 0.98
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        11,
+        0,
+        19
+      ],
+      "rotation": 270,
+      "scale": 0.86
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        21,
+        0,
+        5
+      ],
+      "rotation": 0,
+      "scale": 0.88
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        2,
+        0,
+        14
+      ],
+      "rotation": 90,
+      "scale": 0.9
+    },
+    {
+      "type": "anemone",
+      "position": [
+        26,
+        0,
+        3
+      ],
+      "rotation": 180,
+      "scale": 0.92
+    },
+    {
+      "type": "skull",
+      "position": [
+        11,
+        0,
+        15
+      ],
+      "rotation": 270,
+      "scale": 0.94
+    },
+    {
+      "type": "coral_branch",
+      "position": [
+        18,
+        0,
+        13
+      ],
+      "rotation": 0,
+      "scale": 0.96
+    },
+    {
+      "type": "coral_fan",
+      "position": [
+        24,
+        0,
+        2
+      ],
+      "rotation": 90,
+      "scale": 0.98
+    },
+    {
+      "type": "kelp_cluster",
+      "position": [
+        0,
+        0,
+        4
+      ],
+      "rotation": 180,
+      "scale": 0.86
+    },
+    {
+      "type": "rock_small",
+      "position": [
+        26,
+        0,
+        6
+      ],
+      "rotation": 270,
+      "scale": 0.88
+    },
+    {
+      "type": "rock_large",
+      "position": [
+        25,
+        0,
+        1
+      ],
+      "rotation": 0,
+      "scale": 0.9
+    },
+    {
+      "type": "shell_pile",
+      "position": [
+        14,
+        0,
+        16
+      ],
+      "rotation": 90,
+      "scale": 0.92
+    },
+    {
+      "type": "vent_bubble",
+      "position": [
+        19,
+        0,
+        3
+      ],
+      "rotation": 180,
+      "scale": 0.94
     }
   ]
 }

@@ -85,6 +85,23 @@ describe("WaveDirector", () => {
     wd.tick(0.6);
     expect(spawned).toHaveLength(2);
     expect(wd.isWaveSpawnComplete()).toBe(true);
+    expect(wd.getWaveSpawnReleaseFraction()).toBe(1);
+  });
+
+  it("reports spawn release fraction during active wave", () => {
+    const map = new MapController(sessionMap());
+    const spawned: EnemyController[] = [];
+    let id = 0;
+    const wd = new WaveDirector(map, {
+      spawnEnemy: (e) => spawned.push(e),
+      assignEnemyId: () => `e_${++id}`,
+    });
+    wd.tick(2);
+    expect(wd.getWaveSpawnReleaseFraction()).toBe(0);
+    wd.tick(0.5);
+    expect(wd.getWaveSpawnReleaseFraction()).toBeCloseTo(0.5);
+    wd.tick(1.1);
+    expect(wd.getWaveSpawnReleaseFraction()).toBe(1);
   });
 
   it("advances to next prep when wave is clear", () => {

@@ -38,10 +38,10 @@ import {
   cycleTargetMode,
   type TargetingContext,
 } from "./targeting-system.js";
-import { tileDistanceSq } from "./spatial.js";
 import type {
   BubbleColumnFxEvent,
 } from "./bubble-column-fx-events.js";
+import type { WaveFeedbackUiState } from "./wave-types.js";
 import {
   spawnBubbleVolley,
   tickBubbleProjectiles,
@@ -326,6 +326,19 @@ export class GameSession {
     return this.waveDirector.getWaveIndex() + 1;
   }
 
+  /**
+   * Wave HUD state: first-tide prep vs later preps, release progress vs spawn-complete.
+   */
+  getWaveFeedbackState(): WaveFeedbackUiState {
+    const phase = this.waveDirector.getPhase();
+    if (phase === "completed") return "all_complete";
+    if (phase === "prep") {
+      return this.waveDirector.getWaveIndex() === 0 ? "not_started" : "preparation";
+    }
+    const frac = this.waveDirector.getWaveSpawnReleaseFraction();
+    return frac >= 1 ? "passed" : "started";
+  }
+
   tick(deltaSeconds: number): void {
     if (this.outcome !== "playing" || deltaSeconds <= 0) return;
 
@@ -478,19 +491,16 @@ export class GameSession {
       if (snap.type === "bubble_shotgun") {
         const alive = [...this.enemies.values()].filter((e) => e.isAlive());
         const range = attackRangeTiles(snap.type, snap.level);
-        const rSq = range * range;
-        const hasInRange =
-          alive.length > 0 &&
-          alive.some(
-            (e) => tileDistanceSq(snap.position, e.getGridPosition()) <= rSq,
-          );
-        if (hasInRange) {
-          const aim = TargetingSystem.selectBubbleAimTile(
-            snap.position,
-            alive,
-            range,
-            ctx,
-          );
+        const defense = new DefenseController(snap);
+        const target = TargetingSystem.selectTarget(
+          defense,
+          alive,
+          snap.targetMode,
+          { maxAttackRangeTiles: range },
+          ctx,
+        );
+        if (target) {
+          const aim = target.getGridPosition();
           this.bubbleProjectiles.push(
             ...spawnBubbleVolley(snap.position, aim, snap.level),
           );
@@ -502,11 +512,11 @@ export class GameSession {
             axis: "segment",
             splash: false,
           });
+          this.defenseCooldowns.set(
+            snap.id,
+            fireIntervalFor(snap.type, snap.level),
+          );
         }
-        this.defenseCooldowns.set(
-          snap.id,
-          fireIntervalFor(snap.type, snap.level),
-        );
         continue;
       }
 
@@ -514,31 +524,29 @@ export class GameSession {
         const cannonAlive = [...this.enemies.values()].filter((e) =>
           e.isAlive(),
         );
-        if (cannonAlive.length > 0) {
-          const defense = new DefenseController(snap);
-          const cannonRange = attackRangeTiles(snap.type, snap.level);
-          const aimTarget = TargetingSystem.selectTarget(
-            defense,
-            cannonAlive,
-            snap.targetMode,
-            { maxAttackRangeTiles: cannonRange },
-            ctx,
-          );
-          if (aimTarget) {
-            this.cannonProjectiles.push(
-              spawnCannonProjectile(
-                snap.position,
-                aimTarget.id,
-                snap.level,
-                snap.id,
-              ),
-            );
-          }
-        }
-        this.defenseCooldowns.set(
-          snap.id,
-          fireIntervalFor(snap.type, snap.level),
+        const defense = new DefenseController(snap);
+        const cannonRange = attackRangeTiles(snap.type, snap.level);
+        const aimTarget = TargetingSystem.selectTarget(
+          defense,
+          cannonAlive,
+          snap.targetMode,
+          { maxAttackRangeTiles: cannonRange },
+          ctx,
         );
+        if (aimTarget) {
+          this.cannonProjectiles.push(
+            spawnCannonProjectile(
+              snap.position,
+              aimTarget.id,
+              snap.level,
+              snap.id,
+            ),
+          );
+          this.defenseCooldowns.set(
+            snap.id,
+            fireIntervalFor(snap.type, snap.level),
+          );
+        }
         continue;
       }
 

@@ -39,7 +39,10 @@ export {
 export {
   ARMORY_CARD_PERK,
   ARMORY_DISPLAY_NAME,
+  ARMORY_PRIMARY_ROLE,
+  ARMORY_ROLE_TAGS,
 } from "./defense-armory-meta.js";
+export type { DefenseArmoryRole } from "./defense-armory-meta.js";
 export { hotbarIndexFromKey } from "./hotbar-key.js";
 export {
   downgradeRefundForLevel,
@@ -86,7 +89,7 @@ export {
   type TargetingOptions,
 } from "./targeting-system.js";
 export { WaveDirector, type WaveDirectorHooks } from "./wave-director.js";
-export type { WavePhase } from "./wave-types.js";
+export type { WaveFeedbackUiState, WavePhase } from "./wave-types.js";
 export type {
   CastleDefinition,
   DecorationDefinition,

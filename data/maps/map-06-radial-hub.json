@@ -3,7 +3,7 @@
   "name": "Radial Confluence",
   "description": "Eight trench mouths on one hub—straight lanes for the tide-walkers, zig trenches for the eels, and stepped ridges for the deep tanks. Built from your radial sketch; keep lanes honest where paths almost touch.",
   "difficulty": "hard",
-  "startingShells": 75,
+  "startingShells": 150,
   "gridSize": [
     33,
     33
@@ -652,6 +652,210 @@
           "interval": 1.5,
           "delay": 3,
           "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 4,
+      "prepTime": 16,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_nw",
+          "pathId": "path_nw",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.12,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 7,
+          "spawnId": "spawn_n",
+          "pathId": "path_n",
+          "interval": 1.05,
+          "delay": 0.5,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 7,
+          "spawnId": "spawn_s",
+          "pathId": "path_s",
+          "interval": 1.05,
+          "delay": 0.75,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_ne",
+          "pathId": "path_ne",
+          "interval": 1.35,
+          "delay": 2,
+          "hpMultiplier": 1.108,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_nw",
+          "pathId": "path_nw",
+          "interval": 1.35,
+          "delay": 2.4,
+          "hpMultiplier": 1.108,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_se",
+          "pathId": "path_se",
+          "interval": 1.35,
+          "delay": 2.8,
+          "hpMultiplier": 1.108,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_sw",
+          "pathId": "path_sw",
+          "interval": 1.35,
+          "delay": 3.2,
+          "hpMultiplier": 1.108,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_e",
+          "pathId": "path_e",
+          "interval": 1.6,
+          "delay": 4,
+          "hpMultiplier": 1.105,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_w",
+          "pathId": "path_w",
+          "interval": 1.6,
+          "delay": 4.4,
+          "hpMultiplier": 1.105,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 5,
+      "prepTime": 17,
+      "isBoss": true,
+      "groups": [
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_ne",
+          "pathId": "path_ne",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.14,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_sw",
+          "pathId": "path_sw",
+          "interval": 1,
+          "delay": 0.35,
+          "hpMultiplier": 1.14,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 8,
+          "spawnId": "spawn_n",
+          "pathId": "path_n",
+          "interval": 0.95,
+          "delay": 0.55,
+          "hpMultiplier": 1.12,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 8,
+          "spawnId": "spawn_s",
+          "pathId": "path_s",
+          "interval": 0.95,
+          "delay": 0.85,
+          "hpMultiplier": 1.12,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_ne",
+          "pathId": "path_ne",
+          "interval": 1.2,
+          "delay": 2.2,
+          "hpMultiplier": 1.13,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_nw",
+          "pathId": "path_nw",
+          "interval": 1.2,
+          "delay": 2.6,
+          "hpMultiplier": 1.13,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_se",
+          "pathId": "path_se",
+          "interval": 1.2,
+          "delay": 3,
+          "hpMultiplier": 1.13,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 4,
+          "spawnId": "spawn_sw",
+          "pathId": "path_sw",
+          "interval": 1.2,
+          "delay": 3.4,
+          "hpMultiplier": 1.13,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_e",
+          "pathId": "path_e",
+          "interval": 1.4,
+          "delay": 4.5,
+          "hpMultiplier": 1.125,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 3,
+          "spawnId": "spawn_w",
+          "pathId": "path_w",
+          "interval": 1.4,
+          "delay": 4.9,
+          "hpMultiplier": 1.125,
           "speedMultiplier": 1
         }
       ]

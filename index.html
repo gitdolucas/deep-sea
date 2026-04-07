@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=JetBrains+Mono:wght@450;600&family=Outfit:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Ubuntu+Sans:ital,wght@0,100..800;1,100..800&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -32,12 +32,12 @@
         --mist: #8aa4b8;
         --danger: #ff5c6c;
         --card: rgba(12, 34, 58, 0.72);
-        --font-display: "Cormorant Garamond", Georgia, serif;
-        --font-ui: "Outfit", system-ui, sans-serif;
-        --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        --font-display: "Permanent Marker", cursive;
+        --font-ui: "Ubuntu Sans", system-ui, sans-serif;
+        --font-mono: "Ubuntu Sans", ui-monospace, monospace;
         --hud-hotbar-h: 0px;
         --hotbar-slot: 48px;
-        --inventory-font: "Barlow Condensed", var(--font-ui), system-ui, sans-serif;
+        --inventory-font: var(--font-ui);
         --inventory-bg: #000b1a;
         --inventory-frame: rgba(20, 55, 88, 0.65);
         --inventory-slot-border: rgba(45, 95, 130, 0.85);
@@ -135,28 +135,69 @@
         font-family: var(--font-ui);
       }
 
-      .hud-minibar {
+      .hud-mission-rail {
+        --hud-rail-max: min(300px, 42vw);
         position: fixed;
         z-index: 12;
         left: 0;
         top: 0;
-        max-width: min(280px, calc(100vw - 20px - var(--hud-rail-max, 300px)));
-        padding: max(10px, env(safe-area-inset-top, 0px)) 12px 10px
-          max(12px, env(safe-area-inset-left, 0px));
+        bottom: 0;
+        width: var(--hud-rail-max);
+        max-width: calc(100vw - 12px);
+        padding: max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-left, 0px))
+          max(12px, env(safe-area-inset-bottom, 0px)) 12px;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .hud-mission-rail__panel {
+        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 10px 12px;
+        background: var(--panel);
+        border: 1px solid var(--panel-edge);
+        border-radius: 0 12px 12px 0;
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+        flex-shrink: 0;
+      }
+
+      .hud-mission-rail__mgmt {
         display: flex;
         flex-direction: column;
         gap: 8px;
         align-items: stretch;
-        pointer-events: none;
       }
 
-      .hud-minibar .stat,
-      .hud-minibar .citadel-hud {
+      .hud-mission-rail__mgmt .citadel-hud {
         pointer-events: none;
+        align-items: stretch;
       }
 
-      .hud-minibar .hud-hotkey-hint {
-        margin: 0;
+      .hud-mission-rail__mgmt .citadel-hp-track {
+        justify-content: center;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .hud-mission-rail__mgmt .wave-progress,
+      .hud-mission-rail__mgmt #hudSpeed,
+      .hud-mission-rail__mgmt .hud-send-cluster,
+      .hud-mission-rail__mgmt #btnMainMenu {
+        pointer-events: auto;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        align-self: stretch;
+      }
+
+      .hud-mission-rail__mgmt .hud-send-cluster #sendWave {
+        max-width: none;
       }
 
       .hud-right-rail {
@@ -174,18 +215,14 @@
         display: flex;
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
       }
 
-      .hud-right-rail__scroll {
+      .hud-right-rail__panel {
         pointer-events: auto;
-        flex: 1;
-        min-height: 0;
         display: flex;
         flex-direction: column;
         gap: 8px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: thin;
         padding: 10px 10px 12px;
         background: var(--panel);
         border: 1px solid var(--panel-edge);
@@ -193,27 +230,23 @@
         box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
       }
 
-      .hud-right-rail__mgmt {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        align-items: stretch;
+      .hud-right-rail__panel--armory {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
       }
 
-      .hud-right-rail__mgmt .hud-tide {
+      .hud-armory-wallet {
         pointer-events: none;
+        flex-shrink: 0;
+        margin-top: 2px;
       }
 
-      .hud-right-rail__mgmt .wave-progress,
-      .hud-right-rail__mgmt #hudSpeed,
-      .hud-right-rail__mgmt .hud-send-cluster,
-      .hud-right-rail__mgmt #btnMainMenu {
-        pointer-events: auto;
-        width: 100%;
-      }
-
-      .hud-right-rail__mgmt .hud-send-cluster #sendWave {
-        max-width: none;
+      .hud-armory-wallet.stat-shells .icon-svg {
+        flex-shrink: 0;
+        color: var(--pulse);
       }
 
       .hud-defenses-toggle {
@@ -236,6 +269,14 @@
         border-radius: 8px;
         cursor: pointer;
         transition: border-color 0.15s ease, background 0.15s ease;
+      }
+
+      .hud-defenses-toggle__label {
+        font-family: var(--font-display);
+        font-size: 0.95rem;
+        font-weight: 400;
+        letter-spacing: 0.06em;
+        text-transform: none;
       }
 
       .hud-defenses-toggle:hover {
@@ -390,6 +431,28 @@
         text-transform: uppercase;
         color: #e8f8ff;
         line-height: 1.15;
+      }
+
+      .defense-inventory__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 2px;
+      }
+
+      .defense-inventory__tag {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: var(--font-ui);
+        font-size: 0.52rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(180, 230, 255, 0.95);
+        background: rgba(62, 232, 255, 0.12);
+        border: 1px solid rgba(62, 232, 255, 0.28);
+        line-height: 1.2;
       }
 
       .defense-inventory__perk {
@@ -808,10 +871,6 @@
         pointer-events: auto;
       }
 
-      .hud-tide {
-        margin-bottom: 0;
-      }
-
       .hud-send-cluster {
         pointer-events: auto;
         display: flex;
@@ -821,7 +880,8 @@
 
       .hud-send-cluster #sendWave {
         width: 100%;
-        max-width: 300px;
+        max-width: 100%;
+        box-sizing: border-box;
       }
 
       .hud-top-actions {
@@ -836,24 +896,30 @@
         cursor: pointer;
         display: block;
         width: 100%;
-        max-width: 300px;
-        padding: 10px 32px 10px 14px;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 10px 34px 10px 34px;
         font-family: var(--font-ui);
         font-size: 0.72rem;
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
+        text-align: center;
+        text-align-last: center;
         color: var(--biolume);
-        background: linear-gradient(180deg, #153a5c 0%, #0d2844 100%);
+        background-color: #0d2844;
+        background-image: linear-gradient(180deg, #153a5c 0%, #0d2844 100%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233ee8ff' d='M3 4.5 6 8.5 9 4.5'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position:
+          0 0,
+          right 12px center;
+        background-size: auto, 12px 12px;
         border: 1px solid rgba(62, 232, 255, 0.45);
         border-radius: 8px;
         transition: filter 0.15s ease, box-shadow 0.15s ease;
         appearance: none;
         -webkit-appearance: none;
-        background-image: linear-gradient(180deg, #153a5c 0%, #0d2844 100%),
-          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233ee8ff' d='M3 4.5 6 8.5 9 4.5'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
       }
 
       #hudSpeed:hover:not(:disabled) {
@@ -1150,6 +1216,12 @@
         margin-top: 4px;
       }
 
+      .hud-hotkey-hint--armory {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
       .citadel-hud {
         display: flex;
         flex-direction: column;
@@ -1178,7 +1250,6 @@
         justify-content: flex-start;
       }
 
-      .hud-top-actions .stat.hud-tide,
       .hud-top-actions .wave-progress,
       .hud-top-actions .hud-send-cluster {
         align-self: stretch;
@@ -1208,10 +1279,15 @@
       }
 
       .btn-leave-mission {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
+        box-sizing: border-box;
+      }
+
+      .btn-leave-mission span:last-of-type {
+        margin-inline-end: -0.08em;
       }
 
       .btn-leave-mission .icon-svg {
@@ -1954,14 +2030,53 @@
 
       .wave-progress {
         pointer-events: none;
-        margin-bottom: 14px;
+        margin: 0 0 14px;
+        padding: 10px 12px 2px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        transition: border-color 0.25s ease, background 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .wave-progress[data-wave-state="not_started"] {
+        border-color: rgba(138, 164, 184, 0.25);
+        background: rgba(6, 18, 36, 0.35);
+      }
+
+      .wave-progress[data-wave-state="preparation"] {
+        border-color: rgba(232, 193, 112, 0.45);
+        background: rgba(36, 28, 8, 0.25);
+      }
+
+      .wave-progress[data-wave-state="started"] {
+        border-color: rgba(62, 232, 255, 0.4);
+        background: rgba(6, 28, 42, 0.4);
+      }
+
+      .wave-progress[data-wave-state="passed"] {
+        border-color: rgba(122, 248, 210, 0.5);
+        background: rgba(8, 36, 28, 0.32);
+      }
+
+      .wave-progress[data-wave-state="all_complete"] {
+        border-color: rgba(57, 255, 110, 0.35);
+        background: rgba(6, 28, 20, 0.3);
       }
 
       .wave-progress__label {
         display: flex;
         align-items: baseline;
-        justify-content: space-between;
-        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px 12px;
         margin-bottom: 8px;
         font-family: var(--font-ui);
         font-size: 0.65rem;
@@ -1969,6 +2084,7 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--mist);
+        width: 100%;
       }
 
       .wave-progress__fraction {
@@ -1989,6 +2105,94 @@
 
       .wave-progress__track[hidden] {
         display: none !important;
+      }
+
+      .wave-progress__status {
+        margin: 0 auto 10px;
+        padding: 0 8px;
+        max-width: 26em;
+        font-family: var(--font-ui);
+        font-size: 0.62rem;
+        line-height: 1.4;
+        font-weight: 500;
+        color: var(--mist);
+        text-align: center;
+        text-wrap: balance;
+      }
+
+      .wave--prep-pulse {
+        animation: wavePrepPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes wavePrepPulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.72;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .wave--prep-pulse {
+          animation: none;
+        }
+      }
+
+      .wave-progress__release {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+        width: 100%;
+      }
+
+      .wave-progress__release[hidden] {
+        display: none !important;
+      }
+
+      .wave-progress__release-track {
+        width: 100%;
+        flex: 0 0 auto;
+        height: 7px;
+        border-radius: 4px;
+        background: rgba(4, 12, 24, 0.65);
+        border: 1px solid rgba(62, 232, 255, 0.22);
+        overflow: hidden;
+      }
+
+      .wave-progress__release-fill {
+        height: 100%;
+        width: 0%;
+        min-width: 0;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--biolume) 0%, #5ae0f0 100%);
+        transition: width 0.18s ease-out, box-shadow 0.25s ease,
+          background 0.25s ease;
+        box-shadow: 0 0 8px rgba(62, 232, 255, 0.28);
+      }
+
+      .wave-progress[data-wave-state="passed"] .wave-progress__release-fill {
+        background: linear-gradient(90deg, #39ff6e 0%, var(--pulse) 100%);
+        box-shadow: 0 0 14px rgba(57, 255, 110, 0.42);
+      }
+
+      .wave-progress__release-pct {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--biolume);
+        text-align: center;
+        width: 100%;
+        order: -1;
+      }
+
+      .wave-progress[data-wave-state="passed"] .wave-progress__release-pct {
+        color: var(--pulse);
       }
 
       .wave-seg {
@@ -2013,6 +2217,13 @@
         animation: waveSegPulse 1.25s ease-in-out infinite;
       }
 
+      .wave-seg--spawn-complete.wave-seg--filled {
+        animation: none;
+        background: linear-gradient(180deg, var(--pulse) 0%, #2a9d6f 100%);
+        border-color: rgba(122, 248, 210, 0.88);
+        box-shadow: 0 0 12px rgba(57, 255, 110, 0.32);
+      }
+
       @keyframes waveSegPulse {
         0%,
         100% {
@@ -2032,7 +2243,8 @@
 
       #sendWave {
         width: 100%;
-        display: flex;
+        box-sizing: border-box;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
@@ -2042,7 +2254,7 @@
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        padding: 14px 16px;
+        padding: 14px 18px;
         border-radius: var(--radius);
         border: 1px solid var(--biolume);
         color: var(--abyss);
@@ -2055,9 +2267,14 @@
         transition: filter 0.15s ease, transform 0.12s ease, opacity 0.2s ease;
       }
 
+      #sendWave .send-wave-btn__label {
+        margin-inline-end: -0.08em;
+      }
+
       #sendWave .send-wave-btn__icon {
         display: flex;
         color: inherit;
+        flex-shrink: 0;
       }
 
       #sendWave .send-wave-btn__icon .icon-svg {
@@ -2654,7 +2871,7 @@
       }
 
       #btnMainMenu {
-        width: auto;
+        width: 100%;
         margin-top: 0;
         cursor: pointer;
         font-family: var(--font-ui);
@@ -2662,12 +2879,17 @@
         font-weight: 600;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        padding: 12px 14px;
+        padding: 12px 16px;
         border-radius: 8px;
         border: 1px solid rgba(138, 164, 184, 0.45);
         color: var(--mist);
         background: rgba(8, 22, 42, 0.55);
         transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        gap: 8px;
       }
 
       #btnMainMenu:hover {
@@ -2953,86 +3175,55 @@
     <div id="gameScreen" hidden tabindex="-1">
     <div id="gameMount"></div>
     <div id="gameHud" aria-label="In-game HUD">
-      <div id="hudMinibar" class="hud-minibar">
-        <div class="citadel-hud">
-          <div class="stat stat-vitals">
-            <svg
-              class="icon-svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 21s8-4.5 8-11a8 8 0 10-16 0c0 6.5 8 11 8 11z"
-              />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span class="label">Citadel</span>
-            <span id="statCastle" class="value">20 / 20</span>
-          </div>
-          <div
-            id="citadelHpTrack"
-            class="citadel-hp-track"
-            aria-hidden="true"
-          ></div>
-        </div>
-        <div class="stat stat-shells" id="statShellsRow">
-          <svg
-            class="icon-svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 3c-3 2.5-5 6-5 9.5a5 5 0 0010 0C17 9 15 5.5 12 3z"
-            />
-            <path d="M12 10v2M10 8l2 2 2-2" />
-          </svg>
-          <span class="label">Shells</span>
-          <span
-            id="statShells"
-            class="value"
-            aria-live="polite"
-            aria-atomic="true"
-            >50</span
-          >
-        </div>
-        <p id="hudHotkeyHint" class="hud-hotkey-hint">
-          Keys 1–6 select a defense
-        </p>
-      </div>
-
-      <aside id="hudRightRail" class="hud-right-rail" aria-label="Mission and armory">
-        <div class="hud-right-rail__scroll">
-          <div class="hud-right-rail__mgmt">
-            <div class="stat hud-tide">
-              <svg
-                class="icon-svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
+      <aside id="hudMissionRail" class="hud-mission-rail" aria-label="Mission controls">
+        <div class="hud-mission-rail__panel">
+          <div class="hud-mission-rail__mgmt">
+            <div class="citadel-hud">
+              <div class="stat stat-vitals">
+                <svg
+                  class="icon-svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 21s8-4.5 8-11a8 8 0 10-16 0c0 6.5 8 11 8 11z"
+                  />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span class="label">Citadel</span>
+                <span id="statCastle" class="value">20 / 20</span>
+              </div>
+              <div
+                id="citadelHpTrack"
+                class="citadel-hp-track"
                 aria-hidden="true"
-              >
-                <path d="M2 12c2-3 5-5 10-5s8 2 10 5c-2 3-5 5-10 5S4 15 2 12z" />
-                <path d="M12 7v10" opacity="0.5" />
-              </svg>
-              <span class="label">Tide</span>
-              <span id="statTide" class="value">—</span>
+              ></div>
             </div>
-            <div class="wave-progress" id="waveProgressHost" hidden>
+            <div class="wave-progress" id="waveProgressHost" data-wave-state="not_started" hidden>
               <div class="wave-progress__label">
                 <span id="waveProgressCaption">Waves</span>
                 <span id="waveProgressFraction" class="wave-progress__fraction"
                   >0 / 0</span
                 >
+              </div>
+              <p id="waveProgressStatus" class="wave-progress__status"></p>
+              <div id="waveReleaseHost" class="wave-progress__release" hidden>
+                <div
+                  id="waveReleaseBar"
+                  class="wave-progress__release-track"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  aria-label="Wave spawn released"
+                >
+                  <div class="wave-progress__release-fill" id="waveReleaseFill"></div>
+                </div>
+                <span id="waveReleasePct" class="wave-progress__release-pct"></span>
               </div>
               <div
                 id="waveProgressTrack"
@@ -3096,6 +3287,38 @@
               <span>Leave mission</span>
             </button>
           </div>
+        </div>
+      </aside>
+
+      <aside id="hudRightRail" class="hud-right-rail" aria-label="Armory">
+        <div
+          class="hud-right-rail__panel hud-right-rail__panel--armory"
+          aria-label="Armory"
+        >
+          <div class="stat stat-shells hud-armory-wallet" id="statShellsRow">
+            <svg
+              class="icon-svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 3c-3 2.5-5 6-5 9.5a5 5 0 0010 0C17 9 15 5.5 12 3z"
+              />
+              <path d="M12 10v2M10 8l2 2 2-2" />
+            </svg>
+            <span class="label">Shells</span>
+            <span
+              id="statShells"
+              class="value"
+              aria-live="polite"
+              aria-atomic="true"
+              >50</span
+            >
+          </div>
           <button
             type="button"
             id="btnDefensesToggle"
@@ -3106,6 +3329,12 @@
             <span class="hud-defenses-toggle__label">Defenses</span>
             <span class="hud-defenses-toggle__chev" aria-hidden="true">▼</span>
           </button>
+          <p
+            id="hudHotkeyHint"
+            class="hud-hotkey-hint hud-hotkey-hint--armory"
+          >
+            Keys 1–6 select a defense
+          </p>
           <section id="section-armory" class="hud-armory" aria-label="Defense inventory">
             <div
               id="defenseInventoryGrid"

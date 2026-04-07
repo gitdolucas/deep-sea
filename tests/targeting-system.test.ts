@@ -101,9 +101,15 @@ describe("TargetingSystem", () => {
     ).toBe("n");
   });
 
-  it("bubble aim uses in-range enemies when forward cone is empty (zig-zag paths)", () => {
-    const tower = [2, 3] as const;
-    const castle = [9, 11] as const;
+  it("bubble shotgun aim uses selectTarget tile (single in-range enemy, zig-zag path)", () => {
+    const castleCtx = { castlePosition: [9, 11] as const };
+    const defense = new DefenseController({
+      id: "bub",
+      type: "bubble_shotgun",
+      position: [2, 3],
+      level: 1,
+      targetMode: "first",
+    });
     const e = new EnemyController({
       id: "side",
       enemyType: "stoneclaw",
@@ -117,14 +123,67 @@ describe("TargetingSystem", () => {
       maxHp: 10,
       speedMultiplier: 1,
     });
-    const aim = TargetingSystem.selectBubbleAimTile(
-      tower,
+    const target = TargetingSystem.selectTarget(
+      defense,
       [e],
-      9,
-      { castlePosition: castle },
+      defense.targetMode,
+      { maxAttackRangeTiles: 9 },
+      castleCtx,
     );
+    const aim = target!.getGridPosition();
     const p = e.getGridPosition();
     expect(aim[0]).toBeCloseTo(p[0], 5);
     expect(aim[1]).toBeCloseTo(p[1], 5);
+  });
+
+  it("bubble shotgun aim follows first target, not centroid of pack", () => {
+    const defense = new DefenseController({
+      id: "bub",
+      type: "bubble_shotgun",
+      position: [5, 5],
+      level: 1,
+      targetMode: "first",
+    });
+    const waypoints: [number, number][] = [
+      [5, 4],
+      [5, 10],
+    ];
+    const trailer = new EnemyController({
+      id: "trail",
+      enemyType: "stoneclaw",
+      pathId: "p",
+      waypoints,
+      pathProgress: 0.15,
+      hp: 10,
+      maxHp: 10,
+      speedMultiplier: 1,
+    });
+    const leader = new EnemyController({
+      id: "lead",
+      enemyType: "stoneclaw",
+      pathId: "p",
+      waypoints,
+      pathProgress: 0.85,
+      hp: 10,
+      maxHp: 10,
+      speedMultiplier: 1,
+    });
+    const target = TargetingSystem.selectTarget(
+      defense,
+      [trailer, leader],
+      defense.targetMode,
+      { maxAttackRangeTiles: 9 },
+      ctx,
+    );
+    expect(target?.id).toBe("lead");
+    const aim = target!.getGridPosition();
+    const leaderPos = leader.getGridPosition();
+    expect(aim[0]).toBeCloseTo(leaderPos[0], 5);
+    expect(aim[1]).toBeCloseTo(leaderPos[1], 5);
+    const centroidX = (trailer.getGridPosition()[0] + leaderPos[0]) / 2;
+    const centroidZ = (trailer.getGridPosition()[1] + leaderPos[1]) / 2;
+    expect(Math.abs(aim[0] - centroidX) + Math.abs(aim[1] - centroidZ)).toBeGreaterThan(
+      0.05,
+    );
   });
 });

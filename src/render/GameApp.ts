@@ -19,6 +19,7 @@ import {
 import {
   ARMORY_CARD_PERK,
   ARMORY_DISPLAY_NAME,
+  ARMORY_ROLE_TAGS,
 } from "../game/defense-armory-meta.js";
 import { salvageShellsForDefense } from "../game/defense-economy.js";
 import { buildPlacedDefenseTooltipSpec } from "../game/placed-defense-tooltip.js";
@@ -28,6 +29,7 @@ import type {
   DefenseSnapshot,
   DefenseTypeKey,
 } from "../game/types.js";
+import type { WaveFeedbackUiState } from "../game/wave-types.js";
 import {
   buildMapBoard,
   createMapGroundFog,
@@ -1159,6 +1161,15 @@ export class GameApp {
       const titleEl = document.createElement("span");
       titleEl.className = "defense-inventory__title";
       titleEl.textContent = ARMORY_DISPLAY_NAME[type];
+      const tagsEl = document.createElement("span");
+      tagsEl.className = "defense-inventory__tags";
+      tagsEl.setAttribute("aria-hidden", "true");
+      for (const tag of ARMORY_ROLE_TAGS[type]) {
+        const chip = document.createElement("span");
+        chip.className = "defense-inventory__tag";
+        chip.textContent = tag;
+        tagsEl.appendChild(chip);
+      }
       const perkEl = document.createElement("span");
       perkEl.className = "defense-inventory__perk";
       perkEl.textContent = ARMORY_CARD_PERK[type];
@@ -1170,7 +1181,7 @@ export class GameApp {
       costUnit.className = "defense-inventory__cost-unit";
       costUnit.textContent = "shells";
       costWrap.append(costNum, costUnit);
-      textWrap.append(titleEl, perkEl, costWrap);
+      textWrap.append(titleEl, tagsEl, perkEl, costWrap);
       btn.append(key, thumb, textWrap);
       btn.addEventListener("click", () => this.onArmoryDefenseClick(type));
       grid.append(btn);
@@ -1689,10 +1700,8 @@ export class GameApp {
         statusText = `Need ${cost - shells} more shells`;
       }
 
-      const prettyName = type
-        .split("_")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
+      const prettyName = ARMORY_DISPLAY_NAME[type];
+      const roleHint = ARMORY_ROLE_TAGS[type].join(", ");
 
       if (btn) {
         btn.disabled = !playing;
@@ -1704,7 +1713,10 @@ export class GameApp {
         }
         btn.setAttribute("title", statusText);
         btn.setAttribute("aria-pressed", selected ? "true" : "false");
-        btn.setAttribute("aria-label", `${prettyName}. ${statusText}`);
+        btn.setAttribute(
+          "aria-label",
+          `${prettyName}. ${roleHint}. ${statusText}`,
+        );
       }
       if (costLabel) {
         costLabel.textContent = String(cost);
@@ -2187,7 +2199,7 @@ export class GameApp {
 
   /**
    * Discrete wave bar: filled segments = current tide (1-based) up to total;
-   * last filled segment pulses during active combat.
+   * release bar shows spawn progress; last segment pulses only while releasing.
    */
   private syncWaveProgress(): void {
     const host = document.getElementById("waveProgressHost");
@@ -2225,8 +2237,48 @@ export class GameApp {
       track.lastElementChild?.remove();
     }
 
-    const activeWave =
-      out === "playing" && phase === "active" && filled > 0;
+    const feedback: WaveFeedbackUiState =
+      out === "playing"
+        ? this.session.getWaveFeedbackState()
+        : "all_complete";
+
+    host.dataset.waveState = feedback;
+    host.classList.toggle("wave--prep-pulse", feedback === "preparation");
+
+    const statusEl = document.getElementById("waveProgressStatus");
+    const releaseHost = document.getElementById("waveReleaseHost");
+    const releaseFill = document.getElementById("waveReleaseFill");
+    const releasePct = document.getElementById("waveReleasePct");
+    const releaseBar = document.getElementById("waveReleaseBar");
+
+    const statusCopy: Record<WaveFeedbackUiState, string> = {
+      all_complete: "All waves complete.",
+      not_started: "Not started — place defenses, then send the tide.",
+      preparation: "In preparation — next tide forms after the countdown.",
+      started: "Tide releasing — enemies entering the trench.",
+      passed: "Spawn complete — clear remaining threats.",
+    };
+    if (statusEl) statusEl.textContent = statusCopy[feedback];
+
+    const releaseFrac = this.session.waveDirector.getWaveSpawnReleaseFraction();
+    const pctRounded = Math.round(releaseFrac * 100);
+    const showRelease =
+      out === "playing" &&
+      (feedback === "started" || feedback === "passed");
+
+    if (releaseHost) releaseHost.hidden = !showRelease;
+    if (releaseFill) {
+      releaseFill.style.width = showRelease ? `${pctRounded}%` : "0%";
+    }
+    if (releasePct) {
+      releasePct.textContent = showRelease ? `${pctRounded}%` : "";
+    }
+    if (releaseBar) {
+      releaseBar.setAttribute("aria-valuenow", String(showRelease ? pctRounded : 0));
+    }
+
+    const pulsing =
+      out === "playing" && feedback === "started" && filled > 0;
 
     for (let i = 0; i < total; i++) {
       const seg = track.children[i] as HTMLElement;
@@ -2234,7 +2286,14 @@ export class GameApp {
       seg.classList.toggle("wave-seg--filled", isFilled);
       seg.classList.toggle(
         "wave-seg--active",
-        activeWave && isFilled && i === filled - 1,
+        pulsing && isFilled && i === filled - 1,
+      );
+      seg.classList.toggle(
+        "wave-seg--spawn-complete",
+        out === "playing" &&
+          feedback === "passed" &&
+          isFilled &&
+          i === filled - 1,
       );
     }
   }
@@ -2242,7 +2301,6 @@ export class GameApp {
   private updateHud(): void {
     const statShells = document.getElementById("statShells");
     const statShellsRow = document.getElementById("statShellsRow");
-    const tide = document.getElementById("statTide");
     const castle = document.getElementById("statCastle");
     const shells = this.session.economy.getShells();
     if (statShells) {
@@ -2260,14 +2318,6 @@ export class GameApp {
       }
       this.prevShells = shells;
       statShells.textContent = String(shells);
-    }
-    if (tide) {
-      const phase = this.session.waveDirector.getPhase();
-      const n = this.session.getTideDisplayNumber();
-      tide.textContent =
-        phase === "completed"
-          ? "—"
-          : `${n} · ${phase.toUpperCase()}`;
     }
     if (castle) {
       const c = this.session.castle;

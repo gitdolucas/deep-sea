@@ -188,6 +188,56 @@ describe("GameSession", () => {
     expect(session.getLivingEnemyCount()).toBe(1);
     for (let i = 0; i < 30; i++) session.tick(0.2);
     expect(session.getBubbleProjectiles().length).toBe(0);
+    expect(session.getDefenseCooldownRemaining("bub")).toBe(0);
+  });
+
+  it("current cannon does not fire and does not start cooldown when no enemy is in range", () => {
+    const doc = combatMap();
+    doc.spawnPoints = [{ id: "far", position: [10, 0], pathIds: ["p_far"] }];
+    doc.paths = [
+      {
+        id: "p_far",
+        waypoints: [
+          [10, 0],
+          [10, 7],
+          [4, 7],
+        ],
+      },
+    ];
+    doc.defenses = [
+      {
+        id: "can",
+        type: "current_cannon",
+        position: [2, 2],
+        level: 1,
+        targetMode: "first",
+      },
+    ];
+    doc.waves = [
+      {
+        wave: 1,
+        prepTime: 0,
+        isBoss: false,
+        groups: [
+          {
+            enemyType: "stoneclaw",
+            count: 1,
+            spawnId: "far",
+            pathId: "p_far",
+            interval: 0,
+            delay: 0,
+            hpMultiplier: 1,
+            speedMultiplier: 0,
+          },
+        ],
+      },
+    ];
+    const session = new GameSession(doc);
+    session.tick(0.01);
+    expect(session.getLivingEnemyCount()).toBe(1);
+    for (let i = 0; i < 30; i++) session.tick(0.2);
+    expect(session.getCannonProjectiles().length).toBe(0);
+    expect(session.getDefenseCooldownRemaining("can")).toBe(0);
   });
 
   it("exposes per-defense cooldown remaining for UI", () => {
@@ -281,5 +331,58 @@ describe("GameSession", () => {
     expect(session.map.getDefenses()[0]!.targetMode).toBe("first");
     expect(session.cycleDefenseTargetMode("d1")).toBe(true);
     expect(session.map.getDefenses()[0]!.targetMode).toBe("last");
+  });
+
+  it("getWaveFeedbackState distinguishes first prep, release, and later prep", () => {
+    const doc = combatMap();
+    doc.waves = [
+      {
+        wave: 1,
+        prepTime: 2,
+        isBoss: false,
+        groups: [
+          {
+            enemyType: "stoneclaw",
+            count: 1,
+            spawnId: "s1",
+            pathId: "p1",
+            interval: 0,
+            delay: 0,
+            hpMultiplier: 1,
+            speedMultiplier: 0.02,
+          },
+        ],
+      },
+      {
+        wave: 2,
+        prepTime: 1,
+        isBoss: false,
+        groups: [
+          {
+            enemyType: "stoneclaw",
+            count: 1,
+            spawnId: "s1",
+            pathId: "p1",
+            interval: 0,
+            delay: 0,
+            hpMultiplier: 1,
+            speedMultiplier: 0.02,
+          },
+        ],
+      },
+    ];
+    const session = new GameSession(doc);
+    expect(session.getWaveFeedbackState()).toBe("not_started");
+    session.tick(2);
+    expect(session.getWaveFeedbackState()).toBe("started");
+    expect(session.waveDirector.getWaveSpawnReleaseFraction()).toBe(0);
+    session.tick(0.05);
+    expect(session.waveDirector.getWaveSpawnReleaseFraction()).toBe(1);
+    expect(session.getWaveFeedbackState()).toBe("passed");
+    for (let i = 0; i < 500 && session.getLivingEnemyCount() > 0; i++) {
+      session.tick(0.2);
+    }
+    expect(session.waveDirector.getWaveIndex()).toBe(1);
+    expect(session.getWaveFeedbackState()).toBe("preparation");
   });
 });

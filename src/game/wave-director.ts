@@ -49,6 +49,24 @@ export class WaveDirector {
     return this.groupStates.every((s) => s.remainingToSpawn <= 0);
   }
 
+  /**
+   * Fraction of enemies from the current wave that have **entered play** (0–1).
+   * Only meaningful in `active` phase; otherwise 0.
+   */
+  getWaveSpawnReleaseFraction(): number {
+    if (this.phase !== "active" || !this.groupStates) return 0;
+    const wave = this.map.getWaves()[this.waveIndex];
+    if (!wave) return 0;
+    let total = 0;
+    let remaining = 0;
+    for (let i = 0; i < wave.groups.length; i++) {
+      total += wave.groups[i]!.count;
+      remaining += this.groupStates[i]!.remainingToSpawn;
+    }
+    if (total <= 0) return 1;
+    return Math.min(1, Math.max(0, (total - remaining) / total));
+  }
+
   /** Skip remaining prep time (e.g. "Send Wave"); next `tick` finishes prep if `dt` > 0. */
   skipPrep(): void {
     if (this.phase === "prep") this.prepRemaining = 0;

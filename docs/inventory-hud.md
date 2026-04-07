@@ -1,13 +1,20 @@
 # Inventory HUD
 
-**Board-first** layout: minimal **top-left strip** (citadel + shells), **right rail** for mission controls and a **collapsible defenses inventory**, **left slide-in drawer** for the selected placed defense (details, upgrade, salvage, targeting, move). Placement flow stays defense-first: pick type → range preview on the grid → commit; spend rules live in `GameSession`, `EconomyController`, `MapController`.
+**Board-first** layout: **left mission rail** (citadel, waves, speed, send wave, leave mission), **right rail** for **shells**, **collapsible defenses inventory**, and the optional **hotkey hint** (`#hudHotkeyHint` while playing), **left slide-in drawer** for the selected placed defense (details, upgrade, salvage, targeting, move). Placement flow stays defense-first: pick type → range preview on the grid → commit; spend rules live in `GameSession`, `EconomyController`, `MapController`.
+
+## HUD / UX rationale (evaluation summary)
+
+- **Wallet / armory coupling:** Shell currency is primarily spent in the armory; keeping **`#statShells`** in the right rail (above the Defenses toggle) groups spend UI with defense cards. Citadel survival reads stay in the **left mission** stack with wave controls.
+- **Hierarchy:** Display typography is reserved for high-impact labels (e.g. main menu title, armory toggle wordmark); body copy, stats, and card text use the UI sans for legibility at small sizes.
+- **Narrow / mobile:** The armory may default collapsed; the shells row remains next to the expand control so balance is visible without opening the grid.
+- **Sprite cohesion:** Card thumbnails keep pixelated rendering; UI uses a crisp sans plus sparse display accents so HUD does not fight billboard sprites.
 
 ## Layout (`#gameHud` in `index.html`)
 
 | Region | Content |
 |--------|---------|
-| **Top-left (`#hudMinibar`)** | Citadel HP (`#statCastle`, `#citadelHpTrack`), shells (`#statShells`), optional hotkey hint (`#hudHotkeyHint` while playing). |
-| **Right rail (`#hudRightRail`)** | Tide (`#statTide`), wave progress (`#waveProgressHost`), speed (`#hudSpeed`), **Send wave** (`#sendWave`), **Leave mission** (`#btnMainMenu`). **Defenses toggle** (`#btnDefensesToggle`, `aria-expanded`, controls `#section-armory`). **Armory** (`#section-armory`): placement copy lives in the floating dock; **inventory grid** (`#defenseInventoryGrid`) of defense cards. |
+| **Left mission rail (`#hudMissionRail`)** | Single glass panel (`.hud-mission-rail__panel`): **Citadel** (`#statCastle`, `#citadelHpTrack`), wave progress (`#waveProgressHost`), speed (`#hudSpeed`), **Send wave** (`#sendWave`), **Leave mission** (`#btnMainMenu`). |
+| **Right rail (`#hudRightRail`)** | **Armory** panel (`.hud-right-rail__panel--armory`) — **Shells** (`#statShells`, `#statShellsRow`), **Defenses toggle** (`#btnDefensesToggle`, `aria-expanded`, controls `#section-armory`), optional hotkey hint (`#hudHotkeyHint` under the toggle while playing), **inventory grid** (`#defenseInventoryGrid`). The armory panel scrolls when needed. |
 | **Placement dock (`#placementDock`, bottom center)** | Shown only while a defense **type** is selected for placement: hint (`#placementHint`), **Cancel placement** (`#invCancel`). Visible even when the armory panel is **collapsed** so the player is never stranded. |
 | **Left drawer** | **Backdrop** (`#defenseDetailBackdrop`) + **panel** (`#defenseDetailDrawer`): opens when a **placed** defense is focused (tower tap). Details, **Targeting**, **Upgrade**, **Salvage**, **Dismiss**, D-pad **Move**. Closes on backdrop tap, **Dismiss**, **Escape** (clears focus), or when the tower is removed. |
 
@@ -27,7 +34,8 @@ Each card (`[data-defense-card]`) includes:
 
 - **1:1** icon/thumbnail (tower glyph),
 - **Title** (`ARMORY_DISPLAY_NAME`),
-- **Main perk** (one line from `ARMORY_CARD_PERK` in `src/game/defense-armory-meta.ts`),
+- **Role tags** (1–2 chips from `ARMORY_ROLE_TAGS` in `src/game/defense-armory-meta.ts`),
+- **Main perk** (one line from `ARMORY_CARD_PERK`),
 - **Cost** accent (L1 build cost from `buildCostL1`).
 
 **Click / tap** the card (`.pick`, `data-defense`) enters placement mode like the legacy hotbar. **Hotkeys 1–6** map to `ARMORY_DEFENSE_ORDER` via `hotbarIndexFromKey` (`src/game/hotbar-key.ts`).
