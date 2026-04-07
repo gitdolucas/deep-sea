@@ -7,38 +7,12 @@ export const MINIMAL_MAP_DOCUMENT: MapDocument = {
   id: "minimal_placeholder",
   name: "Placeholder",
   difficulty: "normal",
-  gridSize: [4, 4],
-  castle: { position: [2, 3], hp: 20, size: [1, 1] },
-  spawnPoints: [{ id: "s1", position: [0, 0], pathIds: ["p1"] }],
-  paths: [
-    {
-      id: "p1",
-      waypoints: [
-        [0, 0],
-        [2, 0],
-        [2, 3],
-      ],
-    },
-  ],
+  gridSize: [9, 9],
+  /** Single citadel tile at grid center (9×9 → tile [4,4]). */
+  castle: { position: [4, 4], hp: 20, size: [1, 1] },
+  spawnPoints: [],
+  paths: [],
   defenses: [],
-  waves: [
-    {
-      wave: 1,
-      prepTime: 10,
-      isBoss: false,
-      groups: [
-        {
-          enemyType: "stoneclaw",
-          count: 1,
-          spawnId: "s1",
-          pathId: "p1",
-          interval: 1,
-          delay: 0,
-          hpMultiplier: 1,
-          speedMultiplier: 1,
-        },
-      ],
-    },
-  ],
+  waves: [],
   decorations: [],
 };

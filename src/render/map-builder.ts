@@ -9,9 +9,11 @@ import type {
   SpawnPointDefinition,
   WaveDefinition,
 } from "../game/map-types.js";
+import { analyzeMapStrategyHints } from "../game/map-strategy-hints.js";
 import { validateMapDocument } from "../game/map-validation.js";
 
 const PLAYTEST_SESSION_KEY = "deepSeaPlaytestMap";
+const MAP_BUILDER_DRAFT_KEY = "deepSeaMapBuilderDraft";
 
 const DECORATION_OPTIONS: DecorationTypeKey[] = [
   "coral_branch",
@@ -26,21 +28,15 @@ const DECORATION_OPTIONS: DecorationTypeKey[] = [
   "skull",
 ];
 
-type Tool =
-  | "path"
-  | "spawn"
-  | "castle"
-  | "decoration"
-  | "erase_dec"
-  | "pop_waypoint";
+type CursorMode = "paint" | "erase";
 
-const TOOL_HINTS: Record<Tool, string> = {
-  path: "Each click appends a waypoint to the active path. Waypoints define the coral lane enemies follow.",
-  spawn: "Moves the selected spawn to the clicked tile. New spawns default to the first path id.",
-  castle: "Sets the citadel’s grid origin (front-left of the footprint). Adjust width/depth in the sidebar.",
-  decoration: "Places a prop at (x, floor y, z) using the type and transform fields on the left.",
-  erase_dec: "Removes every decoration whose floor tile matches the cell you click.",
-  pop_waypoint: "Click any cell to remove the last waypoint from the active path (keeps at least two).",
+type MapResource = "spawn" | "path" | "castle" | "decoration";
+
+const RESOURCE_LABELS: Record<MapResource, string> = {
+  spawn: "Spawn",
+  path: "Path",
+  castle: "Citadel",
+  decoration: "Decoration",
 };
 
 function cloneDoc(base: MapDocument): MapDocument {
@@ -48,9 +44,10 @@ function cloneDoc(base: MapDocument): MapDocument {
 }
 
 let state: MapDocument = cloneDoc(MINIMAL_MAP_DOCUMENT);
-let tool: Tool = "path";
-let selectedPathId: string = state.paths[0]?.id ?? "path_main";
-let selectedSpawnId: string = state.spawnPoints[0]?.id ?? "spawn_a";
+let cursorMode: CursorMode = "paint";
+let activeResource: MapResource = "path";
+let selectedPathId: string = state.paths[0]?.id ?? "";
+let selectedSpawnId: string = state.spawnPoints[0]?.id ?? "";
 let decoType: DecorationTypeKey = "rock_small";
 let decoY = 0;
 let decoRot = 0;
@@ -176,37 +173,105 @@ inputDecoScale.type = "number";
 inputDecoScale.min = "0.01";
 inputDecoScale.step = "any";
 
-const wavesTa = document.createElement("textarea");
-wavesTa.spellcheck = false;
-
 const errorsEl = document.createElement("div");
 errorsEl.className = "map-builder__errors";
 errorsEl.setAttribute("role", "status");
 errorsEl.setAttribute("aria-live", "polite");
 
-const toolBar = document.createElement("div");
-toolBar.className = "map-builder__tools";
+const hintsEl = document.createElement("div");
+hintsEl.className = "map-builder__hints";
+hintsEl.setAttribute("role", "status");
+hintsEl.setAttribute("aria-live", "polite");
 
-function toolButton(name: string, t: Tool): HTMLButtonElement {
+const bottomToolbar = document.createElement("div");
+bottomToolbar.className = "map-builder__toolbar map-builder__toolbar--rail";
+bottomToolbar.setAttribute("role", "toolbar");
+bottomToolbar.setAttribute("aria-label", "Map paint tools");
+
+const toolbarRowModes = document.createElement("div");
+toolbarRowModes.className =
+  "map-builder__toolbar-row map-builder__tool-rail-block map-builder__tool-rail-block--modes";
+const modesLabel = document.createElement("span");
+modesLabel.className = "map-builder__toolbar-label";
+modesLabel.textContent = "Cursor";
+toolbarRowModes.append(modesLabel);
+
+function modeButton(label: string, mode: CursorMode): HTMLButtonElement {
   const b = document.createElement("button");
   b.type = "button";
-  b.textContent = name;
-  b.dataset.tool = t;
+  b.className = "map-builder__mode-btn";
+  b.textContent = label;
+  b.dataset.cursorMode = mode;
+  b.title = mode === "paint" ? "Click tiles to place or extend" : "Click tiles to remove";
+  return b;
+}
+toolbarRowModes.append(modeButton("Paint", "paint"), modeButton("Erase", "erase"));
+
+const toolbarRowResources = document.createElement("div");
+toolbarRowResources.className =
+  "map-builder__toolbar-row map-builder__tool-rail-block map-builder__tool-rail-block--resources";
+const resLabel = document.createElement("span");
+resLabel.className = "map-builder__toolbar-label";
+resLabel.textContent = "Resource";
+toolbarRowResources.append(resLabel);
+
+const resourceGroup = document.createElement("div");
+resourceGroup.className = "map-builder__resource-group";
+
+function resourceButton(
+  label: string,
+  resource: MapResource,
+  cssMod: string,
+): HTMLButtonElement {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = `map-builder__resource-btn map-builder__resource-btn--${cssMod}`;
+  b.dataset.resource = resource;
+  b.title = `${label} (${resource})`;
+  b.setAttribute("aria-label", label);
+  const sw = document.createElement("span");
+  sw.className = "map-builder__resource-swatch";
+  sw.setAttribute("aria-hidden", "true");
+  const lab = document.createElement("span");
+  lab.className = "map-builder__resource-label";
+  lab.textContent = label;
+  b.append(sw, lab);
   return b;
 }
 
-const tools: [string, Tool][] = [
-  ["Path", "path"],
-  ["Spawn", "spawn"],
-  ["Castle origin", "castle"],
-  ["Decoration", "decoration"],
-  ["Erase deco", "erase_dec"],
-  ["Pop WP", "pop_waypoint"],
-];
-for (const [label, t] of tools) {
-  const tb = toolButton(label, t);
-  tb.title = TOOL_HINTS[t];
-  toolBar.append(tb);
+resourceGroup.append(
+  resourceButton("Spawn", "spawn", "spawn"),
+  resourceButton("Path", "path", "path"),
+  resourceButton("Citadel", "castle", "castle"),
+  resourceButton("Decoration", "decoration", "decoration"),
+);
+toolbarRowResources.append(resourceGroup);
+
+bottomToolbar.append(toolbarRowModes, toolbarRowResources);
+
+const toolRail = document.createElement("aside");
+toolRail.className = "map-builder__tool-rail";
+toolRail.append(bottomToolbar);
+
+for (const b of toolRail.querySelectorAll("[data-cursor-mode]")) {
+  b.addEventListener("click", () => {
+    const m = (b as HTMLButtonElement).dataset.cursorMode as CursorMode;
+    if (m) {
+      cursorMode = m;
+      refreshBottomToolbar();
+      updateToolLegend();
+    }
+  });
+}
+for (const b of toolRail.querySelectorAll("[data-resource]")) {
+  b.addEventListener("click", () => {
+    const r = (b as HTMLButtonElement).dataset.resource as MapResource;
+    if (r) {
+      activeResource = r;
+      refreshBottomToolbar();
+      updateToolLegend();
+    }
+  });
 }
 
 const btnDownload = document.createElement("button");
@@ -223,11 +288,6 @@ const btnLoadTutorial = document.createElement("button");
 btnLoadTutorial.type = "button";
 btnLoadTutorial.className = "secondary";
 btnLoadTutorial.textContent = "Load tutorial map";
-
-const btnApplyWaves = document.createElement("button");
-btnApplyWaves.type = "button";
-btnApplyWaves.className = "map-builder__mini";
-btnApplyWaves.textContent = "Apply waves JSON";
 
 const legend = document.createElement("div");
 legend.className = "map-builder__legend";
@@ -296,7 +356,7 @@ sidebarBody.className = "map-builder__sidebar-body";
 const hintP = document.createElement("p");
 hintP.className = "map-builder__hint";
 hintP.innerHTML =
-  "<strong>Workflow:</strong> edit the grid with tools → validate below → download JSON to <code>data/maps/</code> → add the map to <code>src/render/levels.ts</code>. Use <strong>Playtest</strong> to try the draft in a new tab.";
+  "<strong>Workflow:</strong> edit the grid → fix schema errors → optional layout hints → download JSON to <code>data/maps/</code>. <strong>Playtest</strong> opens the game; use <strong>Map builder</strong> on the end screen to resume editing.";
 
 const secMeta = section("Map metadata", [
   elField("Map id", inputId),
@@ -328,7 +388,6 @@ pathActions.className = "map-builder__btn-row";
 pathActions.append(btnNewPath, btnPopWp);
 
 const secTools = section("Tools & lanes", [
-  elField("Brush", toolBar),
   elField("Active path", selectPath),
   elField("Path actions", pathActions),
   elField("Active spawn", selectSpawn),
@@ -348,21 +407,21 @@ decoWrap.append(decoGrid, decoRow2);
 
 const secDeco = section("Decorations", [elField("Type, Y, rotation°, scale", decoWrap)]);
 
+const wavesNote = document.createElement("p");
+wavesNote.className = "map-builder__waves-note";
+wavesNote.textContent =
+  "Wave data starts empty. Playtest injects a single Stoneclaw wave (first path + spawn) when you have no waves; export stays as authored. Full wave JSON lives in shipped maps and a future editor.";
+
 sidebarBody.append(
   hintP,
   secMeta,
   secGrid,
   secTools,
   secDeco,
-  section("Waves", [
-    elField("JSON array (see map-schema.md)", wavesTa),
-    (() => {
-      const r = document.createElement("div");
-      r.className = "map-builder__btn-row";
-      r.append(btnApplyWaves);
-      return r;
-    })(),
-    errorsEl,
+  section("Waves", [wavesNote]),
+  section("Validation", [
+    elField("Schema (blocking for download / playtest)", errorsEl),
+    elField("Layout hints (deep-sea-map-strategy)", hintsEl),
   ]),
   (() => {
     const a = document.createElement("div");
@@ -380,8 +439,31 @@ sidebarBody.append(
 
 sidebar.append(sidebarHead, sidebarBody);
 
-canvasInner.append(keyRow, axesNote, legend, gridWrap);
-main.append(canvasInner);
+const artboard = document.createElement("div");
+artboard.className = "map-builder__artboard";
+artboard.append(gridWrap);
+
+const mapColumn = document.createElement("div");
+mapColumn.className = "map-builder__map-column";
+mapColumn.append(artboard);
+
+const workspace = document.createElement("div");
+workspace.className = "map-builder__workspace";
+workspace.append(toolRail, mapColumn);
+
+canvasInner.append(keyRow, axesNote, legend, workspace);
+
+const cleanWholeFab = document.createElement("div");
+cleanWholeFab.className = "map-builder__clean-whole-fab";
+const btnCleanWholeMap = document.createElement("button");
+btnCleanWholeMap.type = "button";
+btnCleanWholeMap.className = "map-builder__clean-whole-btn";
+btnCleanWholeMap.textContent = "Clean whole map";
+btnCleanWholeMap.title =
+  "Reset layout to the default template (9×9, centered citadel only — no paths, spawns, or waves). Keeps map id, name, difficulty, and starting shells.";
+cleanWholeFab.append(btnCleanWholeMap);
+
+main.append(canvasInner, cleanWholeFab);
 root.append(sidebar, main);
 
 let gridEl: HTMLDivElement | null = null;
@@ -403,10 +485,14 @@ function syncFormFromState(): void {
     o.textContent = p.id;
     selectPath.append(o);
   }
-  if (!state.paths.some((p) => p.id === selectedPathId) && state.paths[0]) {
+  if (state.paths.length === 0) {
+    selectedPathId = "";
+  } else if (!state.paths.some((p) => p.id === selectedPathId)) {
     selectedPathId = state.paths[0]!.id;
   }
-  selectPath.value = selectedPathId;
+  if (state.paths.length > 0) {
+    selectPath.value = selectedPathId;
+  }
 
   selectSpawn.replaceChildren();
   for (const s of state.spawnPoints) {
@@ -415,39 +501,39 @@ function syncFormFromState(): void {
     o.textContent = s.id;
     selectSpawn.append(o);
   }
-  if (
-    !state.spawnPoints.some((s) => s.id === selectedSpawnId) &&
-    state.spawnPoints[0]
-  ) {
+  if (state.spawnPoints.length === 0) {
+    selectedSpawnId = "";
+  } else if (!state.spawnPoints.some((s) => s.id === selectedSpawnId)) {
     selectedSpawnId = state.spawnPoints[0]!.id;
   }
-  selectSpawn.value = selectedSpawnId;
+  if (state.spawnPoints.length > 0) {
+    selectSpawn.value = selectedSpawnId;
+  }
 
   selectDecoType.value = decoType;
   inputDecoY.value = String(decoY);
   inputDecoRot.value = String(decoRot);
   inputDecoScale.value = String(decoScale);
 
-  wavesTa.value = JSON.stringify(state.waves, null, 2);
-  refreshToolButtons();
+  refreshBottomToolbar();
 }
 
-const TOOL_LABELS: Record<Tool, string> = {
-  path: "Path",
-  spawn: "Spawn",
-  castle: "Castle",
-  decoration: "Decoration",
-  erase_dec: "Erase deco",
-  pop_waypoint: "Pop waypoint",
-};
-
-function refreshToolButtons(): void {
-  for (const b of toolBar.querySelectorAll("button")) {
-    const t = b.dataset.tool as Tool | undefined;
-    const on = t === tool;
-    if (on) b.setAttribute("data-active", "true");
-    else b.removeAttribute("data-active");
-    if (t) b.setAttribute("aria-pressed", on ? "true" : "false");
+function refreshBottomToolbar(): void {
+  for (const b of toolRail.querySelectorAll("[data-cursor-mode]")) {
+    const btn = b as HTMLButtonElement;
+    const m = btn.dataset.cursorMode as CursorMode | undefined;
+    const on = m === cursorMode;
+    if (on) btn.setAttribute("data-active", "true");
+    else btn.removeAttribute("data-active");
+    if (m) btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  for (const b of toolRail.querySelectorAll("[data-resource]")) {
+    const btn = b as HTMLButtonElement;
+    const r = btn.dataset.resource as MapResource | undefined;
+    const on = r === activeResource;
+    if (on) btn.setAttribute("data-active", "true");
+    else btn.removeAttribute("data-active");
+    if (r) btn.setAttribute("aria-pressed", on ? "true" : "false");
   }
 }
 
@@ -540,28 +626,60 @@ function runCleanupMap(): void {
 function showValidation(): void {
   syncStateFromFormMeta();
   const issues = validateMapDocument(state);
+  const hints = issues.length === 0 ? analyzeMapStrategyHints(state) : [];
+
   if (issues.length === 0) {
-    statusChip.textContent = "Schema OK";
-    statusChip.dataset.state = "ok";
     errorsEl.dataset.visible = "true";
     errorsEl.classList.add("ok");
-    errorsEl.textContent = "Valid — matches docs/map-schema.md rules.";
-    return;
+    errorsEl.textContent = "No schema errors — matches docs/map-schema.md.";
+  } else {
+    errorsEl.classList.remove("ok");
+    errorsEl.dataset.visible = "true";
+    errorsEl.textContent = issues
+      .map((i) => `${i.path}: ${i.message} (${i.code})`)
+      .join("\n");
   }
-  statusChip.textContent = `${issues.length} issue${issues.length === 1 ? "" : "s"}`;
-  statusChip.dataset.state = "err";
-  errorsEl.classList.remove("ok");
-  errorsEl.dataset.visible = "true";
-  errorsEl.textContent = issues
-    .map((i) => `${i.path}: ${i.message} (${i.code})`)
-    .join("\n");
+
+  if (hints.length === 0) {
+    hintsEl.removeAttribute("data-visible");
+    hintsEl.textContent = "";
+  } else {
+    hintsEl.dataset.visible = "true";
+    hintsEl.textContent = hints
+      .map((h) => `[${h.code}] ${h.path}: ${h.message}`)
+      .join("\n\n");
+  }
+
+  if (issues.length > 0) {
+    statusChip.textContent = `${issues.length} error${issues.length === 1 ? "" : "s"}`;
+    statusChip.dataset.state = "err";
+  } else if (hints.length > 0) {
+    statusChip.textContent = `OK · ${hints.length} hint${hints.length === 1 ? "" : "s"}`;
+    statusChip.dataset.state = "warn";
+  } else {
+    statusChip.textContent = "Schema OK";
+    statusChip.dataset.state = "ok";
+  }
 }
 
 function updateToolLegend(): void {
   const [gw, gd] = state.gridSize;
-  const name = TOOL_LABELS[tool];
-  const hint = TOOL_HINTS[tool];
-  legend.innerHTML = `<strong>${name}</strong> · grid ${gw}×${gd}<br>${hint}`;
+  const modeLabel = cursorMode === "paint" ? "Paint" : "Erase";
+  const resLabel = RESOURCE_LABELS[activeResource];
+  const paintHints: Record<MapResource, string> = {
+    spawn: "Places or moves the active spawn (red). First spawn auto-creates a path if needed.",
+    path: "Extends the active path with a new waypoint (green). A path is created automatically on first click if needed.",
+    castle: "Sets the citadel origin—the front-left of its footprint (blue).",
+    decoration: "Places the sidebar decoration type on this tile (purple).",
+  };
+  const eraseHints: Record<MapResource, string> = {
+    spawn: "Removes spawns on the clicked tile.",
+    path: "Removes a waypoint at this tile on the active path (minimum two waypoints kept).",
+    castle: "Citadel stays on the map—use Paint + Citadel to move it.",
+    decoration: "Removes decorations whose floor tile matches.",
+  };
+  const hint = cursorMode === "paint" ? paintHints[activeResource] : eraseHints[activeResource];
+  legend.innerHTML = `<strong>${modeLabel}</strong> · <strong>${resLabel}</strong> · grid ${gw}×${gd}<br>${hint}`;
 }
 
 function rebuildGrid(): void {
@@ -612,52 +730,133 @@ function rebuildGrid(): void {
   showValidation();
 }
 
+function buddySecondWaypoint(
+  gx: number,
+  gz: number,
+  gw: number,
+  gd: number,
+): [number, number] {
+  if (gx + 1 < gw) return [gx + 1, gz];
+  if (gx - 1 >= 0) return [gx - 1, gz];
+  if (gz + 1 < gd) return [gx, gz + 1];
+  return [gx, Math.max(0, gz - 1)];
+}
+
+function createAutoPathAt(gx: number, gz: number): void {
+  const [gw, gd] = state.gridSize;
+  let n = state.paths.length + 1;
+  let id = `path_${n}`;
+  while (state.paths.some((p) => p.id === id)) {
+    n++;
+    id = `path_${n}`;
+  }
+  const b = buddySecondWaypoint(gx, gz, gw, gd);
+  const path: PathDefinition = { id, waypoints: [[gx, gz], b] };
+  state = { ...state, paths: [...state.paths, path] };
+  selectedPathId = id;
+}
+
+function ensureAtLeastOnePath(): string {
+  if (state.paths.length > 0) {
+    return selectedPathId || state.paths[0]!.id;
+  }
+  createAutoPathAt(0, 0);
+  return state.paths[0]!.id;
+}
+
 function onCellClick(gx: number, gz: number): void {
   syncStateFromFormMeta();
-  if (tool === "path") {
-    const p = state.paths.find((x) => x.id === selectedPathId);
-    if (!p) return;
-    const wps = [...p.waypoints, [gx, gz] as [number, number]];
-    replacePath(selectedPathId, { ...p, waypoints: wps });
-  } else if (tool === "pop_waypoint") {
-    const p = state.paths.find((x) => x.id === selectedPathId);
-    if (!p || p.waypoints.length <= 2) return;
-    const wps = p.waypoints.slice(0, -1);
-    replacePath(selectedPathId, { ...p, waypoints: wps });
-  } else if (tool === "spawn") {
-    const s = state.spawnPoints.find((x) => x.id === selectedSpawnId);
-    if (!s) return;
-    const next: SpawnPointDefinition[] = state.spawnPoints.map((sp) =>
-      sp.id === selectedSpawnId ? { ...sp, position: [gx, gz] as [number, number] } : sp,
-    );
-    state = { ...state, spawnPoints: next };
-  } else if (tool === "castle") {
-    state = {
-      ...state,
-      castle: {
-        ...state.castle,
-        position: [gx, gz] as [number, number],
-      },
-    };
-  } else if (tool === "decoration") {
-    const dec: DecorationDefinition = {
-      type: decoType,
-      position: [gx, decoY, gz],
-      rotation: decoRot,
-      scale: decoScale,
-    };
-    state = { ...state, decorations: [...state.decorations, dec] };
-  } else if (tool === "erase_dec") {
-    state = {
-      ...state,
-      decorations: state.decorations.filter(
-        (d) =>
-          !(
-            Math.floor(d.position[0]) === gx &&
-            Math.floor(d.position[2]) === gz
+
+  if (cursorMode === "paint") {
+    if (activeResource === "path") {
+      if (state.paths.length === 0) {
+        createAutoPathAt(gx, gz);
+      } else {
+        const p = state.paths.find((x) => x.id === selectedPathId);
+        if (!p) return;
+        const wps = [...p.waypoints, [gx, gz] as [number, number]];
+        replacePath(selectedPathId, { ...p, waypoints: wps });
+      }
+    } else if (activeResource === "spawn") {
+      const pathId = ensureAtLeastOnePath();
+      if (state.spawnPoints.length === 0) {
+        let n = 1;
+        let id = `spawn_${n}`;
+        while (state.spawnPoints.some((s) => s.id === id)) {
+          n++;
+          id = `spawn_${n}`;
+        }
+        state = {
+          ...state,
+          spawnPoints: [
+            {
+              id,
+              position: [gx, gz],
+              pathIds: [pathId],
+            },
+          ],
+        };
+        selectedSpawnId = id;
+      } else {
+        const s = state.spawnPoints.find((x) => x.id === selectedSpawnId);
+        if (!s) return;
+        state = {
+          ...state,
+          spawnPoints: state.spawnPoints.map((sp) =>
+            sp.id === selectedSpawnId
+              ? { ...sp, position: [gx, gz] as [number, number] }
+              : sp,
           ),
-      ),
-    };
+        };
+      }
+    } else if (activeResource === "castle") {
+      state = {
+        ...state,
+        castle: {
+          ...state.castle,
+          position: [gx, gz] as [number, number],
+        },
+      };
+    } else if (activeResource === "decoration") {
+      const dec: DecorationDefinition = {
+        type: decoType,
+        position: [gx, decoY, gz],
+        rotation: decoRot,
+        scale: decoScale,
+      };
+      state = { ...state, decorations: [...state.decorations, dec] };
+    }
+  } else {
+    if (activeResource === "spawn") {
+      state = {
+        ...state,
+        spawnPoints: state.spawnPoints.filter(
+          (sp) => !(sp.position[0] === gx && sp.position[1] === gz),
+        ),
+      };
+      if (!state.spawnPoints.some((s) => s.id === selectedSpawnId)) {
+        selectedSpawnId = state.spawnPoints[0]?.id ?? "";
+      }
+    } else if (activeResource === "path") {
+      const p = state.paths.find((x) => x.id === selectedPathId);
+      if (!p) return;
+      const filtered = p.waypoints.filter((w) => !(w[0] === gx && w[1] === gz));
+      const wps = ensurePathWaypointMinimum([...filtered]);
+      replacePath(selectedPathId, { ...p, waypoints: wps });
+    } else if (activeResource === "castle") {
+      return;
+    } else if (activeResource === "decoration") {
+      state = {
+        ...state,
+        decorations: state.decorations.filter(
+          (d) =>
+            !(
+              Math.floor(d.position[0]) === gx &&
+              Math.floor(d.position[2]) === gz
+            ),
+        ),
+      };
+    }
   }
   syncFormFromState();
   rebuildGrid();
@@ -675,6 +874,32 @@ function exportDoc(): MapDocument {
   const raw = structuredClone(state) as MapDocument & { description?: string };
   delete raw.description;
   return raw as MapDocument;
+}
+
+/** One test wave for playtest when the draft has paths + spawns but no `waves` yet. */
+function ensurePlayableWavesForPlaytest(doc: MapDocument): MapDocument {
+  if (doc.waves.length > 0) return doc;
+  const p = doc.paths[0];
+  const s = doc.spawnPoints[0];
+  if (!p || !s || p.waypoints.length < 2) return doc;
+  const stub: WaveDefinition = {
+    wave: 1,
+    prepTime: 10,
+    isBoss: false,
+    groups: [
+      {
+        enemyType: "stoneclaw",
+        count: 1,
+        spawnId: s.id,
+        pathId: p.id,
+        interval: 1,
+        delay: 0,
+        hpMultiplier: 1,
+        speedMultiplier: 1,
+      },
+    ],
+  };
+  return { ...doc, waves: [stub] };
 }
 
 btnApplyGrid.addEventListener("click", () => {
@@ -755,33 +980,6 @@ btnNewSpawn.addEventListener("click", () => {
   rebuildGrid();
 });
 
-for (const b of toolBar.querySelectorAll("button")) {
-  b.addEventListener("click", () => {
-    const next = b.dataset.tool as Tool | undefined;
-    if (next) {
-      tool = next;
-      refreshToolButtons();
-      updateToolLegend();
-    }
-  });
-}
-
-btnApplyWaves.addEventListener("click", () => {
-  try {
-    const parsed = JSON.parse(wavesTa.value) as unknown;
-    if (!Array.isArray(parsed)) throw new Error("Waves must be a JSON array.");
-    syncStateFromFormMeta();
-    state = { ...state, waves: parsed as WaveDefinition[] };
-    wavesTa.value = JSON.stringify(state.waves, null, 2);
-    rebuildGrid();
-  } catch (e) {
-    errorsEl.dataset.visible = "true";
-    errorsEl.classList.remove("ok");
-    errorsEl.textContent =
-      e instanceof Error ? e.message : "Invalid waves JSON.";
-  }
-});
-
 inputId.addEventListener("input", () => {
   state.id = inputId.value;
   showValidation();
@@ -818,17 +1016,81 @@ btnPlaytest.addEventListener("click", () => {
     showValidation();
     return;
   }
-  localStorage.setItem(PLAYTEST_SESSION_KEY, JSON.stringify(doc));
-  window.open("/index.html?playtest=1", "_blank");
+  const p = doc.paths[0];
+  const s = doc.spawnPoints[0];
+  if (!p || p.waypoints.length < 2 || !s) {
+    syncStateFromFormMeta();
+    errorsEl.dataset.visible = "true";
+    errorsEl.classList.remove("ok");
+    errorsEl.textContent =
+      "Playtest needs at least one path with 2+ waypoints and one spawn. Paint them with the bottom toolbar, or use Download and edit JSON.";
+    statusChip.textContent = "Playtest blocked";
+    statusChip.dataset.state = "err";
+    return;
+  }
+  const forGame = ensurePlayableWavesForPlaytest(doc);
+  if (validateMapDocument(forGame).length > 0) {
+    showValidation();
+    return;
+  }
+  try {
+    sessionStorage.setItem(MAP_BUILDER_DRAFT_KEY, JSON.stringify(doc));
+  } catch {
+    /* quota or private mode — playtest still works from localStorage */
+  }
+  localStorage.setItem(PLAYTEST_SESSION_KEY, JSON.stringify(forGame));
+  window.open("/index.html?playtest=1&mapBuilderReturn=1", "_blank");
 });
+
+function cleanWholeMapLayout(): void {
+  syncStateFromFormMeta();
+  const preserve = {
+    id: state.id,
+    name: state.name,
+    difficulty: state.difficulty,
+    startingShells: state.startingShells,
+  };
+  state = cloneDoc(MINIMAL_MAP_DOCUMENT);
+  state.id = preserve.id;
+  state.name = preserve.name;
+  state.difficulty = preserve.difficulty;
+  state.startingShells = preserve.startingShells;
+  selectedPathId = state.paths[0]?.id ?? "";
+  selectedSpawnId = state.spawnPoints[0]?.id ?? "";
+  syncFormFromState();
+  rebuildGrid();
+}
 
 btnLoadTutorial.addEventListener("click", () => {
   state = cloneDoc(MINIMAL_MAP_DOCUMENT);
-  selectedPathId = state.paths[0]?.id ?? selectedPathId;
-  selectedSpawnId = state.spawnPoints[0]?.id ?? selectedSpawnId;
+  selectedPathId = state.paths[0]?.id ?? "";
+  selectedSpawnId = state.spawnPoints[0]?.id ?? "";
   syncFormFromState();
   rebuildGrid();
 });
 
+btnCleanWholeMap.addEventListener("click", () => {
+  cleanWholeMapLayout();
+});
+
+function tryRestoreFromSession(): boolean {
+  const params = new URLSearchParams(location.search);
+  if (params.get("restore") !== "1") return false;
+  history.replaceState({}, "", location.pathname);
+  try {
+    const raw = sessionStorage.getItem(MAP_BUILDER_DRAFT_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as unknown;
+    if (validateMapDocument(parsed).length > 0) return false;
+    state = cloneDoc(parsed as MapDocument);
+    selectedPathId = state.paths[0]?.id ?? "";
+    selectedSpawnId = state.spawnPoints[0]?.id ?? "";
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+tryRestoreFromSession();
 syncFormFromState();
 rebuildGrid();

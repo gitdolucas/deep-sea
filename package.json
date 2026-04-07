@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "validate-map": "node scripts/validate-map.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -18,6 +19,7 @@
     "@types/stats.js": "^0.17.4",
     "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^5.1.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "^7.3.1",
     "vitest": "^3.0.5"

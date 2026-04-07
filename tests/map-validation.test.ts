@@ -60,6 +60,22 @@ describe("validateMapDocument", () => {
     expect(isValidMapDocument(doc)).toBe(true);
   });
 
+  it("accepts castle-only draft (empty paths, spawns, waves)", () => {
+    const doc: MapDocument = {
+      id: "draft",
+      name: "Draft",
+      difficulty: "normal",
+      gridSize: [9, 9],
+      castle: { position: [4, 4], hp: 20, size: [1, 1] },
+      spawnPoints: [],
+      paths: [],
+      defenses: [],
+      waves: [],
+      decorations: [],
+    };
+    expect(validateMapDocument(doc)).toEqual([]);
+  });
+
   it("rejects non-object root", () => {
     expect(validateMapDocument(null).length).toBeGreaterThan(0);
     expect(validateMapDocument("x")[0]?.code).toBe("shape.root");

@@ -189,6 +189,8 @@ export type MissionEndNavigation = {
   menu: () => void;
   /** True when another level exists after the current map in the campaign list. */
   hasNextMap: boolean;
+  /** Playtest from map builder — return to editor with draft in sessionStorage. */
+  returnToMapBuilder?: () => void;
 };
 
 function makeRangeRingMesh(
@@ -514,6 +516,11 @@ export class GameApp {
       document.getElementById("overlayBtnMenu")?.addEventListener(
         "click",
         () => missionEndNav.menu(),
+        ac,
+      );
+      document.getElementById("overlayBtnMapBuilder")?.addEventListener(
+        "click",
+        () => missionEndNav.returnToMapBuilder?.(),
         ac,
       );
     }
@@ -2038,6 +2045,11 @@ export class GameApp {
         overlayNext?.toggleAttribute(
           "hidden",
           !(out === "win" && this.missionEndNav.hasNextMap),
+        );
+        const obMb = document.getElementById("overlayBtnMapBuilder");
+        obMb?.toggleAttribute(
+          "hidden",
+          !this.missionEndNav.returnToMapBuilder,
         );
       } else {
         overlayActions.setAttribute("hidden", "");

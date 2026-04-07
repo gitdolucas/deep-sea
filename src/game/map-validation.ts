@@ -621,14 +621,7 @@ export function validateMapDocument(input: unknown): MapValidationIssue[] {
 
   if (!Array.isArray(doc.waves)) {
     push(issues, "shape.waves", "waves", "`waves` must be an array.");
-  } else if (doc.waves.length === 0) {
-    push(
-      issues,
-      "waves.empty",
-      "waves",
-      "`waves` must contain at least one wave for a playable map.",
-    );
-  } else {
+  } else if (doc.waves.length > 0) {
     const waves = doc.waves as unknown[];
     const spawnIdSet = Array.isArray(doc.spawnPoints)
       ? new Set(

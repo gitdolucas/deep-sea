@@ -54,6 +54,10 @@ export {
   type MapValidationIssue,
 } from "./map-validation.js";
 export {
+  analyzeMapStrategyHints,
+  type MapStrategyHint,
+} from "./map-strategy-hints.js";
+export {
   PATH_CONNECTION_ORDER,
   cellsAlongSegment,
   gridCellKey,

@@ -37,6 +37,10 @@ if (shouldMountCannonDnaHelixLeva()) {
 
 const PLAYTEST_SESSION_KEY = "deepSeaPlaytestMap";
 
+/** Captured on first load so playtest return survives any later `history` tweaks. */
+const MAP_BUILDER_PLAYTEST_RETURN =
+  new URLSearchParams(location.search).get("mapBuilderReturn") === "1";
+
 function takePlaytestDocument(): MapDocument | null {
   try {
     const params = new URLSearchParams(location.search);
@@ -199,6 +203,11 @@ function buildMissionEndNav(): MissionEndNavigation {
     },
     menu: () => showMainMenu(),
     hasNextMap: hasNext,
+    returnToMapBuilder: MAP_BUILDER_PLAYTEST_RETURN
+      ? () => {
+          window.location.assign("/map-builder.html?restore=1");
+        }
+      : undefined,
   };
 }
 
