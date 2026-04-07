@@ -12,6 +12,7 @@ import {
 } from "./combat-balance.js";
 import { tileDistanceSq } from "./spatial.js";
 import { damageAfterArmorEffective } from "./combat-damage.js";
+import type { KillShellPop } from "./kill-shell-pop.js";
 import type {
   DefenseLevel,
   DefenseSnapshot,
@@ -71,6 +72,8 @@ export type CombatResolveContext = {
   targeting: TargetingContext;
   /** When enemies die during this collect pass, attribute kill credit to this defense (HUD pops). */
   onDefensePop?: (defenseId: string, count: number) => void;
+  /** One callback per enemy removed with {@link KILL_SHELL_REWARD} this tick. */
+  onKillShell?: (pop: KillShellPop) => void;
 };
 
 function chainRawDamage(primaryRaw: number, chainIndex: number): number {
@@ -86,7 +89,13 @@ function collectKills(
   for (const e of [...ctx.enemies.values()]) {
     if (!e.isAlive()) {
       n++;
+      const pos = e.getGridPosition();
       ctx.economy.earn(KILL_SHELL_REWARD);
+      ctx.onKillShell?.({
+        gx: pos[0],
+        gz: pos[1],
+        shells: KILL_SHELL_REWARD,
+      });
       ctx.enemies.delete(e.id);
     }
   }

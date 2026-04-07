@@ -1,5 +1,57 @@
 import { describe, expect, it } from "vitest";
-import { linesForPlacedDefense } from "../src/game/placed-defense-tooltip.js";
+import {
+  buildDefenseUpgradeCompare,
+  linesForPlacedDefense,
+} from "../src/game/placed-defense-tooltip.js";
+
+describe("buildDefenseUpgradeCompare", () => {
+  it("returns null at max tier", () => {
+    expect(
+      buildDefenseUpgradeCompare({
+        id: "d",
+        type: "arc_spine",
+        position: [0, 0],
+        level: 3,
+        targetMode: "first",
+      }),
+    ).toBeNull();
+  });
+
+  it("Arc Spine L1→L2 marks core and chain rows as changed", () => {
+    const rows = buildDefenseUpgradeCompare({
+      id: "d",
+      type: "arc_spine",
+      position: [0, 0],
+      level: 1,
+      targetMode: "first",
+    })!;
+    const by = Object.fromEntries(rows.map((r) => [r.label, r]));
+    expect(by.Range?.changed).toBe(true);
+    expect(by.Range?.before).toContain("3.8");
+    expect(by.Range?.after).toMatch(/5.*tiles/);
+    expect(by.Interval?.changed).toBe(true);
+    expect(by.Damage?.changed).toBe(true);
+    expect(by.Damage?.before).toContain("12");
+    expect(by.Damage?.after).toContain("15");
+    expect(by.Chain?.changed).toBe(true);
+    expect(by.Chain?.before).toContain("2 enemies");
+    expect(by.Chain?.after).toContain("4 enemies");
+  });
+
+  it("vibration zone L1→L2 shows slow aura increase", () => {
+    const rows = buildDefenseUpgradeCompare({
+      id: "d",
+      type: "vibration_zone",
+      position: [0, 0],
+      level: 1,
+      targetMode: "first",
+    })!;
+    const slow = rows.find((r) => r.label === "Slow in aura");
+    expect(slow?.before).toBe("30%");
+    expect(slow?.after).toBe("50%");
+    expect(slow?.changed).toBe(true);
+  });
+});
 
 describe("linesForPlacedDefense", () => {
   it("includes core stats and arc spine chain data for L1", () => {

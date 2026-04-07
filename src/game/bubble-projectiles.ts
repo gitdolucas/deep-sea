@@ -3,6 +3,7 @@ import { damageAfterArmorEffective } from "./combat-damage.js";
 import type { EnemyController } from "./enemy-controller.js";
 import { KILL_SHELL_REWARD } from "./damage-resolver.js";
 import type { EconomyController } from "./economy-controller.js";
+import type { KillShellPop } from "./kill-shell-pop.js";
 import { distanceSqPointToSegment, tileDistanceSq } from "./spatial.js";
 import type { BubbleColumnFxEvent } from "./bubble-column-fx-events.js";
 import type { DefenseLevel, GridPos } from "./types.js";
@@ -83,10 +84,17 @@ export function spawnBubbleVolley(
 function collectKills(
   enemies: Map<string, EnemyController>,
   economy: EconomyController,
+  onKillShell?: (pop: KillShellPop) => void,
 ): void {
   for (const e of [...enemies.values()]) {
     if (!e.isAlive()) {
+      const pos = e.getGridPosition();
       economy.earn(KILL_SHELL_REWARD);
+      onKillShell?.({
+        gx: pos[0],
+        gz: pos[1],
+        shells: KILL_SHELL_REWARD,
+      });
       enemies.delete(e.id);
     }
   }
@@ -99,6 +107,7 @@ export function tickBubbleProjectiles(
   economy: EconomyController,
   popFxOut?: BubblePopFx[],
   columnFxOut?: BubbleColumnFxEvent[],
+  onKillShell?: (pop: KillShellPop) => void,
 ): void {
   outer: for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i]!;
@@ -152,7 +161,7 @@ export function tickBubbleProjectiles(
             }
           }
         }
-        collectKills(enemies, economy);
+        collectKills(enemies, economy, onKillShell);
         projectiles.splice(i, 1);
         continue outer;
       }

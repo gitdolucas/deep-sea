@@ -11,6 +11,10 @@ export {
   type TowerHitRecord,
 } from "./damage-resolver.js";
 export { damageAfterArmorEffective } from "./combat-damage.js";
+export {
+  buildDefenseUpgradeCompare,
+  type DefenseUpgradeCompareRow,
+} from "./placed-defense-tooltip.js";
 export { DefenseController, type ChainEnemyRef } from "./defense-controller.js";
 export { EconomyController, type EconomyInitialState } from "./economy-controller.js";
 export { EnemyController } from "./enemy-controller.js";
@@ -26,6 +30,7 @@ export {
   type DefenseMoveStep,
   type GameOutcome,
 } from "./game-session.js";
+export type { KillShellPop } from "./kill-shell-pop.js";
 export type {
   BubbleColumnFxAxisMode,
   BubbleColumnFxEvent,

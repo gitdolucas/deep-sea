@@ -65,3 +65,5 @@ export const CHAIN_FX_DURATION = 0.15;
 /** Slightly longer than fastest Tideheart tick (0.08s) so beams overlap — steady beam read. */
 export const TIDEHEART_BEAM_FX_DURATION = 0.14;
 export const DAMAGE_POP_DURATION_SEC = 0.9;
+/** Floating "+N" shell reward over kill position (HUD layer). */
+export const SHELL_EARN_POP_DURATION_SEC = 1.05;

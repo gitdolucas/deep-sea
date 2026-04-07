@@ -16,7 +16,7 @@
 | **Left mission rail (`#hudMissionRail`)** | Single glass panel (`.hud-mission-rail__panel`): **Citadel** (`#statCastle`, `#citadelHpTrack`), wave progress (`#waveProgressHost`), speed (`#hudSpeed`), **Send wave** (`#sendWave`), **Leave mission** (`#btnMainMenu`). |
 | **Right rail (`#hudRightRail`)** | **Armory** panel (`.hud-right-rail__panel--armory`) — **Shells** (`#statShells`, `#statShellsRow`), **Defenses toggle** (`#btnDefensesToggle`, `aria-expanded`, controls `#section-armory`), optional hotkey hint (`#hudHotkeyHint` under the toggle while playing), **inventory grid** (`#defenseInventoryGrid`). The armory panel scrolls when needed. |
 | **Placement dock (`#placementDock`, bottom center)** | Shown only while a defense **type** is selected for placement: hint (`#placementHint`), **Cancel placement** (`#invCancel`). Visible even when the armory panel is **collapsed** so the player is never stranded. |
-| **Left drawer** | **Backdrop** (`#defenseDetailBackdrop`) + **panel** (`#defenseDetailDrawer`): opens when a **placed** defense is focused (tower tap). Details, **Targeting**, **Upgrade**, **Salvage**, **Dismiss**, D-pad **Move**. Closes on backdrop tap, **Dismiss**, **Escape** (clears focus), or when the tower is removed. |
+| **Left drawer** | **Backdrop** (`#defenseDetailBackdrop`) + **panel** (`#defenseDetailDrawer`): opens when a **placed** defense is focused (tower tap). Details, **Targeting**, **Upgrade** (with current vs next level compare), **Salvage**, **Dismiss**. Closes on backdrop tap, **Dismiss**, **Escape** (clears focus), or when the tower is removed. |
 
 ### Breakpoints
 
@@ -67,7 +67,7 @@ Unchanged from previous spec: valid cell shows rings; click commits via `tryPurc
 
 ### Defense focus — drawer + grid move
 
-When a placed defense is focused, the **left drawer** opens. **Move** D-pad calls `GameSession.tryMoveDefenseStep`. **Upgrade** → `tryUpgradeDefense`; **Salvage** → `trySalvageDefense`; **Targeting** cycles `cycleDefenseTargetMode`. Camera FOV/orbit behavior is unchanged (`GameApp.syncDefenseFocusCamera`).
+When a placed defense is focused, the **left drawer** opens. **Upgrade** → `tryUpgradeDefense`; **Salvage** → `trySalvageDefense`; **Targeting** cycles `cycleDefenseTargetMode`. (`GameSession.tryMoveDefenseStep` remains available for programmatic/tests use; the drawer no longer exposes a Move control.) Camera FOV/orbit behavior is unchanged (`GameApp.syncDefenseFocusCamera`).
 
 ## Architecture notes
 

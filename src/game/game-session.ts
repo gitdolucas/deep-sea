@@ -38,9 +38,8 @@ import {
   cycleTargetMode,
   type TargetingContext,
 } from "./targeting-system.js";
-import type {
-  BubbleColumnFxEvent,
-} from "./bubble-column-fx-events.js";
+import type { BubbleColumnFxEvent } from "./bubble-column-fx-events.js";
+import type { KillShellPop } from "./kill-shell-pop.js";
 import type { WaveFeedbackUiState } from "./wave-types.js";
 import {
   spawnBubbleVolley,
@@ -80,6 +79,7 @@ export class GameSession {
   private nextBubbleColumnFxSeed = 1;
   private cannonProjectiles: CannonProjectileState[] = [];
   private readonly defensePops = new Map<string, number>();
+  private killShellPops: KillShellPop[] = [];
 
   constructor(
     doc: MapDocument,
@@ -121,6 +121,9 @@ export class GameSession {
       onDefensePop: (defenseId, count) => {
         const prev = this.defensePops.get(defenseId) ?? 0;
         this.defensePops.set(defenseId, prev + count);
+      },
+      onKillShell: (pop) => {
+        this.killShellPops.push(pop);
       },
     };
   }
@@ -175,6 +178,14 @@ export class GameSession {
     if (this.bubbleColumnFxEvents.length === 0) return [];
     const out = this.bubbleColumnFxEvents.slice();
     this.bubbleColumnFxEvents.length = 0;
+    return out;
+  }
+
+  /** Kill loot floats for the render layer; cleared when consumed. */
+  consumeKillShellPops(): KillShellPop[] {
+    if (this.killShellPops.length === 0) return [];
+    const out = this.killShellPops.slice();
+    this.killShellPops.length = 0;
     return out;
   }
 
@@ -386,6 +397,9 @@ export class GameSession {
       this.economy,
       this.bubblePopFx,
       this.bubbleColumnFxEvents,
+      (pop) => {
+        this.killShellPops.push(pop);
+      },
     );
     this.tickTideheartLasers(deltaSeconds);
     this.tickMainDefenses(deltaSeconds);
@@ -414,7 +428,13 @@ export class GameSession {
   private collectDeadEnemies(): void {
     for (const e of [...this.enemies.values()]) {
       if (!e.isAlive()) {
+        const pos = e.getGridPosition();
         this.economy.earn(KILL_SHELL_REWARD);
+        this.killShellPops.push({
+          gx: pos[0],
+          gz: pos[1],
+          shells: KILL_SHELL_REWARD,
+        });
         this.enemies.delete(e.id);
       }
     }

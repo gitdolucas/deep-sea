@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { damageAfterArmorEffective } from "../src/game/combat-damage.js";
 import {
   DamageResolver,
+  KILL_SHELL_REWARD,
   attackRangeTiles,
   primaryDamageFor,
 } from "../src/game/damage-resolver.js";
+import type { KillShellPop } from "../src/game/kill-shell-pop.js";
 import { EconomyController } from "../src/game/economy-controller.js";
 import { EnemyController } from "../src/game/enemy-controller.js";
 import {
@@ -77,6 +79,7 @@ describe("DamageResolver", () => {
     enemies.set("v", victim);
 
     let pops = 0;
+    const killShells: KillShellPop[] = [];
     DamageResolver.resolveTowerAttack(
       {
         id: "d",
@@ -92,11 +95,17 @@ describe("DamageResolver", () => {
         onDefensePop: (_id, n) => {
           pops += n;
         },
+        onKillShell: (k) => {
+          killShells.push(k);
+        },
       },
     );
     expect(pops).toBe(1);
 
     expect(enemies.has("v")).toBe(false);
-    expect(economy.getShells()).toBeGreaterThan(0);
+    expect(economy.getShells()).toBe(KILL_SHELL_REWARD);
+    expect(killShells).toEqual([
+      { gx: 0.5, gz: 0, shells: KILL_SHELL_REWARD },
+    ]);
   });
 });

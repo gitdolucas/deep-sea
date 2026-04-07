@@ -2,7 +2,8 @@ import * as THREE from "three";
 import Stats from "stats.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { MapDocument } from "../game/map-types.js";
-import { GameSession, type DefenseMoveStep } from "../game/game-session.js";
+import type { KillShellPop } from "../game/kill-shell-pop.js";
+import { GameSession } from "../game/game-session.js";
 import {
   DefenseController,
   arcSpineChainSearchRadius,
@@ -22,7 +23,10 @@ import {
   ARMORY_ROLE_TAGS,
 } from "../game/defense-armory-meta.js";
 import { salvageShellsForDefense } from "../game/defense-economy.js";
-import { buildPlacedDefenseTooltipSpec } from "../game/placed-defense-tooltip.js";
+import {
+  buildDefenseUpgradeCompare,
+  buildPlacedDefenseTooltipSpec,
+} from "../game/placed-defense-tooltip.js";
 import { hotbarIndexFromKey } from "../game/hotbar-key.js";
 import type {
   DefenseLevel,
@@ -42,6 +46,7 @@ import {
   COLORS,
   CHAIN_FX_DURATION,
   DAMAGE_POP_DURATION_SEC,
+  SHELL_EARN_POP_DURATION_SEC,
   TIDEHEART_BEAM_FX_DURATION,
 } from "./constants.js";
 import {
@@ -357,6 +362,7 @@ export class GameApp {
   private mapPanRecenterActive = false;
   /** For shell stat row flash when balance changes. */
   private prevShells: number | null = null;
+  private prevCastleHp: number | null = null;
   private gameplayTipsTimer: ReturnType<typeof setInterval> | null = null;
   private gameplayTipIndex = 0;
   /** Orbit pivot when not focused on a defense (map center). */
@@ -635,18 +641,6 @@ export class GameApp {
       () => this.onDefenseDetailSalvage(),
       ac,
     );
-    for (const btn of document.querySelectorAll("[data-dpad]")) {
-      btn.addEventListener(
-        "click",
-        (ev) => {
-          const step = (ev.currentTarget as HTMLElement).dataset
-            .dpad as DefenseMoveStep;
-          this.onDefenseDetailDpad(step);
-        },
-        ac,
-      );
-    }
-
     this.syncHudSpeedControl();
     this.refreshInventoryUi();
   }
@@ -1175,12 +1169,15 @@ export class GameApp {
       perkEl.textContent = ARMORY_CARD_PERK[type];
       const costWrap = document.createElement("span");
       costWrap.className = "defense-inventory__cost";
+      const costIcon = document.createElement("span");
+      costIcon.className = "defense-inventory__cost-icon";
+      costIcon.setAttribute("aria-hidden", "true");
       const costNum = document.createElement("strong");
       costNum.dataset.defenseCost = "";
       const costUnit = document.createElement("span");
       costUnit.className = "defense-inventory__cost-unit";
       costUnit.textContent = "shells";
-      costWrap.append(costNum, costUnit);
+      costWrap.append(costIcon, costNum, costUnit);
       textWrap.append(titleEl, tagsEl, perkEl, costWrap);
       btn.append(key, thumb, textWrap);
       btn.addEventListener("click", () => this.onArmoryDefenseClick(type));
@@ -1253,24 +1250,129 @@ export class GameApp {
       btnTarget.disabled = !playing;
     }
 
+    const makeShellIcon = (small?: boolean): HTMLSpanElement => {
+      const el = document.createElement("span");
+      el.className =
+        "defense-detail-drawer__shell-icon" +
+        (small ? " defense-detail-drawer__shell-icon--sm" : "");
+      el.setAttribute("aria-hidden", "true");
+      return el;
+    };
+
+    const shells = this.session.economy.getShells();
     const dc = new DefenseController(snap);
     const base = buildCostL1(snap.type);
     const upCost = dc.upgradeShellCost(base);
-    if (btnUp) {
+    const hintEl = document.getElementById("defenseDetailUpgradeHint");
+    const compareEl = document.getElementById("defenseDetailUpgradeCompare");
+    const maxEl = document.getElementById("defenseDetailUpgradeMax");
+
+    if (btnUp && hintEl && compareEl && maxEl) {
+      btnUp.replaceChildren();
       if (snap.level >= 3 || upCost === null) {
-        btnUp.textContent = "Max level";
+        btnUp.appendChild(document.createTextNode("Max level"));
         btnUp.disabled = true;
+        btnUp.removeAttribute("aria-describedby");
+        hintEl.hidden = true;
+        hintEl.textContent = "";
+        hintEl.classList.remove("defense-detail-drawer__upgrade-hint--short");
+        compareEl.hidden = true;
+        compareEl.replaceChildren();
+        maxEl.hidden = false;
       } else {
-        const shells = this.session.economy.getShells();
-        btnUp.textContent = `Upgrade (${upCost} shells)`;
+        maxEl.hidden = true;
+        const nextLv = (snap.level + 1) as DefenseLevel;
         btnUp.disabled = !playing || shells < upCost;
+        btnUp.setAttribute(
+          "aria-describedby",
+          "defenseDetailUpgradeHint defenseDetailUpgradeCompare",
+        );
+        const icon = makeShellIcon();
+        const textWrap = document.createElement("span");
+        textWrap.className = "defense-detail-drawer__upgrade-btn-text";
+        const titleEl = document.createElement("span");
+        titleEl.className = "defense-detail-drawer__upgrade-btn-title";
+        titleEl.textContent = `Upgrade to L${nextLv}`;
+        const costRow = document.createElement("span");
+        costRow.className = "defense-detail-drawer__upgrade-btn-cost";
+        costRow.append(
+          makeShellIcon(true),
+          document.createTextNode(`${upCost} shells`),
+        );
+        textWrap.append(titleEl, costRow);
+        btnUp.append(icon, textWrap);
+
+        if (playing) {
+          if (shells < upCost) {
+            hintEl.hidden = false;
+            hintEl.classList.add("defense-detail-drawer__upgrade-hint--short");
+            hintEl.textContent = `Need ${upCost - shells} more shells to upgrade.`;
+          } else {
+            hintEl.hidden = false;
+            hintEl.classList.remove(
+              "defense-detail-drawer__upgrade-hint--short",
+            );
+            hintEl.textContent = `You have ${shells} shells.`;
+          }
+        } else {
+          hintEl.hidden = true;
+          hintEl.textContent = "";
+          hintEl.classList.remove("defense-detail-drawer__upgrade-hint--short");
+        }
+
+        const cmp = buildDefenseUpgradeCompare(snap);
+        compareEl.replaceChildren();
+        if (cmp) {
+          compareEl.hidden = false;
+          const cap = document.createElement("p");
+          cap.className = "defense-detail-drawer__compare-caption";
+          cap.textContent = "Current vs next";
+          const head = document.createElement("div");
+          head.className = "defense-detail-drawer__compare-head";
+          const h0 = document.createElement("span");
+          h0.textContent = "Stat";
+          const h1 = document.createElement("span");
+          h1.textContent = `L${snap.level}`;
+          const h2 = document.createElement("span");
+          h2.textContent = `L${nextLv}`;
+          head.append(h0, h1, h2);
+          compareEl.append(cap, head);
+          for (const r of cmp) {
+            const row = document.createElement("div");
+            row.className =
+              "defense-detail-drawer__compare-row" +
+              (r.changed
+                ? " defense-detail-drawer__compare-row--changed"
+                : "");
+            const k = document.createElement("span");
+            k.className = "defense-detail-drawer__compare-k";
+            k.textContent = r.label;
+            const vb = document.createElement("span");
+            vb.className = "defense-detail-drawer__compare-v";
+            vb.textContent = r.before;
+            const va = document.createElement("span");
+            va.className =
+              "defense-detail-drawer__compare-v defense-detail-drawer__compare-v--after";
+            va.textContent = r.after;
+            row.append(k, vb, va);
+            compareEl.append(row);
+          }
+        }
       }
     }
 
     if (btnSal) {
       const sal = salvageShellsForDefense(snap);
-      btnSal.textContent = `Salvage (+${sal} shells)`;
+      btnSal.replaceChildren();
+      btnSal.append(
+        makeShellIcon(),
+        document.createTextNode(`Salvage (+${sal} shells)`),
+      );
       btnSal.disabled = !playing;
+      btnSal.setAttribute(
+        "aria-label",
+        `Salvage defense for ${sal} shells refund`,
+      );
     }
   }
 
@@ -1321,15 +1423,6 @@ export class GameApp {
       this.clearSelection();
       this.updateHud();
       this.refreshInventoryUi();
-    }
-  }
-
-  private onDefenseDetailDpad(step: DefenseMoveStep): void {
-    const id = this.selectedDefenseId;
-    if (!id || this.session.getOutcome() !== "playing") return;
-    if (this.session.tryMoveDefenseStep(id, step)) {
-      this.defenseDrawerUiCache = null;
-      this.syncDefenseDrawerUi();
     }
   }
 
@@ -1779,6 +1872,7 @@ export class GameApp {
     this.syncEnemies();
     this.syncBubbleAttackFx(dt);
     this.applyCombatVfx();
+    this.applyKillShellFloats();
     this.syncCannonAttackFx(dt);
     this.updateChainFx(dt);
     updateArcSpineHitSparkles(this.arcSpineHitSparkles, dt, this.scene);
@@ -2197,6 +2291,40 @@ export class GameApp {
     window.setTimeout(() => el.remove(), DAMAGE_POP_DURATION_SEC * 1000);
   }
 
+  private applyKillShellFloats(): void {
+    for (const pop of this.session.consumeKillShellPops()) {
+      this.spawnShellEarnPopup(pop);
+    }
+  }
+
+  private spawnShellEarnPopup(pop: KillShellPop): void {
+    const layer = document.getElementById("damageLayer");
+    if (!layer) return;
+    const w = worldFromGrid(pop.gx, pop.gz, this.doc, 1.12);
+    const v = w.clone().project(this.camera);
+    const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+    const el = document.createElement("div");
+    el.className = "shell-earn-pop";
+    el.setAttribute("aria-label", `Earned ${pop.shells} shells`);
+    const icon = document.createElement("img");
+    icon.className = "shell-earn-pop__icon";
+    icon.src = `${import.meta.env.BASE_URL}icons/shell.svg`;
+    icon.alt = "";
+    icon.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.className = "shell-earn-pop__value";
+    label.textContent = `+${pop.shells}`;
+    el.append(icon, label);
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    layer.appendChild(el);
+    window.setTimeout(
+      () => el.remove(),
+      SHELL_EARN_POP_DURATION_SEC * 1000,
+    );
+  }
+
   /**
    * Discrete wave bar: filled segments = current tide (1-based) up to total;
    * release bar shows spawn progress; last segment pulses only while releasing.
@@ -2321,8 +2449,25 @@ export class GameApp {
     }
     if (castle) {
       const c = this.session.castle;
-      castle.textContent = `${c.getCurrentHp()} / ${c.maxHp}`;
-      this.syncCitadelHpSegments(c.getCurrentHp(), c.maxHp);
+      const hp = c.getCurrentHp();
+      const maxHp = c.maxHp;
+      castle.textContent = `${hp} / ${maxHp}`;
+      this.syncCitadelHpSegments(hp, maxHp);
+
+      const citadelHost = document.getElementById("citadelHudHost");
+      if (
+        citadelHost &&
+        this.prevCastleHp !== null &&
+        hp < this.prevCastleHp
+      ) {
+        citadelHost.classList.remove("citadel-hud--hit");
+        void citadelHost.offsetWidth;
+        citadelHost.classList.add("citadel-hud--hit");
+        window.setTimeout(() => {
+          citadelHost.classList.remove("citadel-hud--hit");
+        }, 580);
+      }
+      this.prevCastleHp = hp;
     }
     const hotkeyHint = document.getElementById("hudHotkeyHint");
     if (hotkeyHint) {
