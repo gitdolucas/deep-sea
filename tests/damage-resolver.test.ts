@@ -18,6 +18,9 @@ describe("DamageResolver", () => {
     expect(primaryDamageFor("arc_spine", 3)).toBe(18);
     expect(primaryDamageFor("bubble_shotgun", 1)).toBe(25);
     expect(primaryDamageFor("bubble_shotgun", 3)).toBe(35);
+    expect(primaryDamageFor("tideheart_laser", 1)).toBe(4);
+    expect(primaryDamageFor("tideheart_laser", 2)).toBe(5);
+    expect(primaryDamageFor("tideheart_laser", 3)).toBe(5);
   });
 
   it("uses finite attack range per defense (Arc Spine +25%: L1 3.75 / L2+ 5)", () => {

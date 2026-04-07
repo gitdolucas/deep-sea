@@ -9,7 +9,7 @@ export const VIBRATION_DOT_DAMAGE_PER_TICK = 2;
 /** Direct hit / beam tick damage before armor (0 = utility-only tick). */
 export const DIRECT_DAMAGE: Record<DefenseTypeKey, Record<DefenseLevel, number>> =
   {
-    tideheart_laser: { 1: 4, 2: 5, 3: 6 },
+    tideheart_laser: { 1: 4, 2: 5, 3: 5 },
     bubble_shotgun: { 1: 25, 2: 30, 3: 35 },
     vibration_zone: { 1: 0, 2: 0, 3: VIBRATION_DOT_DAMAGE_PER_TICK },
     /** Buffed vs docs table; adds AoE splash in simulation (cannon-projectiles). */

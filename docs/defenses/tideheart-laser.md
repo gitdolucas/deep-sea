@@ -32,6 +32,16 @@ Refined Tideheart Crystal energy fired in a tight beam. Shreds Razoreels mid-spr
 - White-hot core with cyan aura, pulsing radius ring
 - Full breathing glow cycle, rotating crystals
 
+## Damage (per tick, before armor)
+
+Authoritative tick cadence: `docs/combat.md` §2. Per-tick damage is **~10% below** the prior 4 / 5 / 6 baseline (rounded: L3 beam damage matches the old L2 tier).
+
+| Level | Damage / tick |
+|-------|---------------|
+| L1    | 4             |
+| L2    | 5             |
+| L3    | 5 (×3 beams + pierce) |
+
 ## Build Cost
 
 | Action   | Cost (Shells) |
