@@ -34,13 +34,13 @@ Refined Tideheart Crystal energy fired in a tight beam. Shreds Razoreels mid-spr
 
 ## Damage (per tick, before armor)
 
-Authoritative tick cadence: `docs/combat.md` §2. Per-tick damage is **~10% below** the prior 4 / 5 / 6 baseline (rounded: L3 beam damage matches the old L2 tier).
+Authoritative tick cadence: `docs/combat.md` (Attack Speed). Values below are **50% of** the original 4 / 5 / 6 design (L2: 5×0.5 rounded to 3).
 
 | Level | Damage / tick |
 |-------|---------------|
-| L1    | 4             |
-| L2    | 5             |
-| L3    | 5 (×3 beams + pierce) |
+| L1    | 2             |
+| L2    | 3             |
+| L3    | 3 (×3 beams + pierce) |
 
 ## Build Cost
 

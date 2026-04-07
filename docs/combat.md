@@ -142,7 +142,7 @@ This means a Colossus inside an L3 Ink Veil drops from 8 armor to 3 — every to
 
 | Tower           | L1          | L2           | L3                                                 |
 | --------------- | ----------- | ------------ | -------------------------------------------------- |
-| Tideheart Laser | 4/tick      | 5/tick       | 5/tick (×3 beams)                                  |
+| Tideheart Laser | 2/tick      | 3/tick       | 3/tick (×3 beams)                                  |
 | Bubble Shotgun  | 25/bubble   | 30/bubble    | 35/bubble + 15 splash                              |
 | Vibration Zone  | 0           | 0            | 2/tick (DoT)                                       |
 | Current Cannon  | 12          | 19           | 28 + primary stun/lift (1s, non-Colossus) + splash |
@@ -246,8 +246,8 @@ Ink Veil L3 shreds 5 armor. Every other tower's damage against armored targets i
 
 | Target (Colossus, 8 armor)    | Without Ink Veil  | With Ink Veil L3 (3 armor) |
 | ----------------------------- | ----------------- | -------------------------- |
-| Tideheart Laser L1 (4/tick)   | max(1, 4-8) = 1   | max(1, 4-3) = 1            |
-| Tideheart Laser L3 (5/tick)   | max(1, 5-8) = 1   | max(1, 5-3) = 2            |
+| Tideheart Laser L1 (2/tick)   | max(1, 2-8) = 1   | max(1, 2-3) = 1            |
+| Tideheart Laser L3 (3/tick)   | max(1, 3-8) = 1   | max(1, 3-3) = 1            |
 | Arc Spine L3 (12)             | max(1, 12-8) = 4  | max(1, 12-3) = 9           |
 | Bubble Shotgun L3 (35/bubble) | max(1, 35-8) = 27 | max(1, 35-3) = 32          |
 
