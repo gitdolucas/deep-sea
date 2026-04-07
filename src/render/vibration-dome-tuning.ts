@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { InkVeilSurfaceBlending } from "./ink-veil-tuning.js";
 
 export type VibrationDomeSide = "double" | "front" | "back";
 
@@ -45,6 +46,94 @@ export interface VibrationDomeTuning {
   fresnelIntensity: number;
   /** Rim tint (hex). */
   fresnelColor: string;
+
+  /** Soft horizontal disk on the seabed (under the transmission dome). */
+  baseDiskEnabled: boolean;
+  baseDiskSegments: number;
+  baseDiskYOffset: number;
+  baseDiskColor: string;
+  baseDiskOpacity: number;
+  baseDiskEdgeSoftness: number;
+  baseDiskDepthWrite: boolean;
+  baseDiskDepthTest: boolean;
+  baseDiskBlending: InkVeilSurfaceBlending;
+  baseDiskRenderOrder: number;
+  /** View-angle rim tint (`mix(fill, rimColor, fresnel * intensity)`). */
+  baseDiskRimColor: string;
+  baseDiskRimIntensity: number;
+  baseDiskRimPower: number;
+  /** Edge profile: `smoothstep(1 - edgeSoft * innerK, 1 + edgeSoft * outerK, r)`. */
+  baseDiskEdgeInnerK: number;
+  baseDiskEdgeOuterK: number;
+  /** Discard when `r > 1 + edgeSoft * discardK`. */
+  baseDiskEdgeDiscardK: number;
+  /** 0–1: fades fill alpha toward disk center (ring / donut). */
+  baseDiskCenterHole: number;
+  /** Inner radius (0–1) where center hole fade starts. */
+  baseDiskCenterHoleRadius: number;
+
+  /**
+   * Ink-style fbm / swirl / streaks on the base disk (see `vibration-zone-field` shaders).
+   * Tier indices match defense level (L1→[0], L3→[2]).
+   */
+  baseDiskSwirlSpeed: readonly [number, number, number];
+  baseDiskOpacityMul: readonly [number, number, number];
+  baseDiskRingHint: readonly [number, number, number];
+  baseDiskNoiseScaleBase: number;
+  baseDiskNoiseScalePerLevel: number;
+  baseDiskFresnelPow: number;
+  baseDiskNoiseTimeScale: number;
+  baseDiskFbmStrength: number;
+  baseDiskSwirlTierBase: number;
+  baseDiskSwirlTierPerLevel: number;
+  baseDiskStreakAngFreq: number;
+  baseDiskStreakRadialFreq: number;
+  baseDiskStreakTimeScale: number;
+  /** Extra alpha gain on procedural disk (1 = match ink pipeline scale). */
+  baseDiskProcAlphaGlobal: number;
+
+  fieldParticlesEnabled: boolean;
+  fieldParticleRenderOrder: number;
+  /** Local Y for particle burst origin (raises/lowers field relative to rim center). */
+  fieldParticleYOffset: number;
+  fieldParticleCount: readonly [number, number, number];
+  fieldParticleColor: string;
+  fieldParticlePointSizeMul: number;
+  /** @deprecated Center-origin pulse ignores ring spawn; kept for JSON compat. */
+  fieldParticleSpawnRMin: number;
+  fieldParticleSpawnRRange: number;
+  /** Multiplier on `uTime` per particle (phase spread). */
+  fieldParticleTimeLo: number;
+  fieldParticleTimeRange: number;
+  /** Radial pulse speed: cos envelope to dome shell and back (see field vertex shader). */
+  fieldParticleOrbitSpeed: number;
+  /** 1 ≈ touch hemisphere wireframe at `uRadius`; <1 stays inside shell. */
+  fieldParticleRadialTightness: number;
+  /** Transverse/Shell ripple frequency (perpendicular to outward ray). */
+  fieldParticleWobbleFreq: number;
+  fieldParticleWobblePhaseMul: number;
+  /** Per-particle random variation on radial reach (0 = none). */
+  fieldParticleWobbleStr: number;
+  /** Slow temporal noise on pulse amplitude. */
+  fieldParticleLiftRate: number;
+  /** Shell wobble strength (orthogonal, scales with pulse). */
+  fieldParticleLiftAmp: number;
+  /** Random direction jitter (0–~0.35) before normalize — spreads XYZ. */
+  fieldParticleWobbleAlongOrbit: number;
+  fieldParticleAlphaLo: number;
+  fieldParticleAlphaRange: number;
+  fieldParticlePxBase: number;
+  fieldParticlePxSpread: number;
+  fieldParticlePxDepthScale: number;
+  fieldParticlePxDepthRef: number;
+  fieldParticlePxMin: number;
+  fieldParticlePxMax: number;
+  fieldParticleSoftInner: number;
+  fieldParticleSoftOuter: number;
+  fieldParticleOpacityMul: number;
+  fieldParticleDepthWrite: boolean;
+  fieldParticleDepthTest: boolean;
+  fieldParticleBlending: InkVeilSurfaceBlending;
 }
 
 export const DEFAULT_VIBRATION_DOME_TUNING: VibrationDomeTuning = {
@@ -70,22 +159,112 @@ export const DEFAULT_VIBRATION_DOME_TUNING: VibrationDomeTuning = {
   geometryWidthSegments: 96,
   geometryHeightSegments: 48,
   showWireframe: false,
-  transmissionResolutionScale: 0.82,
+  transmissionResolutionScale: 0.67,
   floorYOffset: -0.5,
   wobbleEnabled: true,
-  wobbleAmp: 0.55,
+  wobbleAmp: 0.51,
   wobbleFreq: 3.8,
   wobbleRadial: 12.5,
   wobbleTimeScale: 0.95,
   fresnelPower: 12,
   fresnelIntensity: 1.5,
   fresnelColor: "#39ff6e",
+
+  baseDiskEnabled: true,
+  baseDiskSegments: 19,
+  baseDiskYOffset: 0.92,
+  baseDiskColor: "#000000",
+  baseDiskOpacity: 0.43,
+  baseDiskEdgeSoftness: 0.02,
+  baseDiskDepthWrite: false,
+  baseDiskDepthTest: true,
+  baseDiskBlending: "additive",
+  baseDiskRenderOrder: -1,
+  baseDiskRimColor: "#ffffff",
+  baseDiskRimIntensity: 1.5,
+  baseDiskRimPower: 9.25,
+  baseDiskEdgeInnerK: 6,
+  baseDiskEdgeOuterK: 1.95,
+  baseDiskEdgeDiscardK: 4,
+  baseDiskCenterHole: 0,
+  baseDiskCenterHoleRadius: 0.95,
+
+  baseDiskSwirlSpeed: [0, 3.3, 3.7],
+  baseDiskOpacityMul: [0.86, 1.02, 1.12],
+  baseDiskRingHint: [0.66, 0.42, 0.46],
+  baseDiskNoiseScaleBase: 1.6,
+  baseDiskNoiseScalePerLevel: 0,
+  baseDiskFresnelPow: 1.9,
+  baseDiskNoiseTimeScale: 1.3,
+  baseDiskFbmStrength: 2.45,
+  baseDiskSwirlTierBase: 0.34,
+  baseDiskSwirlTierPerLevel: 0.075,
+  baseDiskStreakAngFreq: 5.5,
+  baseDiskStreakRadialFreq: 2,
+  baseDiskStreakTimeScale: 5.5,
+  baseDiskProcAlphaGlobal: 0.72,
+
+  fieldParticlesEnabled: true,
+  fieldParticleRenderOrder: 3,
+  fieldParticleYOffset: 1.38,
+  fieldParticleCount: [233, 56, 72],
+  fieldParticleColor: "#daff96",
+  fieldParticlePointSizeMul: 0.05,
+  fieldParticleSpawnRMin: 0.18,
+  fieldParticleSpawnRRange: 0.78,
+  fieldParticleTimeLo: 0.15,
+  fieldParticleTimeRange: 0.02,
+  fieldParticleOrbitSpeed: 14,
+  fieldParticleRadialTightness: 0.78,
+  fieldParticleWobbleFreq: 16,
+  fieldParticleWobblePhaseMul: 0,
+  fieldParticleWobbleStr: 0.145,
+  fieldParticleLiftRate: 8,
+  fieldParticleLiftAmp: 0.015,
+  fieldParticleWobbleAlongOrbit: 0.45,
+  fieldParticleAlphaLo: 0.28,
+  fieldParticleAlphaRange: 0.42,
+  fieldParticlePxBase: 0,
+  fieldParticlePxSpread: 60,
+  fieldParticlePxDepthScale: 175,
+  fieldParticlePxDepthRef: 0.35,
+  fieldParticlePxMin: 2,
+  fieldParticlePxMax: 58,
+  fieldParticleSoftInner: 0.22,
+  fieldParticleSoftOuter: 0.48,
+  fieldParticleOpacityMul: 0.18,
+  fieldParticleDepthWrite: false,
+  fieldParticleDepthTest: true,
+  fieldParticleBlending: "additive",
 };
 
 const TINT = new THREE.Color(0x39ff6e);
 
+function cloneFieldParticleCount(
+  d: VibrationDomeTuning,
+): Pick<VibrationDomeTuning, "fieldParticleCount"> {
+  return {
+    fieldParticleCount: [...d.fieldParticleCount] as [number, number, number],
+  };
+}
+
+function cloneBaseDiskTierTriples(
+  d: VibrationDomeTuning,
+): Pick<
+  VibrationDomeTuning,
+  "baseDiskSwirlSpeed" | "baseDiskOpacityMul" | "baseDiskRingHint"
+> {
+  return {
+    baseDiskSwirlSpeed: [...d.baseDiskSwirlSpeed] as [number, number, number],
+    baseDiskOpacityMul: [...d.baseDiskOpacityMul] as [number, number, number],
+    baseDiskRingHint: [...d.baseDiskRingHint] as [number, number, number],
+  };
+}
+
 export const vibrationDomeTuning: VibrationDomeTuning = {
   ...DEFAULT_VIBRATION_DOME_TUNING,
+  ...cloneFieldParticleCount(DEFAULT_VIBRATION_DOME_TUNING),
+  ...cloneBaseDiskTierTriples(DEFAULT_VIBRATION_DOME_TUNING),
 };
 
 export function getVibrationDomeTuning(): VibrationDomeTuning {
@@ -94,7 +273,11 @@ export function getVibrationDomeTuning(): VibrationDomeTuning {
 
 /** Plain snapshot for logging / clipboard (not the live mutable reference). */
 export function snapshotVibrationDomeTuning(): VibrationDomeTuning {
-  return { ...vibrationDomeTuning };
+  return {
+    ...vibrationDomeTuning,
+    ...cloneFieldParticleCount(vibrationDomeTuning),
+    ...cloneBaseDiskTierTriples(vibrationDomeTuning),
+  };
 }
 
 /** Pretty-printed JSON of {@link snapshotVibrationDomeTuning}. */
@@ -126,7 +309,8 @@ export async function copyVibrationDomeTuningToClipboard(): Promise<boolean> {
 }
 
 export function resetVibrationDomeTuning(): void {
-  Object.assign(vibrationDomeTuning, DEFAULT_VIBRATION_DOME_TUNING);
+  const d = DEFAULT_VIBRATION_DOME_TUNING;
+  Object.assign(vibrationDomeTuning, d, cloneFieldParticleCount(d), cloneBaseDiskTierTriples(d));
 }
 
 function sideToConstant(side: VibrationDomeSide): number {

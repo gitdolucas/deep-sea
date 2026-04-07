@@ -251,7 +251,7 @@ export class GameApp {
       root: THREE.Group;
       tower: THREE.Mesh;
       bar: BarBillboard;
-      vibrationDome?: THREE.Mesh;
+      vibrationDome?: THREE.Group;
       vibrationDomeKey?: string;
       inkVeilAura?: THREE.Group;
       inkVeilAuraKey?: string;

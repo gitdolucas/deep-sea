@@ -1,0 +1,355 @@
+{
+  "id": "map_07_symmetric_circuit",
+  "name": "Symmetric Circuit",
+  "description": "Twenty-eight by twenty grid from the reference sketch: central spine hub, upper and lower crossbars, ten trench mouths converging on the citadel.",
+  "difficulty": "normal",
+  "startingShells": 80,
+  "gridSize": [28, 20],
+  "castle": {
+    "position": [13, 9],
+    "hp": 20,
+    "size": [1, 1]
+  },
+  "spawnPoints": [
+    {
+      "id": "spawn_n",
+      "position": [13, 1],
+      "pathIds": ["path_n"]
+    },
+    {
+      "id": "spawn_nw_short",
+      "position": [10, 5],
+      "pathIds": ["path_nw_short"]
+    },
+    {
+      "id": "spawn_ne_short",
+      "position": [16, 5],
+      "pathIds": ["path_ne_short"]
+    },
+    {
+      "id": "spawn_nw_long",
+      "position": [8, 7],
+      "pathIds": ["path_nw_long"]
+    },
+    {
+      "id": "spawn_ne_long",
+      "position": [18, 7],
+      "pathIds": ["path_ne_long"]
+    },
+    {
+      "id": "spawn_sw_long",
+      "position": [4, 6],
+      "pathIds": ["path_sw_long"]
+    },
+    {
+      "id": "spawn_se_long",
+      "position": [22, 6],
+      "pathIds": ["path_se_long"]
+    },
+    {
+      "id": "spawn_sw_short",
+      "position": [9, 15],
+      "pathIds": ["path_sw_short"]
+    },
+    {
+      "id": "spawn_se_short",
+      "position": [17, 15],
+      "pathIds": ["path_se_short"]
+    },
+    {
+      "id": "spawn_s",
+      "position": [13, 15],
+      "pathIds": ["path_s"]
+    }
+  ],
+  "paths": [
+    {
+      "id": "path_n",
+      "waypoints": [
+        [13, 1],
+        [13, 2],
+        [13, 3],
+        [13, 4],
+        [13, 5],
+        [13, 6],
+        [13, 7],
+        [13, 8],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_nw_short",
+      "waypoints": [
+        [10, 5],
+        [10, 4],
+        [10, 3],
+        [13, 3],
+        [13, 4],
+        [13, 5],
+        [13, 6],
+        [13, 7],
+        [13, 8],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_ne_short",
+      "waypoints": [
+        [16, 5],
+        [16, 4],
+        [16, 3],
+        [13, 3],
+        [13, 4],
+        [13, 5],
+        [13, 6],
+        [13, 7],
+        [13, 8],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_nw_long",
+      "waypoints": [
+        [8, 7],
+        [8, 6],
+        [8, 5],
+        [8, 4],
+        [8, 3],
+        [9, 3],
+        [10, 3],
+        [11, 3],
+        [12, 3],
+        [13, 3],
+        [13, 4],
+        [13, 5],
+        [13, 6],
+        [13, 7],
+        [13, 8],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_ne_long",
+      "waypoints": [
+        [18, 7],
+        [18, 6],
+        [18, 5],
+        [18, 4],
+        [18, 3],
+        [17, 3],
+        [16, 3],
+        [15, 3],
+        [14, 3],
+        [13, 3],
+        [13, 4],
+        [13, 5],
+        [13, 6],
+        [13, 7],
+        [13, 8],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_sw_long",
+      "waypoints": [
+        [4, 6],
+        [4, 7],
+        [4, 8],
+        [4, 9],
+        [4, 10],
+        [4, 11],
+        [5, 11],
+        [6, 11],
+        [7, 11],
+        [8, 11],
+        [9, 11],
+        [10, 11],
+        [11, 11],
+        [12, 11],
+        [13, 11],
+        [13, 10],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_se_long",
+      "waypoints": [
+        [22, 6],
+        [22, 7],
+        [22, 8],
+        [22, 9],
+        [22, 10],
+        [22, 11],
+        [21, 11],
+        [20, 11],
+        [19, 11],
+        [18, 11],
+        [17, 11],
+        [16, 11],
+        [15, 11],
+        [14, 11],
+        [13, 11],
+        [13, 10],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_sw_short",
+      "waypoints": [
+        [9, 15],
+        [9, 14],
+        [9, 13],
+        [9, 12],
+        [9, 11],
+        [10, 11],
+        [11, 11],
+        [12, 11],
+        [13, 11],
+        [13, 10],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_se_short",
+      "waypoints": [
+        [17, 15],
+        [17, 14],
+        [17, 13],
+        [17, 12],
+        [17, 11],
+        [16, 11],
+        [15, 11],
+        [14, 11],
+        [13, 11],
+        [13, 10],
+        [13, 9]
+      ]
+    },
+    {
+      "id": "path_s",
+      "waypoints": [
+        [13, 15],
+        [13, 14],
+        [13, 13],
+        [13, 12],
+        [13, 11],
+        [13, 10],
+        [13, 9]
+      ]
+    }
+  ],
+  "defenses": [],
+  "waves": [
+    {
+      "wave": 1,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 6,
+          "spawnId": "spawn_n",
+          "pathId": "path_n",
+          "interval": 1.0,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_sw_long",
+          "pathId": "path_sw_long",
+          "interval": 1.2,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_se_long",
+          "pathId": "path_se_long",
+          "interval": 1.2,
+          "delay": 2,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "prepTime": 12,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 8,
+          "spawnId": "spawn_nw_long",
+          "pathId": "path_nw_long",
+          "interval": 0.9,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 8,
+          "spawnId": "spawn_ne_long",
+          "pathId": "path_ne_long",
+          "interval": 0.9,
+          "delay": 0,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    },
+    {
+      "wave": 3,
+      "prepTime": 15,
+      "isBoss": false,
+      "groups": [
+        {
+          "enemyType": "stoneclaw",
+          "count": 10,
+          "spawnId": "spawn_s",
+          "pathId": "path_s",
+          "interval": 0.8,
+          "delay": 0,
+          "hpMultiplier": 1.05,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_nw_short",
+          "pathId": "path_nw_short",
+          "interval": 2.0,
+          "delay": 4,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "razoreel",
+          "count": 2,
+          "spawnId": "spawn_ne_short",
+          "pathId": "path_ne_short",
+          "interval": 2.0,
+          "delay": 4,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        }
+      ]
+    }
+  ],
+  "decorations": [
+    { "type": "rock_small", "position": [1, 0, 2], "rotation": 0, "scale": 1 },
+    { "type": "coral_branch", "position": [25, 0, 4], "rotation": 15, "scale": 1 },
+    { "type": "kelp_cluster", "position": [2, 0, 17], "rotation": 0, "scale": 1 },
+    { "type": "anemone", "position": [26, 0, 16], "rotation": 0, "scale": 1 },
+    { "type": "shell_pile", "position": [6, 0, 18], "rotation": 0, "scale": 1 },
+    { "type": "rock_large", "position": [20, 0, 1], "rotation": 0, "scale": 1 },
+    { "type": "vent_bubble", "position": [11, 0, 18], "rotation": 0, "scale": 0.9 },
+    { "type": "coral_fan", "position": [24, 0, 11], "rotation": -20, "scale": 1 }
+  ]
+}

@@ -44,9 +44,9 @@ export function inkVeilLevaSchema(onRemount: () => void) {
       },
       diskYOffset: {
         value: d.diskYOffset,
-        min: 0,
-        max: 0.08,
-        step: 0.001,
+        min: -0.5,
+        max: 4,
+        step: 0.02,
         label: "Disk lift (Z-fight)",
         onChange: (v: number) => {
           inkVeilTuning.diskYOffset = v;
@@ -539,7 +539,7 @@ export function inkVeilLevaSchema(onRemount: () => void) {
           min: 0,
           max: 2,
           step: 0.05,
-          label: "Wobble on Z",
+          label: "Tangential wobble",
           onChange: (v: number) => {
             inkVeilTuning.particleWobbleAlongOrbit = v;
           },

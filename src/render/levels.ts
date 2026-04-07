@@ -19,6 +19,9 @@ import map05NullDepths from "../../data/maps/map-05-null-depths.json" with {
 import map06RadialHub from "../../data/maps/map-06-radial-hub.json" with {
   type: "json",
 };
+import map07SymmetricCircuit from "../../data/maps/map-07-symmetric-circuit.json" with {
+  type: "json",
+};
 import type { MapDocument } from "../game/map-types.js";
 
 export type LevelEntry = {
@@ -63,5 +66,10 @@ export const LEVELS: readonly LevelEntry[] = [
     id: map06RadialHub.id,
     name: map06RadialHub.name,
     document: map06RadialHub as unknown as MapDocument,
+  },
+  {
+    id: map07SymmetricCircuit.id,
+    name: map07SymmetricCircuit.name,
+    document: map07SymmetricCircuit as unknown as MapDocument,
   },
 ];

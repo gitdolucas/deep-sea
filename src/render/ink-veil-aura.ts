@@ -216,11 +216,10 @@ void main() {
   float ang = aPhase * 6.2831853 + t * uPOrbitSpeed;
   float rad = aR * uRadius * uPRadTight;
   float wobble = sin(t * uPWobFreq + aPhase * uPWobPhase) * uPWobStr * uRadius;
-  vec3 pos = vec3(
-    cos(ang) * rad + wobble,
-    abs(sin(t * uPLiftRate + aPhase)) * uRadius * uPLiftAmp,
-    sin(ang) * rad + wobble * uPWobAlong
-  );
+  vec2 radial = vec2(cos(ang), sin(ang)) * rad;
+  vec2 tangent = vec2(-sin(ang), cos(ang));
+  vec2 xz = radial + tangent * (wobble * uPWobAlong);
+  vec3 pos = vec3(xz.x, abs(sin(t * uPLiftRate + aPhase)) * uRadius * uPLiftAmp, xz.y);
 
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mvPosition;

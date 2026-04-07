@@ -8,7 +8,7 @@ export interface InkVeilTuning {
   applyOverrides: boolean;
 
   floorYOffset: number;
-  /** Small lift so disk clears z-fight with floor. */
+  /** Local Y for disk vs dome/particles (small lift only; large values float the pool). */
   diskYOffset: number;
 
   diskSegments: number;
@@ -56,7 +56,7 @@ export interface InkVeilTuning {
   particleLiftRate: number;
   /** Vertical spread `abs(sin) * uRadius * this`. */
   particleLiftAmp: number;
-  /** Z term mixes wobble: `+ wobble * this`. */
+  /** Scales tangential wobble (perpendicular to radius), not radial push. */
   particleWobbleAlongOrbit: number;
 
   /** Per-vertex alpha: `lo + range * hash`. */
@@ -103,7 +103,7 @@ export const DEFAULT_INK_VEIL_TUNING: InkVeilTuning = {
   applyOverrides: true,
 
   floorYOffset: 0.28,
-  diskYOffset: 0.08,
+  diskYOffset: 0.5,
 
   diskSegments: 83,
   domeWidthSegments: 96,

@@ -11,8 +11,13 @@ import {
 } from "./entity-sprite-atlas.js";
 import { applyVibrationDomeTuningToMesh, getVibrationDomeTuning } from "./vibration-dome-tuning.js";
 import {
-  applyVibrationZoneDomeRadius,
-  createVibrationZoneDomeMesh,
+  applyVibrationFieldRadiusAndParts,
+  createVibrationFieldGroup,
+  getVibrationFieldDomeMesh,
+  updateVibrationFieldVisuals,
+  vibrationFieldSyncKey,
+} from "./vibration-zone-field.js";
+import {
   syncVibrationDomeGeometryAndEdges,
   syncVibrationZoneDomeTierMaterial,
   updateVibrationZoneDomeMaterial,
@@ -83,7 +88,8 @@ export function createDefenseTowerMesh(
 
 export type VibrationDomeVis = {
   root: THREE.Group;
-  vibrationDome?: THREE.Mesh;
+  /** Transmission dome lives in {@link createVibrationFieldGroup} → `userData.vibrationDomeMesh`. */
+  vibrationDome?: THREE.Group;
   vibrationDomeKey?: string;
   /** Ink Veil cyclone / ground pool (see `syncInkVeilAuraForDefense`). */
   inkVeilAura?: THREE.Group;
@@ -104,41 +110,42 @@ export function syncVibrationZoneDomeForDefense(
   if (d.type === "vibration_zone") {
     const rTiles = auraRadiusTiles("vibration_zone", d.level);
     const tune = getVibrationDomeTuning();
-    const auraKey = `${d.level}:${rTiles}`;
+    const auraKey = vibrationFieldSyncKey(d.level, rTiles, tune);
     const showWire =
       tune.showWireframe || vibrationDomeDebugWireframeFromUrl();
     if (!vis.vibrationDome) {
-      vis.vibrationDome = createVibrationZoneDomeMesh(d.level, rTiles);
+      vis.vibrationDome = createVibrationFieldGroup(d.level, rTiles, tune);
       vis.root.add(vis.vibrationDome);
       vis.vibrationDomeKey = auraKey;
     } else if (vis.vibrationDomeKey !== auraKey) {
-      applyVibrationZoneDomeRadius(
+      applyVibrationFieldRadiusAndParts(
         vis.vibrationDome,
         d.level,
         rTiles,
-        tune.geometryWidthSegments,
-        tune.geometryHeightSegments,
+        tune,
       );
       vis.vibrationDomeKey = auraKey;
     }
+    const domeMesh = getVibrationFieldDomeMesh(vis.vibrationDome);
     syncVibrationDomeGeometryAndEdges(
-      vis.vibrationDome,
+      domeMesh,
       rTiles,
       tune.geometryWidthSegments,
       tune.geometryHeightSegments,
       showWire,
     );
-    syncVibrationZoneDomeTierMaterial(vis.vibrationDome, d.level, rTiles);
+    syncVibrationZoneDomeTierMaterial(domeMesh, d.level, rTiles);
     if (tune.applyOverrides) {
-      applyVibrationDomeTuningToMesh(vis.vibrationDome, tune);
+      applyVibrationDomeTuningToMesh(domeMesh, tune);
     }
     const floorY = 0.06;
     vis.vibrationDome.position.set(0, floorY - w.y + tune.floorYOffset, 0);
     updateVibrationZoneDomeMaterial(
-      vis.vibrationDome.material as THREE.MeshPhysicalMaterial,
+      domeMesh.material as THREE.MeshPhysicalMaterial,
       elapsedSec,
       d.level,
     );
+    updateVibrationFieldVisuals(vis.vibrationDome, d.level, rTiles, elapsedSec, tune);
   } else if (vis.vibrationDome) {
     vis.root.remove(vis.vibrationDome);
     disposeSubtree(vis.vibrationDome);

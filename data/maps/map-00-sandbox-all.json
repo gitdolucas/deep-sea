@@ -60,6 +60,20 @@
   ],
   "defenses": [
     {
+      "id": "def_test_arc",
+      "type": "arc_spine",
+      "position": [2, 2],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
+      "id": "def_test_laser",
+      "type": "tideheart_laser",
+      "position": [4, 2],
+      "level": 1,
+      "targetMode": "closest"
+    },
+    {
       "id": "def_test_shotgun",
       "type": "bubble_shotgun",
       "position": [
@@ -107,8 +121,8 @@
       "isBoss": false,
       "groups": [
         {
-          "enemyType": "abyssal_colossus",
-          "count": 20,
+          "enemyType": "stoneclaw",
+          "count": 100,
           "spawnId": "spawn_test",
           "pathId": "path_main",
           "interval": 1,
