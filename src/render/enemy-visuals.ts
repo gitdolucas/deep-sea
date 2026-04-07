@@ -12,8 +12,8 @@ export interface EnemyVisualBuild {
   root: THREE.Group;
   /** Local Y for the HP bar (above the silhouette). */
   hpBarY: number;
-  /** Stoneclaw atlas visual (vertical plane; yaw-synced each frame in the render app). */
-  spriteBillboard?: THREE.Mesh;
+  /** Stoneclaw atlas visual ({@link THREE.Sprite} faces the camera automatically). */
+  spriteBillboard?: THREE.Sprite;
 }
 
 function stdMat(
@@ -34,21 +34,21 @@ function stdMat(
 }
 
 function makeStoneclawSprite(map: THREE.Texture): {
-  sprite: THREE.Mesh;
+  sprite: THREE.Sprite;
   hpBarY: number;
 } {
   const rect = ENTITY_SPRITE_RECTS_PX.stoneclaw;
   const { width, height } = worldSizeForSpriteRect(rect);
-  const sprite = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, height),
-    new THREE.MeshBasicMaterial({
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
       map,
       transparent: true,
       alphaTest: 0.01,
       depthWrite: false,
-      side: THREE.DoubleSide,
+      sizeAttenuation: true,
     }),
   );
+  sprite.scale.set(width, height, 1);
   sprite.position.y = height * 0.5;
   sprite.userData.kind = "enemy_sprite";
   sprite.userData.enemyType = "stoneclaw";

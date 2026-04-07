@@ -34,7 +34,6 @@ import {
   worldFromGrid,
   worldGroundGridSpan,
 } from "./board.js";
-import { syncVerticalBillboardMesh } from "./yaw-billboard.js";
 import { buildDecorationsGroup } from "./decorations.js";
 import { createSeabedOverlay } from "./seabed-overlay.js";
 import {
@@ -283,13 +282,13 @@ export class GameApp {
   private placementType: DefenseTypeKey | null = null;
   private enemyObjects = new Map<
     string,
-    { root: THREE.Group; bar: BarBillboard; spriteBillboard?: THREE.Mesh }
+    { root: THREE.Group; bar: BarBillboard; spriteBillboard?: THREE.Sprite }
   >();
   private defenseObjects = new Map<
     string,
     {
       root: THREE.Group;
-      tower: THREE.Mesh;
+      tower: THREE.Mesh | THREE.Sprite;
       bar: BarBillboard;
       vibrationDome?: THREE.Group;
       vibrationDomeKey?: string;
@@ -1886,9 +1885,6 @@ export class GameApp {
       const hpRatio = e.maxHp > 0 ? e.hp / e.maxHp : 0;
       vis.bar.setFillRatio(hpRatio);
       vis.bar.group.quaternion.copy(this.camera.quaternion);
-      if (vis.spriteBillboard) {
-        syncVerticalBillboardMesh(vis.spriteBillboard, vis.root, this.camera);
-      }
     }
     for (const [id, vis] of [...this.enemyObjects]) {
       if (!alive.has(id)) {
@@ -1937,8 +1933,7 @@ export class GameApp {
       vis.bar.setFillRatio(cdRatio);
       vis.bar.group.quaternion.copy(this.camera.quaternion);
       if (vis.tower.userData.entitySprite === true) {
-        syncVerticalBillboardMesh(vis.tower, vis.root, this.camera);
-        const mat = vis.tower.material as THREE.MeshBasicMaterial;
+        const mat = vis.tower.material as THREE.SpriteMaterial;
         const ready = interval > 0 ? 1 - remaining / interval : 1;
         const glow = 0.8 + 0.2 * Math.max(0, Math.min(1, ready));
         const selected = this.selectedDefenseId === d.id;

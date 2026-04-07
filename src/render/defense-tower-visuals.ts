@@ -25,9 +25,6 @@ import {
 } from "./vibration-zone-dome.js";
 import { worldFromGrid } from "./board.js";
 
-/** Half-height of {@link createDefenseTowerMesh} cylinder placeholder — atlas quads align feet here. */
-export const DEFENSE_PLACEHOLDER_CYLINDER_HALF_HEIGHT = 0.55 / 2;
-
 /** Placeholder tower tint per defense (until sprites). */
 export const DEFENSE_TOWER_COLOR: Record<DefenseTypeKey, number> = {
   arc_spine: COLORS.tower,
@@ -42,7 +39,7 @@ export function createDefenseTowerMesh(
   defenseId: string,
   type: DefenseTypeKey,
   spriteAtlas?: EntitySpriteAtlas | null,
-): THREE.Mesh {
+): THREE.Mesh | THREE.Sprite {
   const tex = getEntitySpriteTextureForDefense(spriteAtlas, type);
   if (tex) {
     const rect =
@@ -52,23 +49,22 @@ export function createDefenseTowerMesh(
           ? ENTITY_SPRITE_RECTS_PX.ink_veil
           : ENTITY_SPRITE_RECTS_PX.arc_spine;
     const { width, height } = worldSizeForSpriteRect(rect);
-    /** Vertical plane + yaw billboarding (`yaw-billboard.ts`): `THREE.Sprite` uses the camera plane and reads as floating above tiles. */
-    const tower = new THREE.Mesh(
-      new THREE.PlaneGeometry(width, height),
-      new THREE.MeshBasicMaterial({
+    /** {@link THREE.Sprite} always faces the camera; avoids mis-oriented plane + camera quaternion (edge-on bar). */
+    const tower = new THREE.Sprite(
+      new THREE.SpriteMaterial({
         map: tex,
         transparent: true,
         alphaTest: 0.01,
         depthWrite: false,
-        side: THREE.DoubleSide,
+        sizeAttenuation: true,
       }),
     );
-    const h = DEFENSE_PLACEHOLDER_CYLINDER_HALF_HEIGHT;
-    tower.position.y = height * 0.5 - h;
+    tower.scale.set(width, height, 1);
+    tower.position.y = height * 0.5;
     tower.userData.kind = "defense_tower";
     tower.userData.defenseId = defenseId;
     tower.userData.entitySprite = true;
-    tower.userData.cooldownBarLocalY = height - h + 0.08;
+    tower.userData.cooldownBarLocalY = height + 0.08;
     return tower;
   }
 

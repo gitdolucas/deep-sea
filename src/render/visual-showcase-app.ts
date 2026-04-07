@@ -26,7 +26,6 @@ import {
 import type { EntitySpriteAtlas } from "./entity-sprite-atlas.js";
 import { syncInkVeilAuraForDefense } from "./ink-veil-aura.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
-import { syncVerticalBillboardMesh } from "./yaw-billboard.js";
 import {
   ensureBubbleProjectilePool,
   spawnBubblePopRings,
@@ -196,14 +195,12 @@ export class VisualShowcaseApp {
   }[] = [];
   private arcSpineSparkles: ArcSpineHitSparkleBurst[] = [];
   private enemyBars: THREE.Group[] = [];
-  private enemyVerticalBillboards: { root: THREE.Group; mesh: THREE.Mesh }[] =
-    [];
   private readonly entitySpriteAtlas: EntitySpriteAtlas | null;
   private defenseRoots = new Map<
     string,
     {
       root: THREE.Group;
-      tower: THREE.Mesh;
+      tower: THREE.Mesh | THREE.Sprite;
       bar: BarBillboard;
       vibrationDome?: THREE.Group;
       vibrationDomeKey?: string;
@@ -430,7 +427,6 @@ export class VisualShowcaseApp {
   }
 
   private placeEnemies(): void {
-    this.enemyVerticalBillboards = [];
     const positions: [number, number][] = [
       [4, 6],
       [8, 6],
@@ -439,7 +435,7 @@ export class VisualShowcaseApp {
     for (let i = 0; i < ENEMY_TYPES.length; i++) {
       const t = ENEMY_TYPES[i]!;
       const [gx, gz] = positions[i]!;
-      const { root, hpBarY, spriteBillboard } = createEnemyVisual(
+      const { root, hpBarY } = createEnemyVisual(
         t,
         this.entitySpriteAtlas,
       );
@@ -451,9 +447,6 @@ export class VisualShowcaseApp {
       root.add(bar.group);
       bar.setFillRatio(0.75);
       this.enemyBars.push(bar.group);
-      if (spriteBillboard) {
-        this.enemyVerticalBillboards.push({ root, mesh: spriteBillboard });
-      }
     }
   }
 
@@ -711,16 +704,12 @@ export class VisualShowcaseApp {
     for (const g of this.enemyBars) {
       g.quaternion.copy(this.camera.quaternion);
     }
-    for (const { root, mesh } of this.enemyVerticalBillboards) {
-      syncVerticalBillboardMesh(mesh, root, this.camera);
-    }
     for (const d of this.doc.defenses) {
       const vis = this.defenseRoots.get(d.id);
       if (!vis) continue;
       vis.bar.group.quaternion.copy(this.camera.quaternion);
       if (vis.tower.userData.entitySprite === true) {
-        syncVerticalBillboardMesh(vis.tower, vis.root, this.camera);
-        const mat = vis.tower.material as THREE.MeshBasicMaterial;
+        const mat = vis.tower.material as THREE.SpriteMaterial;
         mat.color.setRGB(1, 1, 1);
       } else {
         const mat = vis.tower.material as THREE.MeshStandardMaterial;
