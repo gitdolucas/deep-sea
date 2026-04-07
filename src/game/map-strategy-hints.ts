@@ -72,6 +72,23 @@ export function analyzeMapStrategyHints(doc: MapDocument): MapStrategyHint[] {
     );
   }
 
+  const usedSpawns = new Set<string>();
+  for (const wave of doc.waves ?? []) {
+    for (const g of wave.groups ?? []) {
+      if (g.spawnId) usedSpawns.add(g.spawnId);
+    }
+  }
+  for (const sp of doc.spawnPoints ?? []) {
+    if (!usedSpawns.has(sp.id)) {
+      push(
+        hints,
+        "waves.unused_spawn",
+        "waves",
+        `Spawn "${sp.id}" is never referenced by any wave group (deep-sea-map-strategy spawn coverage).`,
+      );
+    }
+  }
+
   const paths = doc.paths;
   if (paths.length < 2) {
     return hints;

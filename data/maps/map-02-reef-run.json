@@ -97,7 +97,7 @@
           "pathId": "path_main",
           "interval": 1.5,
           "delay": 0,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.03,
           "speedMultiplier": 1
         },
         {
@@ -107,7 +107,7 @@
           "pathId": "path_main",
           "interval": 1.3,
           "delay": 8,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.03,
           "speedMultiplier": 1
         }
       ]
@@ -124,8 +124,8 @@
           "pathId": "path_main",
           "interval": 1.2,
           "delay": 0,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
+          "hpMultiplier": 1.06,
+          "speedMultiplier": 1.02
         }
       ]
     },
@@ -141,8 +141,8 @@
           "pathId": "path_main",
           "interval": 1.1,
           "delay": 0,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
+          "hpMultiplier": 1.09,
+          "speedMultiplier": 1.04
         },
         {
           "enemyType": "stoneclaw",
@@ -151,8 +151,8 @@
           "pathId": "path_main",
           "interval": 1,
           "delay": 7,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
+          "hpMultiplier": 1.09,
+          "speedMultiplier": 1.06
         }
       ]
     }

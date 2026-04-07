@@ -62,14 +62,20 @@
     {
       "id": "def_test_arc",
       "type": "arc_spine",
-      "position": [2, 2],
+      "position": [
+        2,
+        2
+      ],
       "level": 1,
       "targetMode": "closest"
     },
     {
       "id": "def_test_laser",
       "type": "tideheart_laser",
-      "position": [4, 2],
+      "position": [
+        4,
+        2
+      ],
       "level": 1,
       "targetMode": "closest"
     },
@@ -121,12 +127,22 @@
       "isBoss": false,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.01,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "stoneclaw",
           "count": 100,
           "spawnId": "spawn_test",
           "pathId": "path_main",
           "interval": 1,
-          "delay": 0,
+          "delay": 0.5,
           "hpMultiplier": 1,
           "speedMultiplier": 1
         },
@@ -136,18 +152,8 @@
           "spawnId": "spawn_test",
           "pathId": "path_main",
           "interval": 2,
-          "delay": 3,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_test",
-          "pathId": "path_main",
-          "interval": 1,
-          "delay": 10,
-          "hpMultiplier": 1,
+          "delay": 2.5,
+          "hpMultiplier": 1.005,
           "speedMultiplier": 1
         }
       ]
@@ -158,13 +164,23 @@
       "isBoss": true,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_test",
+          "pathId": "path_main",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.235,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "stoneclaw",
           "count": 2,
           "spawnId": "spawn_test",
           "pathId": "path_main",
           "interval": 1.5,
-          "delay": 0,
-          "hpMultiplier": 1,
+          "delay": 0.5,
+          "hpMultiplier": 1.215,
           "speedMultiplier": 1
         },
         {
@@ -174,17 +190,7 @@
           "pathId": "path_main",
           "interval": 1.5,
           "delay": 2,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_test",
-          "pathId": "path_main",
-          "interval": 1,
-          "delay": 6,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.22,
           "speedMultiplier": 1
         }
       ]

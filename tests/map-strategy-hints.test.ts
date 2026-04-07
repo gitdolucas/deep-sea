@@ -145,6 +145,25 @@ describe("analyzeMapStrategyHints", () => {
     const doc = baseDoc({
       paths: [{ id: "p1", waypoints: [[0, 0], [1, 0]] }],
       decorations: [{ type: "skull", position: [4, 0, 4], rotation: 0, scale: 1 }],
+      waves: [
+        {
+          wave: 1,
+          prepTime: 10,
+          isBoss: false,
+          groups: [
+            {
+              enemyType: "stoneclaw",
+              count: 1,
+              spawnId: "s1",
+              pathId: "p1",
+              interval: 1,
+              delay: 0,
+              hpMultiplier: 1,
+              speedMultiplier: 1,
+            },
+          ],
+        },
+      ],
     });
     const hints = analyzeMapStrategyHints(doc);
     expect(hints.length).toBe(0);

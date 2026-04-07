@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import Stats from "stats.js";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameSession, type DefenseMoveStep } from "../game/game-session.js";
@@ -170,11 +169,52 @@ function isSimTimeScale(n: number): n is SimTimeScale {
   return SIM_TIME_SCALE_SET.has(n);
 }
 
-/** Vertical FOV multiplier while a defense is focused (narrower = zoom in). */
+/**
+ * Orthographic zoom while a defense is focused: target zoom = baseZoom / this value
+ * (same framing intent as the old perspective FOV halving).
+ */
 const DEFENSE_FOCUS_FOV_SCALE = 0.5;
 
+/** Vertical half-extent of ortho frustum at zoom=1 (world units); width follows aspect. */
+const ORTHO_VIEW_HALF_HEIGHT = 14;
+
+/** Near/far planes for the gameplay orthographic camera. */
+const ORTHO_CAMERA_NEAR = 0.1;
+const ORTHO_CAMERA_FAR = 200;
+
+/** Zoom in limit (larger = closer view). */
+const ORTHO_MAX_ZOOM = 12;
+
+/** NDC margin for map-fit probe (1 = use full view width/height). */
+const ORTHO_MAP_FIT_NDC_MARGIN = 0.9;
+
+/** Tiles padding beyond grid edge when fitting the map in frame. */
+const ORTHO_MAP_FIT_GRID_PAD = 0.72;
+
+const ORTHO_MAP_FIT_Z_LO = -0.08;
+const ORTHO_MAP_FIT_Z_HI = 2.08;
+
+/** Lowest zoom tried in binary search (wider view numerically in three.js). */
+const ORTHO_ZOOM_SEARCH_LO = 0.08;
+const ORTHO_ZOOM_SEARCH_HI = 48;
+const ORTHO_ZOOM_SEARCH_STEPS = 26;
+
+/** Shrink computed fit slightly so the map is comfortably inside the frame. */
+const ORTHO_MAP_FIT_ZOOM_SAFETY = 0.96;
+
+/** Hard floor so computed fit never underflows. */
+const ORTHO_MAP_FIT_ABSOLUTE_FLOOR = 0.12;
+
+const MAP_PAN_ZOOM_SENS = 1;
+
+/** Exponential smoothing when auto-recentering pan (off-map or zoom-out full frame). */
+const MAP_PAN_RECENTER_SMOOTH_RATE = 7;
+
+/** Samples per axis when checking if any map tile lies in the viewport (works at any zoom). */
+const MAP_VIEWPORT_TILE_SAMPLES = 24;
+
 /**
- * Exponential smoothing for orbit target + FOV when entering/leaving defense focus.
+ * Exponential smoothing for orbit target + zoom when entering/leaving defense focus.
  * Larger = snappier (still smooth in/out).
  */
 const DEFENSE_FOCUS_CAMERA_SMOOTH_RATE = 6.5;
@@ -218,11 +258,9 @@ const SCENE_GRID_VISUAL_Y = 0.02;
 export class GameApp {
   readonly session: GameSession;
   private readonly doc: MapDocument;
-  /** Default perspective FOV (degrees); halved while defense focus is active. */
-  private readonly cameraFovBase = 50;
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
-  private readonly camera: THREE.PerspectiveCamera;
+  private readonly camera: THREE.OrthographicCamera;
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private clock = new THREE.Clock();
@@ -285,9 +323,37 @@ export class GameApp {
   private readonly seabedMat: THREE.ShaderMaterial;
   private nextDefenseId = 1;
   private readonly mount: HTMLElement;
-  private readonly orbitControls: OrbitControls;
   private readonly abortController = new AbortController();
   private slotPointerStart: { x: number; y: number } | null = null;
+  /**
+   * Look-at pivot from defense-focus easing (map center ⟷ tower), before user pan offset.
+   * Updated in {@link GameApp.syncDefenseFocusCamera}.
+   */
+  private readonly cameraCinematicPivot = new THREE.Vector3(0, 0, 0);
+  /** User pan accumulation in world space (screen-space drag along camera right/up). */
+  private readonly mapPanOffset = new THREE.Vector3(0, 0, 0);
+  /** Offset from pivot to camera position (matches initial diagonal framing). */
+  private readonly pivotToCameraOffset = new THREE.Vector3(6, 14, 12);
+  private readonly tmpCameraPivotWorld = new THREE.Vector3();
+  private readonly mapPanRightScratch = new THREE.Vector3();
+  private readonly mapPanUpScratch = new THREE.Vector3();
+  private mapPanActive = false;
+  private mapPanPointerId: number | null = null;
+  private mapPanDragLast: { x: number; y: number } | null = null;
+  private mapPanEnabled = true;
+  private mapZoomEnabled = true;
+  /**
+   * Maximum zoom (three.js ortho: larger = tighter) that still keeps the full map in frame
+   * at the rest pivot. Used as initial zoom, minimum zoom, and zoom-out snap target.
+   */
+  private mapFullFrameZoom = 1;
+  private readonly mapFitCornerPool: THREE.Vector3[] = Array.from(
+    { length: 8 },
+    () => new THREE.Vector3(),
+  );
+  private readonly mapFitProjectScratch = new THREE.Vector3();
+  /** Smooth drift of {@link mapPanOffset} toward origin when the map is off-screen or after full-frame zoom-out. */
+  private mapPanRecenterActive = false;
   /** For shell stat row flash when balance changes. */
   private prevShells: number | null = null;
   private gameplayTipsTimer: ReturnType<typeof setInterval> | null = null;
@@ -295,8 +361,10 @@ export class GameApp {
   /** Orbit pivot when not focused on a defense (map center). */
   private readonly orbitRestTarget = new THREE.Vector3(0, 0, 0);
   private readonly tmpDefenseOrbitLookAt = new THREE.Vector3();
-  /** 0 = map rest framing, 1 = defense focus (drives eased FOV + orbit pivot). */
+  /** 0 = map rest framing, 1 = defense focus (drives eased zoom + orbit pivot). */
   private defenseFocusViewBlend = 0;
+  /** `camera.zoom` when defense focus started (new selection from none); used to lerp zoom in/out. */
+  private orthoZoomAtFocusStart = 1;
   private readonly missionEndNav: MissionEndNavigation | null;
   private readonly stats: Stats;
   private readonly armoryOpenStorageKey = "deepSeaArmoryOpen";
@@ -396,31 +464,18 @@ export class GameApp {
 
     const w0 = window.innerWidth;
     const h0 = window.innerHeight;
-    const aspect0 = w0 / h0;
-    this.camera = new THREE.PerspectiveCamera(
-      this.cameraFovBase,
-      aspect0,
-      0.1,
-      200,
+    this.camera = new THREE.OrthographicCamera(
+      -1,
+      1,
+      1,
+      -1,
+      ORTHO_CAMERA_NEAR,
+      ORTHO_CAMERA_FAR,
     );
-    this.camera.position.set(6, 14, 12);
-    this.camera.lookAt(0, 0, 0);
-
-    this.orbitControls = new OrbitControls(
-      this.camera,
-      this.renderer.domElement,
-    );
-    this.orbitControls.target.set(0, 0, 0);
-    this.orbitControls.enableDamping = true;
-    this.orbitControls.dampingFactor = 0.08;
-    this.orbitControls.enableRotate = false;
-    this.orbitControls.mouseButtons.LEFT = THREE.MOUSE.PAN;
-    this.orbitControls.touches.ONE = THREE.TOUCH.PAN;
-    this.orbitControls.screenSpacePanning = true;
-    this.orbitControls.maxPolarAngle = Math.PI / 2 - 0.06;
-    this.orbitControls.minDistance = 4;
-    this.orbitControls.maxDistance = 72;
-    this.orbitControls.update();
+    this.recomputeMapFullFrameZoom(w0, h0);
+    this.camera.zoom = this.mapFullFrameZoom;
+    this.mapPanOffset.set(0, 0, 0);
+    this.applyCameraFromPivot();
     this.syncOrbitWithPlacement();
 
     const ac = { signal: this.abortController.signal };
@@ -465,10 +520,27 @@ export class GameApp {
     window.addEventListener("pointerup", (ev) => this.onSlotPointerUp(ev), ac);
     window.addEventListener(
       "pointercancel",
-      () => {
+      (ev) => {
         this.slotPointerStart = null;
+        const verifyMapPan =
+          this.mapPanPointerId === ev.pointerId && this.mapPanActive;
+        this.endMapPanPointer(ev.pointerId);
+        if (verifyMapPan) {
+          this.applyCameraFromPivot();
+          this.updateMapPanOffscreenRecenter();
+        }
       },
       ac,
+    );
+    window.addEventListener(
+      "pointermove",
+      (ev) => this.onWindowPointerMoveForPan(ev),
+      ac,
+    );
+    this.renderer.domElement.addEventListener(
+      "wheel",
+      (ev) => this.onCanvasWheelZoom(ev),
+      { ...ac, passive: false },
     );
     window.addEventListener("keydown", (ev) => this.onKeyDown(ev), ac);
     document.getElementById("sendWave")?.addEventListener(
@@ -592,7 +664,6 @@ export class GameApp {
     this.abortController.abort();
     this.renderer.setAnimationLoop(null);
     this.stats.dom.remove();
-    this.orbitControls.dispose();
     this.scene.remove(this.sceneGridHelper);
     disposeObject3DTree(this.sceneGridHelper);
     for (const c of this.chainLines) {
@@ -722,9 +793,234 @@ export class GameApp {
   private onResize(): void {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
+    this.recomputeMapFullFrameZoom(w, h);
+    this.camera.zoom = Math.max(this.camera.zoom, this.mapFullFrameZoom);
+    this.camera.updateProjectionMatrix();
+    this.applyCameraFromPivot();
+  }
+
+  private updateOrthoFrustum(width: number, height: number): void {
+    const aspect = width / Math.max(height, 1e-6);
+    const halfH = ORTHO_VIEW_HALF_HEIGHT;
+    const halfW = halfH * aspect;
+    this.camera.left = -halfW;
+    this.camera.right = halfW;
+    this.camera.top = halfH;
+    this.camera.bottom = -halfH;
+    this.camera.updateProjectionMatrix();
+  }
+
+  /** Camera pose for map-fit probe: rest pivot, no user pan. */
+  private syncCameraForMapFitProbe(pivot: THREE.Vector3): void {
+    this.tmpCameraPivotWorld.copy(pivot);
+    this.camera.position
+      .copy(this.tmpCameraPivotWorld)
+      .add(this.pivotToCameraOffset);
+    this.camera.lookAt(this.tmpCameraPivotWorld);
+    this.camera.updateMatrixWorld(true);
+  }
+
+  private fillMapFitCornerPool(): void {
+    const [gw, gd] = this.doc.gridSize;
+    const pad = ORTHO_MAP_FIT_GRID_PAD;
+    const xMin = -(gw - 1) * 0.5 - pad;
+    const xMax = (gw - 1) * 0.5 + pad;
+    const zMin = -(gd - 1) * 0.5 - pad;
+    const zMax = (gd - 1) * 0.5 + pad;
+    let i = 0;
+    for (const x of [xMin, xMax]) {
+      for (const y of [ORTHO_MAP_FIT_Z_LO, ORTHO_MAP_FIT_Z_HI]) {
+        for (const z of [zMin, zMax]) {
+          this.mapFitCornerPool[i++]!.set(x, y, z);
+        }
+      }
+    }
+  }
+
+  /** True if all map corner samples project inside NDC margin for current camera matrices. */
+  private mapBoundsFitAtCurrentProjection(ndcMargin: number): boolean {
+    const m = ndcMargin;
+    for (const p of this.mapFitCornerPool) {
+      this.mapFitProjectScratch.copy(p).project(this.camera);
+      const r = this.mapFitProjectScratch;
+      if (Math.abs(r.x) > m || Math.abs(r.y) > m) return false;
+      if (r.z < -1 || r.z > 1) return false;
+    }
+    return true;
+  }
+
+  /**
+   * True when some point on the map floor (grid sampled across playable tiles) lies in the viewport.
+   * Uses tile coverage instead of bbox corners so zoomed-in views on the interior still count as visible.
+   */
+  private mapHasVisibleSample(ndcLimit = 1.02): boolean {
+    const [gw, gd] = this.doc.gridSize;
+    const nx = Math.min(MAP_VIEWPORT_TILE_SAMPLES, Math.max(gw, 1));
+    const nz = Math.min(MAP_VIEWPORT_TILE_SAMPLES, Math.max(gd, 1));
+    const ox = (gw - 1) * 0.5;
+    const oz = (gd - 1) * 0.5;
+    const y = 0.12;
+    const lim = ndcLimit;
+    this.camera.updateMatrixWorld(true);
+    for (let ix = 0; ix < nx; ix++) {
+      const fx = nx === 1 ? (gw - 1) * 0.5 : (ix / (nx - 1)) * (gw - 1);
+      for (let iz = 0; iz < nz; iz++) {
+        const fz = nz === 1 ? (gd - 1) * 0.5 : (iz / (nz - 1)) * (gd - 1);
+        this.mapFitProjectScratch.set(fx - ox, y, fz - oz).project(this.camera);
+        const r = this.mapFitProjectScratch;
+        if (
+          Math.abs(r.x) <= lim &&
+          Math.abs(r.y) <= lim &&
+          r.z >= -lim &&
+          r.z <= lim
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * If no map tile projects into the viewport, activate smooth pan recenter (any zoom).
+   * Called when a map pan gesture ends (pointer up / cancel), not during drag.
+   * Zoom-out to full frame sets {@link mapPanRecenterActive} from the wheel handler as well.
+   */
+  private updateMapPanOffscreenRecenter(): void {
+    if (this.mapPanOffset.lengthSq() < 1e-12) {
+      this.mapPanRecenterActive = false;
+      return;
+    }
+    this.camera.updateMatrixWorld(true);
+    if (!this.mapHasVisibleSample()) {
+      this.mapPanRecenterActive = true;
+    }
+  }
+
+  private stepMapPanRecenter(dt: number): void {
+    if (!this.mapPanRecenterActive) return;
+    if (this.mapPanOffset.lengthSq() < 1e-12) {
+      this.mapPanOffset.set(0, 0, 0);
+      this.mapPanRecenterActive = false;
+      return;
+    }
+    const step =
+      1 - Math.exp(-MAP_PAN_RECENTER_SMOOTH_RATE * Math.min(dt, 0.1));
+    this.mapPanOffset.lerp(this.orbitRestTarget, step);
+    if (this.mapPanOffset.lengthSq() < 1e-10) {
+      this.mapPanOffset.set(0, 0, 0);
+      this.mapPanRecenterActive = false;
+    }
+  }
+
+  /**
+   * Largest ortho zoom that still keeps padded map bounds in frame (rest pivot, no pan).
+   * Updates {@link GameApp.mapFullFrameZoom}.
+   */
+  private recomputeMapFullFrameZoom(width: number, height: number): void {
+    this.updateOrthoFrustum(width, height);
+    this.fillMapFitCornerPool();
+    const pivot = this.orbitRestTarget;
+    let lo = ORTHO_ZOOM_SEARCH_LO;
+    let hi = ORTHO_ZOOM_SEARCH_HI;
+    for (let s = 0; s < ORTHO_ZOOM_SEARCH_STEPS; s++) {
+      const mid = (lo + hi) * 0.5;
+      this.camera.zoom = mid;
+      this.camera.updateProjectionMatrix();
+      this.syncCameraForMapFitProbe(pivot);
+      if (this.mapBoundsFitAtCurrentProjection(ORTHO_MAP_FIT_NDC_MARGIN)) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    let fit = lo * ORTHO_MAP_FIT_ZOOM_SAFETY;
+    fit = Math.min(fit, ORTHO_MAX_ZOOM);
+    fit = Math.max(fit, ORTHO_MAP_FIT_ABSOLUTE_FLOOR);
+    this.mapFullFrameZoom = fit;
+  }
+
+  private applyCameraFromPivot(): void {
+    this.tmpCameraPivotWorld
+      .copy(this.cameraCinematicPivot)
+      .add(this.mapPanOffset);
+    this.camera.position
+      .copy(this.tmpCameraPivotWorld)
+      .add(this.pivotToCameraOffset);
+    this.camera.lookAt(this.tmpCameraPivotWorld);
+  }
+
+  private updateMapNavigateEnabled(): void {
+    const playing = this.session.getOutcome() === "playing";
+    const focused = playing && this.selectedDefenseId !== null;
+    this.mapPanEnabled = playing && !this.placementType && !focused;
+    const focusZoomBusy =
+      playing &&
+      (this.selectedDefenseId !== null || this.defenseFocusViewBlend > 0.02);
+    this.mapZoomEnabled = !focusZoomBusy;
+  }
+
+  private endMapPanPointer(pointerId: number): void {
+    if (this.mapPanPointerId === pointerId) {
+      this.mapPanActive = false;
+      this.mapPanDragLast = null;
+      this.mapPanPointerId = null;
+    }
+  }
+
+  private onWindowPointerMoveForPan(e: PointerEvent): void {
+    if (!this.mapPanActive || !this.mapPanDragLast) return;
+    if (e.pointerId !== this.mapPanPointerId) return;
+    if (!this.mapPanEnabled) return;
+    if (e.pointerType === "mouse" && (e.buttons & 1) === 0) return;
+
+    const dx = e.clientX - this.mapPanDragLast.x;
+    const dy = e.clientY - this.mapPanDragLast.y;
+    this.mapPanDragLast = { x: e.clientX, y: e.clientY };
+    if (dx === 0 && dy === 0) return;
+
+    this.mapPanRecenterActive = false;
+    this.camera.updateMatrixWorld();
+    const el = this.renderer.domElement;
+    const w = Math.max(el.clientWidth, 1);
+    const h = Math.max(el.clientHeight, 1);
+    const worldPerPixX =
+      ((this.camera.right - this.camera.left) / this.camera.zoom / w) *
+      MAP_PAN_ZOOM_SENS;
+    const worldPerPixY =
+      ((this.camera.top - this.camera.bottom) / this.camera.zoom / h) *
+      MAP_PAN_ZOOM_SENS;
+    const right = this.mapPanRightScratch
+      .setFromMatrixColumn(this.camera.matrixWorld, 0)
+      .normalize();
+    const up = this.mapPanUpScratch
+      .setFromMatrixColumn(this.camera.matrixWorld, 1)
+      .normalize();
+    this.mapPanOffset.addScaledVector(right, -dx * worldPerPixX);
+    this.mapPanOffset.addScaledVector(up, dy * worldPerPixY);
+    this.applyCameraFromPivot();
+  }
+
+  private onCanvasWheelZoom(e: WheelEvent): void {
+    if (!this.mapZoomEnabled) return;
+    e.preventDefault();
+    const scale = Math.pow(0.95, e.deltaY * 0.05);
+    const zoomingOut = scale > 1;
+    const prev = this.camera.zoom;
+    const nextZoom = THREE.MathUtils.clamp(
+      this.camera.zoom / scale,
+      this.mapFullFrameZoom,
+      ORTHO_MAX_ZOOM,
+    );
+    this.camera.zoom = nextZoom;
+    if (zoomingOut && nextZoom <= this.mapFullFrameZoom + 1e-5) {
+      this.mapPanRecenterActive = true;
+    }
+    if (Math.abs(this.camera.zoom - prev) > 1e-8) {
+      this.camera.updateProjectionMatrix();
+      this.applyCameraFromPivot();
+    }
   }
 
   private onKeyDown(ev: KeyboardEvent): void {
@@ -1096,16 +1392,9 @@ export class GameApp {
     this.towerHoverRangeGroup.visible = true;
   }
 
-  /** Placement and defense focus: orbit pan only when idle (tile pick + camera explore). */
+  /** Placement and defense focus: map pan only when idle (tile pick + camera explore). */
   private syncOrbitWithPlacement(): void {
-    this.updateOrbitPanEnabled();
-  }
-
-  private updateOrbitPanEnabled(): void {
-    const focused =
-      this.session.getOutcome() === "playing" &&
-      this.selectedDefenseId !== null;
-    this.orbitControls.enablePan = !this.placementType && !focused;
+    this.updateMapNavigateEnabled();
   }
 
   private selectDefense(id: string): void {
@@ -1117,7 +1406,11 @@ export class GameApp {
       this.rebuildPlacementRangeRings();
       this.syncOrbitWithPlacement();
     }
+    const prevSelected = this.selectedDefenseId;
     this.selectedDefenseId = id;
+    if (prevSelected === null) {
+      this.orthoZoomAtFocusStart = this.camera.zoom;
+    }
     this.defenseDrawerUiCache = null;
     this.refreshInventoryUi();
     window.requestAnimationFrame(() => {
@@ -1292,10 +1585,23 @@ export class GameApp {
       return;
     }
     this.slotPointerStart = { x: e.clientX, y: e.clientY };
+    this.updateMapNavigateEnabled();
+    if (this.mapPanEnabled) {
+      this.mapPanActive = true;
+      this.mapPanPointerId = e.pointerId;
+      this.mapPanDragLast = { x: e.clientX, y: e.clientY };
+    }
   }
 
   private onSlotPointerUp(e: PointerEvent): void {
     if (e.button !== 0) return;
+    const verifyMapPanAfterRelease =
+      this.mapPanPointerId === e.pointerId && this.mapPanActive;
+    this.endMapPanPointer(e.pointerId);
+    if (verifyMapPanAfterRelease) {
+      this.applyCameraFromPivot();
+      this.updateMapPanOffscreenRecenter();
+    }
     const start = this.slotPointerStart;
     this.slotPointerStart = null;
     if (!start || this.session.getOutcome() !== "playing") return;
@@ -1474,7 +1780,9 @@ export class GameApp {
       this.hideTowerHoverTip();
     }
     this.syncDefenseFocusCamera(dt);
-    this.orbitControls.update();
+    this.applyCameraFromPivot();
+    this.stepMapPanRecenter(dt);
+    this.applyCameraFromPivot();
     this.seabedMat.uniforms.uTime.value = this.clock.elapsedTime;
     this.renderer.transmissionResolutionScale =
       getVibrationDomeTuning().transmissionResolutionScale;
@@ -1483,11 +1791,11 @@ export class GameApp {
   }
 
   /**
-   * Ease orbit pivot (screen center) toward the selected defense and FOV in/out with smoothstep.
+   * Ease look pivot (screen center) toward the selected defense and ortho zoom in/out with smoothstep.
    * Pan is disabled while focused so the look-at stays on the tower; D-pad moves the tower, pivot follows.
    */
   private syncDefenseFocusCamera(dt: number): void {
-    this.updateOrbitPanEnabled();
+    this.updateMapNavigateEnabled();
 
     const playing = this.session.getOutcome() === "playing";
     const id = this.selectedDefenseId;
@@ -1520,22 +1828,26 @@ export class GameApp {
       this.tmpDefenseOrbitLookAt.copy(this.orbitRestTarget);
     }
 
-    this.orbitControls.target.lerpVectors(
+    this.cameraCinematicPivot.lerpVectors(
       this.orbitRestTarget,
       this.tmpDefenseOrbitLookAt,
       easeInOut,
     );
 
-    const nextFov = THREE.MathUtils.lerp(
-      this.cameraFovBase,
-      this.cameraFovBase * DEFENSE_FOCUS_FOV_SCALE,
-      easeInOut,
-    );
-    if (Math.abs(nextFov - this.camera.fov) > 1e-5) {
-      this.camera.fov = nextFov;
-      this.camera.updateProjectionMatrix();
-    } else {
-      this.camera.fov = nextFov;
+    const z0 = this.orthoZoomAtFocusStart;
+    const z1 = z0 / DEFENSE_FOCUS_FOV_SCALE;
+    const shouldDriveZoom = snap || t > 1e-4;
+    if (shouldDriveZoom) {
+      const nextZoom = THREE.MathUtils.lerp(z0, z1, easeInOut);
+      const clamped = THREE.MathUtils.clamp(
+        nextZoom,
+        this.mapFullFrameZoom,
+        ORTHO_MAX_ZOOM,
+      );
+      if (Math.abs(clamped - this.camera.zoom) > 1e-6) {
+        this.camera.zoom = clamped;
+        this.camera.updateProjectionMatrix();
+      }
     }
   }
 

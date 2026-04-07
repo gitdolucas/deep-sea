@@ -188,7 +188,7 @@
           "pathId": "path_center",
           "interval": 2,
           "delay": 6,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.005,
           "speedMultiplier": 1
         }
       ]
@@ -205,7 +205,7 @@
           "pathId": "path_left",
           "interval": 1.6,
           "delay": 0,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.04,
           "speedMultiplier": 1
         },
         {
@@ -215,7 +215,7 @@
           "pathId": "path_left",
           "interval": 1.2,
           "delay": 2,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.035,
           "speedMultiplier": 1
         },
         {
@@ -225,7 +225,7 @@
           "pathId": "path_right",
           "interval": 1.2,
           "delay": 0,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.035,
           "speedMultiplier": 1
         },
         {
@@ -235,7 +235,7 @@
           "pathId": "path_right",
           "interval": 1.6,
           "delay": 4,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.04,
           "speedMultiplier": 1
         }
       ]
@@ -252,7 +252,7 @@
           "pathId": "path_center",
           "interval": 1.1,
           "delay": 0,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.07,
           "speedMultiplier": 1
         },
         {
@@ -262,7 +262,7 @@
           "pathId": "path_left",
           "interval": 1.4,
           "delay": 3,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.075,
           "speedMultiplier": 1
         },
         {
@@ -272,7 +272,7 @@
           "pathId": "path_right",
           "interval": 1.1,
           "delay": 1,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.07,
           "speedMultiplier": 1
         },
         {
@@ -282,7 +282,7 @@
           "pathId": "path_right",
           "interval": 1.4,
           "delay": 5,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.075,
           "speedMultiplier": 1
         }
       ]
@@ -299,7 +299,7 @@
           "pathId": "path_left",
           "interval": 1,
           "delay": 0,
-          "hpMultiplier": 1.05,
+          "hpMultiplier": 1.1,
           "speedMultiplier": 1
         },
         {
@@ -309,7 +309,7 @@
           "pathId": "path_left",
           "interval": 1.2,
           "delay": 4,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.105,
           "speedMultiplier": 1
         },
         {
@@ -319,7 +319,7 @@
           "pathId": "path_right",
           "interval": 1,
           "delay": 0,
-          "hpMultiplier": 1.05,
+          "hpMultiplier": 1.1,
           "speedMultiplier": 1
         },
         {
@@ -329,7 +329,7 @@
           "pathId": "path_center",
           "interval": 1.2,
           "delay": 3,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.105,
           "speedMultiplier": 1
         }
       ]
@@ -346,7 +346,7 @@
           "pathId": "path_center",
           "interval": 1.1,
           "delay": 0,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.125,
           "speedMultiplier": 1
         },
         {
@@ -356,7 +356,7 @@
           "pathId": "path_left",
           "interval": 0.9,
           "delay": 2,
-          "hpMultiplier": 1.05,
+          "hpMultiplier": 1.12,
           "speedMultiplier": 1
         },
         {
@@ -366,7 +366,7 @@
           "pathId": "path_right",
           "interval": 0.9,
           "delay": 2,
-          "hpMultiplier": 1.05,
+          "hpMultiplier": 1.12,
           "speedMultiplier": 1
         },
         {
@@ -376,7 +376,7 @@
           "pathId": "path_right",
           "interval": 1.1,
           "delay": 6,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.125,
           "speedMultiplier": 1
         }
       ]
@@ -387,13 +387,23 @@
       "isBoss": true,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_center",
+          "pathId": "path_center",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.175,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "stoneclaw",
           "count": 10,
           "spawnId": "spawn_left",
           "pathId": "path_left",
           "interval": 0.85,
-          "delay": 0,
-          "hpMultiplier": 1,
+          "delay": 0.35,
+          "hpMultiplier": 1.155,
           "speedMultiplier": 1
         },
         {
@@ -402,8 +412,8 @@
           "spawnId": "spawn_right",
           "pathId": "path_right",
           "interval": 0.85,
-          "delay": 0,
-          "hpMultiplier": 1,
+          "delay": 0.35,
+          "hpMultiplier": 1.155,
           "speedMultiplier": 1
         },
         {
@@ -412,18 +422,8 @@
           "spawnId": "spawn_center",
           "pathId": "path_center",
           "interval": 1.2,
-          "delay": 8,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_center",
-          "pathId": "path_center",
-          "interval": 1,
-          "delay": 14,
-          "hpMultiplier": 1,
+          "delay": 6,
+          "hpMultiplier": 1.16,
           "speedMultiplier": 1
         }
       ]
@@ -440,7 +440,7 @@
           "pathId": "path_left",
           "interval": 1,
           "delay": 0,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.165,
           "speedMultiplier": 1
         },
         {
@@ -450,7 +450,7 @@
           "pathId": "path_right",
           "interval": 0.85,
           "delay": 1,
-          "hpMultiplier": 1.1,
+          "hpMultiplier": 1.16,
           "speedMultiplier": 1
         },
         {
@@ -460,7 +460,7 @@
           "pathId": "path_center",
           "interval": 1,
           "delay": 3,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.165,
           "speedMultiplier": 1
         }
       ]
@@ -477,7 +477,7 @@
           "pathId": "path_left",
           "interval": 0.75,
           "delay": 0,
-          "hpMultiplier": 1.1,
+          "hpMultiplier": 1.18,
           "speedMultiplier": 1
         },
         {
@@ -487,7 +487,7 @@
           "pathId": "path_right",
           "interval": 0.95,
           "delay": 2,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.185,
           "speedMultiplier": 1
         },
         {
@@ -497,7 +497,7 @@
           "pathId": "path_center",
           "interval": 0.75,
           "delay": 1,
-          "hpMultiplier": 1.1,
+          "hpMultiplier": 1.18,
           "speedMultiplier": 1
         }
       ]
@@ -508,13 +508,23 @@
       "isBoss": true,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_right",
+          "pathId": "path_right",
+          "interval": 1,
+          "delay": 0,
+          "hpMultiplier": 1.235,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "razoreel",
           "count": 6,
           "spawnId": "spawn_left",
           "pathId": "path_left",
           "interval": 1,
-          "delay": 0,
-          "hpMultiplier": 1,
+          "delay": 0.4,
+          "hpMultiplier": 1.22,
           "speedMultiplier": 1
         },
         {
@@ -523,8 +533,8 @@
           "spawnId": "spawn_right",
           "pathId": "path_right",
           "interval": 0.75,
-          "delay": 0,
-          "hpMultiplier": 1.1,
+          "delay": 0.5,
+          "hpMultiplier": 1.215,
           "speedMultiplier": 1
         },
         {
@@ -534,17 +544,7 @@
           "pathId": "path_center",
           "interval": 1,
           "delay": 4,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_right",
-          "pathId": "path_right",
-          "interval": 1,
-          "delay": 16,
-          "hpMultiplier": 1,
+          "hpMultiplier": 1.22,
           "speedMultiplier": 1
         }
       ]

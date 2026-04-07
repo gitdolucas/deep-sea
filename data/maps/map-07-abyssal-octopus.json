@@ -2293,6 +2293,16 @@
           "speedMultiplier": 1
         },
         {
+          "enemyType": "stoneclaw",
+          "count": 3,
+          "spawnId": "spawn_n_a",
+          "pathId": "path_n_a",
+          "interval": 1.45,
+          "delay": 0.55,
+          "hpMultiplier": 1,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "razoreel",
           "count": 2,
           "spawnId": "spawn_ne_b",
@@ -2320,12 +2330,22 @@
       "isBoss": false,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_sw_a",
+          "pathId": "path_sw_a",
+          "interval": 1.2,
+          "delay": 0,
+          "hpMultiplier": 1.05,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "stoneclaw",
           "count": 4,
           "spawnId": "spawn_e_b",
           "pathId": "path_e_b",
           "interval": 1.2,
-          "delay": 0,
+          "delay": 0.45,
           "hpMultiplier": 1.08,
           "speedMultiplier": 1
         },
@@ -2335,7 +2355,17 @@
           "spawnId": "spawn_w_c",
           "pathId": "path_w_c",
           "interval": 1.2,
-          "delay": 0.2,
+          "delay": 0.65,
+          "hpMultiplier": 1.08,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_se_b",
+          "pathId": "path_se_b",
+          "interval": 1.1,
+          "delay": 0.85,
           "hpMultiplier": 1.08,
           "speedMultiplier": 1
         },
@@ -2345,8 +2375,8 @@
           "spawnId": "spawn_ne_a",
           "pathId": "path_ne_a",
           "interval": 1.8,
-          "delay": 2,
-          "hpMultiplier": 1,
+          "delay": 2.5,
+          "hpMultiplier": 1.06,
           "speedMultiplier": 1
         },
         {
@@ -2355,18 +2385,8 @@
           "spawnId": "spawn_nw_c",
           "pathId": "path_nw_c",
           "interval": 1.8,
-          "delay": 3,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_sw_a",
-          "pathId": "path_sw_a",
-          "interval": 1.2,
-          "delay": 8,
-          "hpMultiplier": 1,
+          "delay": 3.5,
+          "hpMultiplier": 1.06,
           "speedMultiplier": 1
         }
       ]
@@ -2377,12 +2397,32 @@
       "isBoss": false,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_sw_b",
+          "pathId": "path_sw_b",
+          "interval": 1.2,
+          "delay": 0,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_e_c",
+          "pathId": "path_e_c",
+          "interval": 1.2,
+          "delay": 0.35,
+          "hpMultiplier": 1.1,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "stoneclaw",
           "count": 5,
           "spawnId": "spawn_w_a",
           "pathId": "path_w_a",
           "interval": 1,
-          "delay": 0,
+          "delay": 0.75,
           "hpMultiplier": 1.16,
           "speedMultiplier": 1
         },
@@ -2392,7 +2432,17 @@
           "spawnId": "spawn_ne_b",
           "pathId": "path_ne_b",
           "interval": 1,
-          "delay": 0.2,
+          "delay": 0.95,
+          "hpMultiplier": 1.16,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "stoneclaw",
+          "count": 4,
+          "spawnId": "spawn_sw_c",
+          "pathId": "path_sw_c",
+          "interval": 0.95,
+          "delay": 1.15,
           "hpMultiplier": 1.16,
           "speedMultiplier": 1
         },
@@ -2402,8 +2452,8 @@
           "spawnId": "spawn_nw_b",
           "pathId": "path_nw_b",
           "interval": 1.5,
-          "delay": 2,
-          "hpMultiplier": 1,
+          "delay": 2.5,
+          "hpMultiplier": 1.12,
           "speedMultiplier": 1
         },
         {
@@ -2412,28 +2462,8 @@
           "spawnId": "spawn_se_a",
           "pathId": "path_se_a",
           "interval": 1.5,
-          "delay": 3,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_sw_b",
-          "pathId": "path_sw_b",
-          "interval": 1.2,
-          "delay": 6,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_e_c",
-          "pathId": "path_e_c",
-          "interval": 1.2,
-          "delay": 9,
-          "hpMultiplier": 1,
+          "delay": 3.5,
+          "hpMultiplier": 1.12,
           "speedMultiplier": 1
         }
       ]
@@ -2444,12 +2474,32 @@
       "isBoss": true,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_n_c",
+          "pathId": "path_n_c",
+          "interval": 1.2,
+          "delay": 0,
+          "hpMultiplier": 1.16,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_s_c",
+          "pathId": "path_s_c",
+          "interval": 1.2,
+          "delay": 0.3,
+          "hpMultiplier": 1.16,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "stoneclaw",
           "count": 6,
           "spawnId": "spawn_ne_a",
           "pathId": "path_ne_a",
           "interval": 0.9,
-          "delay": 0,
+          "delay": 0.65,
           "hpMultiplier": 1.24,
           "speedMultiplier": 1
         },
@@ -2459,7 +2509,7 @@
           "spawnId": "spawn_sw_a",
           "pathId": "path_sw_a",
           "interval": 0.9,
-          "delay": 0.15,
+          "delay": 0.85,
           "hpMultiplier": 1.24,
           "speedMultiplier": 1
         },
@@ -2469,8 +2519,8 @@
           "spawnId": "spawn_nw_c",
           "pathId": "path_nw_c",
           "interval": 1.3,
-          "delay": 2,
-          "hpMultiplier": 1,
+          "delay": 2.5,
+          "hpMultiplier": 1.18,
           "speedMultiplier": 1
         },
         {
@@ -2479,28 +2529,8 @@
           "spawnId": "spawn_se_c",
           "pathId": "path_se_c",
           "interval": 1.3,
-          "delay": 2.5,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_n_c",
-          "pathId": "path_n_c",
-          "interval": 1.2,
-          "delay": 5,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_s_c",
-          "pathId": "path_s_c",
-          "interval": 1.2,
-          "delay": 6,
-          "hpMultiplier": 1,
+          "delay": 3,
+          "hpMultiplier": 1.18,
           "speedMultiplier": 1
         }
       ]
@@ -2511,12 +2541,42 @@
       "isBoss": true,
       "groups": [
         {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_nw_a",
+          "pathId": "path_nw_a",
+          "interval": 1.2,
+          "delay": 0,
+          "hpMultiplier": 1.22,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_se_a",
+          "pathId": "path_se_a",
+          "interval": 1.2,
+          "delay": 0.25,
+          "hpMultiplier": 1.22,
+          "speedMultiplier": 1
+        },
+        {
+          "enemyType": "abyssal_colossus",
+          "count": 1,
+          "spawnId": "spawn_ne_c",
+          "pathId": "path_ne_c",
+          "interval": 1.2,
+          "delay": 0.5,
+          "hpMultiplier": 1.22,
+          "speedMultiplier": 1
+        },
+        {
           "enemyType": "stoneclaw",
           "count": 8,
           "spawnId": "spawn_e_a",
           "pathId": "path_e_a",
           "interval": 0.75,
-          "delay": 0,
+          "delay": 1,
           "hpMultiplier": 1.32,
           "speedMultiplier": 1
         },
@@ -2526,7 +2586,7 @@
           "spawnId": "spawn_w_a",
           "pathId": "path_w_a",
           "interval": 0.75,
-          "delay": 0.1,
+          "delay": 1.15,
           "hpMultiplier": 1.32,
           "speedMultiplier": 1
         },
@@ -2536,8 +2596,8 @@
           "spawnId": "spawn_n_b",
           "pathId": "path_n_b",
           "interval": 1.2,
-          "delay": 1,
-          "hpMultiplier": 1,
+          "delay": 2.25,
+          "hpMultiplier": 1.24,
           "speedMultiplier": 1
         },
         {
@@ -2546,38 +2606,8 @@
           "spawnId": "spawn_s_b",
           "pathId": "path_s_b",
           "interval": 1.2,
-          "delay": 1.5,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_nw_a",
-          "pathId": "path_nw_a",
-          "interval": 1.2,
-          "delay": 4,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_se_a",
-          "pathId": "path_se_a",
-          "interval": 1.2,
-          "delay": 5,
-          "hpMultiplier": 1,
-          "speedMultiplier": 1
-        },
-        {
-          "enemyType": "abyssal_colossus",
-          "count": 1,
-          "spawnId": "spawn_ne_c",
-          "pathId": "path_ne_c",
-          "interval": 1.2,
-          "delay": 7,
-          "hpMultiplier": 1,
+          "delay": 2.75,
+          "hpMultiplier": 1.24,
           "speedMultiplier": 1
         }
       ]

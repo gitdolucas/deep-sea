@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { analyzeMapStrategyHints } from "../src/game/map-strategy-hints.js";
 import {
   isValidMapDocument,
   validateMapDocument,
@@ -204,6 +205,22 @@ describe("validateMapDocument", () => {
       const json = JSON.parse(raw) as unknown;
       const issues = validateMapDocument(json);
       expect(issues, `${f}: ${JSON.stringify(issues)}`).toEqual([]);
+    }
+  });
+
+  it("every data/maps JSON uses each spawn in at least one wave (strategy hint)", () => {
+    let files: string[];
+    try {
+      files = readdirSync(mapsDir).filter((f) => f.endsWith(".json"));
+    } catch {
+      files = [];
+    }
+    for (const f of files) {
+      const raw = readFileSync(join(mapsDir, f), "utf8");
+      const doc = JSON.parse(raw) as MapDocument;
+      const hints = analyzeMapStrategyHints(doc);
+      const unused = hints.filter((h) => h.code === "waves.unused_spawn");
+      expect(unused, `${f}: ${JSON.stringify(unused)}`).toEqual([]);
     }
   });
 });
