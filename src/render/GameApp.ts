@@ -29,7 +29,13 @@ import type {
   DefenseSnapshot,
   DefenseTypeKey,
 } from "../game/types.js";
-import { buildMapBoard, worldFromGrid, worldGroundGridSpan } from "./board.js";
+import {
+  buildMapBoard,
+  createMapGroundFog,
+  worldFromGrid,
+  worldGroundGridSpan,
+} from "./board.js";
+import { syncVerticalBillboardMesh } from "./yaw-billboard.js";
 import { buildDecorationsGroup } from "./decorations.js";
 import { createSeabedOverlay } from "./seabed-overlay.js";
 import {
@@ -78,6 +84,7 @@ import {
   createTideheartLaserBeam,
 } from "./tideheart-laser-beam-fx.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
+import type { EntitySpriteAtlas } from "./entity-sprite-atlas.js";
 import {
   createDefenseTowerMesh,
   syncVibrationZoneDomeForDefense,
@@ -85,7 +92,7 @@ import {
 import { syncInkVeilAuraForDefense } from "./ink-veil-aura.js";
 import { getVibrationDomeTuning } from "./vibration-dome-tuning.js";
 import { GAMEPLAY_TIPS } from "./gameplay-tips.js";
-import { defenseFocusCardIconInnerHtml } from "./defense-focus-card-icons.js";
+import { mountDefenseCardIcon } from "./entity-sprite-dom.js";
 
 type BarBillboard = {
   group: THREE.Group;
@@ -236,7 +243,7 @@ export class GameApp {
   private placementType: DefenseTypeKey | null = null;
   private enemyObjects = new Map<
     string,
-    { root: THREE.Group; bar: BarBillboard }
+    { root: THREE.Group; bar: BarBillboard; spriteBillboard?: THREE.Mesh }
   >();
   private defenseObjects = new Map<
     string,
@@ -296,16 +303,19 @@ export class GameApp {
   private armoryNarrowMql: MediaQueryList | null = null;
   /** Cached drawer UI key so we do not rebuild DOM every frame. */
   private defenseDrawerUiCache: string | null = null;
+  private readonly entitySpriteAtlas: EntitySpriteAtlas | null;
 
   constructor(
     doc: MapDocument,
     mount?: HTMLElement,
     missionEndNav?: MissionEndNavigation | null,
+    entitySpriteAtlas?: EntitySpriteAtlas | null,
   ) {
     this.doc = doc;
     this.session = new GameSession(doc);
     this.mount = mount ?? document.body;
     this.missionEndNav = missionEndNav ?? null;
+    this.entitySpriteAtlas = entitySpriteAtlas ?? null;
     this.armoryNarrowMql = window.matchMedia("(max-width: 720px)");
     this.armoryExpanded = this.readArmoryExpandedInitial();
 
@@ -325,6 +335,7 @@ export class GameApp {
     document.body.appendChild(this.stats.dom);
 
     this.scene.background = new THREE.Color(COLORS.background);
+    this.scene.fog = createMapGroundFog(doc);
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0).texture;
     pmrem.dispose();
@@ -817,20 +828,17 @@ export class GameApp {
 
   private ensureDefenseInventoryGrid(): void {
     if (this.armoryGridBuilt) return;
-    const ul = document.getElementById(
-      "defenseInventoryGrid",
-    ) as HTMLUListElement | null;
-    if (!ul) return;
-    ul.replaceChildren();
+    const grid = document.getElementById("defenseInventoryGrid");
+    if (!grid) return;
+    grid.replaceChildren();
     ARMORY_DEFENSE_ORDER.forEach((type, index) => {
       const hotkey = String(index + 1);
-      const li = document.createElement("li");
-      li.className =
-        "defense-card defense-card--inventory defense-card--affordable";
-      li.dataset.defenseCard = type;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "pick defense-inventory__btn";
+      btn.setAttribute("role", "listitem");
+      btn.className =
+        "pick defense-inventory__btn defense-card--inventory defense-card--affordable";
+      btn.dataset.defenseCard = type;
       btn.dataset.defense = type;
       const key = document.createElement("span");
       key.className = "defense-inventory__key";
@@ -838,10 +846,12 @@ export class GameApp {
       key.setAttribute("aria-hidden", "true");
       const thumb = document.createElement("span");
       thumb.className = "defense-inventory__thumb";
-      thumb.innerHTML = defenseFocusCardIconInnerHtml(type).replace(
-        "defense-focus-card__icon-svg",
-        "defense-inventory__icon-svg",
-      );
+      mountDefenseCardIcon(thumb, type, 64, 64);
+      const invSvg = thumb.querySelector(".defense-focus-card__icon-svg");
+      if (invSvg) {
+        invSvg.classList.remove("defense-focus-card__icon-svg");
+        invSvg.classList.add("defense-inventory__icon-svg");
+      }
       const textWrap = document.createElement("div");
       textWrap.className = "defense-inventory__text";
       const titleEl = document.createElement("span");
@@ -861,8 +871,7 @@ export class GameApp {
       textWrap.append(titleEl, perkEl, costWrap);
       btn.append(key, thumb, textWrap);
       btn.addEventListener("click", () => this.onArmoryDefenseClick(type));
-      li.append(btn);
-      ul.append(li);
+      grid.append(btn);
     });
     this.armoryGridBuilt = true;
   }
@@ -902,7 +911,7 @@ export class GameApp {
     const spec = buildPlacedDefenseTooltipSpec(snap);
     title.textContent = spec.title;
     sub.textContent = `Level ${spec.level} · [${snap.position[0]}, ${snap.position[1]}] · ${snap.id}`;
-    iconHost.innerHTML = defenseFocusCardIconInnerHtml(snap.type);
+    mountDefenseCardIcon(iconHost, snap.type, 56, 56);
 
     statsHost.replaceChildren();
     for (const row of spec.core) {
@@ -1185,9 +1194,7 @@ export class GameApp {
     if (meshes.length === 0) return null;
     const hits = this.raycaster.intersectObjects(meshes, false);
     if (hits.length === 0) return null;
-    const id = (hits[0]!.object as THREE.Mesh).userData.defenseId as
-      | string
-      | undefined;
+    const id = hits[0]!.object.userData.defenseId as string | undefined;
     return typeof id === "string" ? id : null;
   }
 
@@ -1534,7 +1541,10 @@ export class GameApp {
       const w = worldFromGrid(pos[0], pos[1], this.doc, 0.28);
       let vis = this.enemyObjects.get(id);
       if (!vis) {
-        const { root, hpBarY } = createEnemyVisual(e.enemyType);
+        const { root, hpBarY, spriteBillboard } = createEnemyVisual(
+          e.enemyType,
+          this.entitySpriteAtlas,
+        );
         const bar = makeBarBillboard(
           0.52,
           0.072,
@@ -1544,7 +1554,7 @@ export class GameApp {
         bar.group.position.set(0, hpBarY, 0);
         root.add(bar.group);
         this.scene.add(root);
-        vis = { root, bar };
+        vis = { root, bar, spriteBillboard };
         this.enemyObjects.set(id, vis);
       }
       vis.root.position.set(
@@ -1557,6 +1567,9 @@ export class GameApp {
       const hpRatio = e.maxHp > 0 ? e.hp / e.maxHp : 0;
       vis.bar.setFillRatio(hpRatio);
       vis.bar.group.quaternion.copy(this.camera.quaternion);
+      if (vis.spriteBillboard) {
+        syncVerticalBillboardMesh(vis.spriteBillboard, vis.root, this.camera);
+      }
     }
     for (const [id, vis] of [...this.enemyObjects]) {
       if (!alive.has(id)) {
@@ -1575,7 +1588,11 @@ export class GameApp {
       let vis = this.defenseObjects.get(d.id);
       if (!vis) {
         const root = new THREE.Group();
-        const tower = createDefenseTowerMesh(d.id, d.type);
+        const tower = createDefenseTowerMesh(
+          d.id,
+          d.type,
+          this.entitySpriteAtlas,
+        );
         root.add(tower);
         const bar = makeBarBillboard(
           0.44,
@@ -1583,7 +1600,11 @@ export class GameApp {
           COLORS.cooldownBarBg,
           COLORS.cooldownBarFill,
         );
-        bar.group.position.set(0, 0.44, 0);
+        const barY =
+          typeof tower.userData.cooldownBarLocalY === "number"
+            ? tower.userData.cooldownBarLocalY
+            : 0.44;
+        bar.group.position.set(0, barY, 0);
         root.add(bar.group);
         this.scene.add(root);
         vis = { root, tower, bar };
@@ -1596,11 +1617,21 @@ export class GameApp {
       const cdRatio = interval > 0 ? remaining / interval : 0;
       vis.bar.setFillRatio(cdRatio);
       vis.bar.group.quaternion.copy(this.camera.quaternion);
-      const mat = vis.tower.material as THREE.MeshStandardMaterial;
-      const ready = interval > 0 ? 1 - remaining / interval : 1;
-      const baseEmit = 0.08 + 0.28 * Math.max(0, Math.min(1, ready));
-      const selected = this.selectedDefenseId === d.id;
-      mat.emissiveIntensity = selected ? baseEmit + 0.32 : baseEmit;
+      if (vis.tower.userData.entitySprite === true) {
+        syncVerticalBillboardMesh(vis.tower, vis.root, this.camera);
+        const mat = vis.tower.material as THREE.MeshBasicMaterial;
+        const ready = interval > 0 ? 1 - remaining / interval : 1;
+        const glow = 0.8 + 0.2 * Math.max(0, Math.min(1, ready));
+        const selected = this.selectedDefenseId === d.id;
+        const g = selected ? Math.min(1, glow + 0.14) : glow;
+        mat.color.setRGB(g, g, g);
+      } else {
+        const mat = vis.tower.material as THREE.MeshStandardMaterial;
+        const ready = interval > 0 ? 1 - remaining / interval : 1;
+        const baseEmit = 0.08 + 0.28 * Math.max(0, Math.min(1, ready));
+        const selected = this.selectedDefenseId === d.id;
+        mat.emissiveIntensity = selected ? baseEmit + 0.32 : baseEmit;
+      }
 
       syncVibrationZoneDomeForDefense(
         vis,

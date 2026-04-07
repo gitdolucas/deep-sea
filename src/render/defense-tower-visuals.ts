@@ -3,6 +3,12 @@ import type { MapDocument } from "../game/map-types.js";
 import { auraRadiusTiles } from "../game/damage-resolver.js";
 import type { DefenseSnapshot, DefenseTypeKey } from "../game/types.js";
 import { COLORS } from "./constants.js";
+import type { EntitySpriteAtlas } from "./entity-sprite-atlas.js";
+import {
+  ENTITY_SPRITE_RECTS_PX,
+  getEntitySpriteTextureForDefense,
+  worldSizeForSpriteRect,
+} from "./entity-sprite-atlas.js";
 import { applyVibrationDomeTuningToMesh, getVibrationDomeTuning } from "./vibration-dome-tuning.js";
 import {
   applyVibrationZoneDomeRadius,
@@ -13,6 +19,9 @@ import {
   vibrationDomeDebugWireframeFromUrl,
 } from "./vibration-zone-dome.js";
 import { worldFromGrid } from "./board.js";
+
+/** Half-height of {@link createDefenseTowerMesh} cylinder placeholder — atlas quads align feet here. */
+export const DEFENSE_PLACEHOLDER_CYLINDER_HALF_HEIGHT = 0.55 / 2;
 
 /** Placeholder tower tint per defense (until sprites). */
 export const DEFENSE_TOWER_COLOR: Record<DefenseTypeKey, number> = {
@@ -27,7 +36,37 @@ export const DEFENSE_TOWER_COLOR: Record<DefenseTypeKey, number> = {
 export function createDefenseTowerMesh(
   defenseId: string,
   type: DefenseTypeKey,
+  spriteAtlas?: EntitySpriteAtlas | null,
 ): THREE.Mesh {
+  const tex = getEntitySpriteTextureForDefense(spriteAtlas, type);
+  if (tex) {
+    const rect =
+      type === "vibration_zone"
+        ? ENTITY_SPRITE_RECTS_PX.vibration_zone
+        : type === "ink_veil"
+          ? ENTITY_SPRITE_RECTS_PX.ink_veil
+          : ENTITY_SPRITE_RECTS_PX.arc_spine;
+    const { width, height } = worldSizeForSpriteRect(rect);
+    /** Vertical plane + yaw billboarding (`yaw-billboard.ts`): `THREE.Sprite` uses the camera plane and reads as floating above tiles. */
+    const tower = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, height),
+      new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        alphaTest: 0.01,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    const h = DEFENSE_PLACEHOLDER_CYLINDER_HALF_HEIGHT;
+    tower.position.y = height * 0.5 - h;
+    tower.userData.kind = "defense_tower";
+    tower.userData.defenseId = defenseId;
+    tower.userData.entitySprite = true;
+    tower.userData.cooldownBarLocalY = height - h + 0.08;
+    return tower;
+  }
+
   const tint = DEFENSE_TOWER_COLOR[type];
   const tower = new THREE.Mesh(
     new THREE.CylinderGeometry(0.22, 0.28, 0.55, 10),

@@ -273,7 +273,6 @@
       }
 
       .defense-inventory-grid {
-        list-style: none;
         margin: 0;
         padding: 0;
         display: grid;
@@ -287,14 +286,7 @@
         }
       }
 
-      .defense-card--inventory {
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        border: none;
-      }
-
-      .defense-card--inventory .defense-inventory__btn {
+      .defense-inventory-grid > .defense-inventory__btn.defense-card--inventory {
         width: 100%;
         margin: 0;
         display: flex;
@@ -313,22 +305,26 @@
         position: relative;
       }
 
-      .defense-card--inventory .defense-inventory__btn:hover:not(:disabled) {
+      .defense-inventory-grid
+        > .defense-inventory__btn.defense-card--inventory:hover:not(:disabled) {
         border-color: rgba(0, 240, 255, 0.35);
       }
 
-      .defense-card--inventory .defense-inventory__btn:focus-visible {
+      .defense-inventory-grid
+        > .defense-inventory__btn.defense-card--inventory:focus-visible {
         outline: 2px solid var(--inventory-cyan);
         outline-offset: 2px;
       }
 
-      .defense-card--inventory.selected .defense-inventory__btn {
+      .defense-inventory-grid
+        > .defense-inventory__btn.defense-card--inventory.selected {
         border-color: var(--inventory-cyan);
         box-shadow: 0 0 0 1px var(--inventory-cyan),
           0 0 14px var(--inventory-cyan-glow);
       }
 
-      .defense-card--inventory.defense-card--blocked .defense-inventory__btn {
+      .defense-inventory-grid
+        > .defense-inventory__btn.defense-card--inventory.defense-card--blocked {
         opacity: 0.75;
       }
 
@@ -344,6 +340,7 @@
       }
 
       .defense-inventory__thumb {
+        position: relative;
         align-self: center;
         width: 64px;
         height: 64px;
@@ -362,6 +359,21 @@
         width: 40px;
         height: 40px;
         display: block;
+      }
+
+      .defense-inventory__thumb .defense-card-icon-sprite-wrap {
+        position: absolute;
+        inset: 0;
+        box-sizing: border-box;
+        padding: 4px;
+        overflow: hidden;
+        border-radius: 6px;
+        background-color: #fff;
+      }
+
+      .defense-card-icon-sprite {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
       }
 
       .defense-inventory__text {
@@ -408,7 +420,7 @@
       }
 
       @media (max-width: 720px) {
-        .defense-card--inventory .defense-inventory__btn {
+        .defense-inventory-grid > .defense-inventory__btn.defense-card--inventory {
           flex-direction: row;
           align-items: center;
           gap: 10px;
@@ -578,6 +590,7 @@
       }
 
       .defense-detail-drawer__icon {
+        position: relative;
         width: 56px;
         height: 56px;
         border-radius: 12px;
@@ -593,6 +606,16 @@
       .defense-detail-drawer__icon .defense-focus-card__icon-svg {
         width: 34px;
         height: 34px;
+      }
+
+      .defense-detail-drawer__icon .defense-card-icon-sprite-wrap {
+        position: absolute;
+        inset: 0;
+        box-sizing: border-box;
+        padding: 4px;
+        overflow: hidden;
+        border-radius: 10px;
+        background-color: #fff;
       }
 
       .defense-detail-drawer__stats {
@@ -3084,7 +3107,11 @@
             <span class="hud-defenses-toggle__chev" aria-hidden="true">▼</span>
           </button>
           <section id="section-armory" class="hud-armory" aria-label="Defense inventory">
-            <ul id="defenseInventoryGrid" class="defense-inventory-grid"></ul>
+            <div
+              id="defenseInventoryGrid"
+              class="defense-inventory-grid"
+              role="list"
+            ></div>
           </section>
         </div>
       </aside>

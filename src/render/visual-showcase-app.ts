@@ -10,6 +10,7 @@ import type { EnemyTypeKey, GridPos } from "../game/types.js";
 import { validateMapDocument } from "../game/map-validation.js";
 import {
   buildMapBoard,
+  createMapGroundFog,
   createPathCellMesh,
   type PathCellMaterialKey,
   worldFromGrid,
@@ -22,8 +23,10 @@ import {
   createDefenseTowerMesh,
   syncVibrationZoneDomeForDefense,
 } from "./defense-tower-visuals.js";
+import type { EntitySpriteAtlas } from "./entity-sprite-atlas.js";
 import { syncInkVeilAuraForDefense } from "./ink-veil-aura.js";
 import { createEnemyVisual } from "./enemy-visuals.js";
+import { syncVerticalBillboardMesh } from "./yaw-billboard.js";
 import {
   ensureBubbleProjectilePool,
   spawnBubblePopRings,
@@ -193,6 +196,9 @@ export class VisualShowcaseApp {
   }[] = [];
   private arcSpineSparkles: ArcSpineHitSparkleBurst[] = [];
   private enemyBars: THREE.Group[] = [];
+  private enemyVerticalBillboards: { root: THREE.Group; mesh: THREE.Mesh }[] =
+    [];
+  private readonly entitySpriteAtlas: EntitySpriteAtlas | null;
   private defenseRoots = new Map<
     string,
     {
@@ -206,13 +212,18 @@ export class VisualShowcaseApp {
     }
   >();
 
-  constructor(doc: MapDocument, mount: HTMLElement) {
+  constructor(
+    doc: MapDocument,
+    mount: HTMLElement,
+    entitySpriteAtlas?: EntitySpriteAtlas | null,
+  ) {
     const issues = validateMapDocument(doc);
     if (issues.length > 0) {
       console.warn("Showcase map validation:", issues);
     }
     this.doc = doc;
     this.mount = mount;
+    this.entitySpriteAtlas = entitySpriteAtlas ?? null;
 
     const aimDx = BUBBLE_SHOTGUN_AIM[0] - BUBBLE_SHOTGUN_TOWER[0];
     const aimDz = BUBBLE_SHOTGUN_AIM[1] - BUBBLE_SHOTGUN_TOWER[1];
@@ -231,6 +242,7 @@ export class VisualShowcaseApp {
     this.mount.appendChild(this.renderer.domElement);
 
     this.scene.background = new THREE.Color(COLORS.background);
+    this.scene.fog = createMapGroundFog(doc);
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0).texture;
     pmrem.dispose();
@@ -240,9 +252,7 @@ export class VisualShowcaseApp {
     sun.position.set(8, 18, 10);
     this.scene.add(sun);
 
-    const { root: boardRoot } = buildMapBoard(doc, {
-      showCellLabels: false,
-    });
+    const { root: boardRoot } = buildMapBoard(doc);
     this.scene.add(boardRoot);
     this.scene.add(buildDecorationsGroup(doc));
 
@@ -379,7 +389,11 @@ export class VisualShowcaseApp {
     for (const d of this.doc.defenses) {
       const w = worldFromGrid(d.position[0], d.position[1], this.doc, 0.35);
       const root = new THREE.Group();
-      const tower = createDefenseTowerMesh(d.id, d.type);
+      const tower = createDefenseTowerMesh(
+        d.id,
+        d.type,
+        this.entitySpriteAtlas,
+      );
       root.add(tower);
       const bar = makeBarBillboard(
         0.44,
@@ -387,7 +401,11 @@ export class VisualShowcaseApp {
         COLORS.cooldownBarBg,
         COLORS.cooldownBarFill,
       );
-      bar.group.position.set(0, 0.44, 0);
+      const barY =
+        typeof tower.userData.cooldownBarLocalY === "number"
+          ? tower.userData.cooldownBarLocalY
+          : 0.44;
+      bar.group.position.set(0, barY, 0);
       root.add(bar.group);
       bar.setFillRatio(0.35);
       root.position.set(w.x, w.y, w.z);
@@ -412,6 +430,7 @@ export class VisualShowcaseApp {
   }
 
   private placeEnemies(): void {
+    this.enemyVerticalBillboards = [];
     const positions: [number, number][] = [
       [4, 6],
       [8, 6],
@@ -420,7 +439,10 @@ export class VisualShowcaseApp {
     for (let i = 0; i < ENEMY_TYPES.length; i++) {
       const t = ENEMY_TYPES[i]!;
       const [gx, gz] = positions[i]!;
-      const { root, hpBarY } = createEnemyVisual(t);
+      const { root, hpBarY, spriteBillboard } = createEnemyVisual(
+        t,
+        this.entitySpriteAtlas,
+      );
       const w = worldFromGrid(gx, gz, this.doc, 0);
       root.position.set(w.x, w.y, w.z);
       this.scene.add(root);
@@ -429,6 +451,9 @@ export class VisualShowcaseApp {
       root.add(bar.group);
       bar.setFillRatio(0.75);
       this.enemyBars.push(bar.group);
+      if (spriteBillboard) {
+        this.enemyVerticalBillboards.push({ root, mesh: spriteBillboard });
+      }
     }
   }
 
@@ -686,12 +711,21 @@ export class VisualShowcaseApp {
     for (const g of this.enemyBars) {
       g.quaternion.copy(this.camera.quaternion);
     }
+    for (const { root, mesh } of this.enemyVerticalBillboards) {
+      syncVerticalBillboardMesh(mesh, root, this.camera);
+    }
     for (const d of this.doc.defenses) {
       const vis = this.defenseRoots.get(d.id);
       if (!vis) continue;
       vis.bar.group.quaternion.copy(this.camera.quaternion);
-      const mat = vis.tower.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 0.22;
+      if (vis.tower.userData.entitySprite === true) {
+        syncVerticalBillboardMesh(vis.tower, vis.root, this.camera);
+        const mat = vis.tower.material as THREE.MeshBasicMaterial;
+        mat.color.setRGB(1, 1, 1);
+      } else {
+        const mat = vis.tower.material as THREE.MeshStandardMaterial;
+        mat.emissiveIntensity = 0.22;
+      }
       syncVibrationZoneDomeForDefense(vis, d, this.doc, disposeObject3DTree, t);
       syncInkVeilAuraForDefense(vis, d, this.doc, disposeObject3DTree, t);
     }

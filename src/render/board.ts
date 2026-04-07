@@ -14,7 +14,7 @@ import { createCellTopCapTexture, createLabelSpriteTexture } from "./cell-surfac
 export type SlotPick = { mesh: THREE.Mesh; gx: number; gz: number };
 
 export type BuildMapBoardOptions = {
-  /** When true (default), floating sprites show {@link MapCellSurface.label} per tile. */
+  /** When true, floating sprites show {@link MapCellSurface.label} per tile (debug). */
   showCellLabels?: boolean;
 };
 
@@ -36,6 +36,23 @@ export function mapGridOrigin(doc: MapDocument): THREE.Vector3 {
 export function worldGroundGridSpan(doc: MapDocument): number {
   const [gw, gd] = doc.gridSize;
   return Math.max(Math.max(gw, gd), WORLD_GROUND_GRID_EXTENT);
+}
+
+/**
+ * Largest map axis in world units (1 tile = 1 unit), for sizing distance-based effects like fog.
+ */
+export function mapGridMaxAxisWorld(doc: MapDocument): number {
+  const [gw, gd] = doc.gridSize;
+  return Math.max(gw, gd);
+}
+
+/**
+ * Linear scene fog: ramp uses a short `near`; density reaches background at `3 ×` {@link mapGridMaxAxisWorld}.
+ */
+export function createMapGroundFog(doc: MapDocument): THREE.Fog {
+  const far = mapGridMaxAxisWorld(doc) * 5;
+  const near = Math.max(0.1, far * 0.28);
+  return new THREE.Fog(new THREE.Color(COLORS.background), near, far);
 }
 
 const CELL_BOX = new THREE.BoxGeometry(0.96, 0.055, 0.96);
@@ -147,7 +164,7 @@ export function buildMapBoard(
   doc: MapDocument,
   options?: BuildMapBoardOptions,
 ): { root: THREE.Group; cells: SlotPick[] } {
-  const showCellLabels = options?.showCellLabels ?? true;
+  const showCellLabels = options?.showCellLabels ?? false;
   const root = new THREE.Group();
   const [gw, gd] = doc.gridSize;
   const origin = gridXZ(gw, gd);

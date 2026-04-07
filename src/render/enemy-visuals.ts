@@ -1,11 +1,19 @@
 import * as THREE from "three";
 import type { EnemyTypeKey } from "../game/types.js";
 import { COLORS } from "./constants.js";
+import type { EntitySpriteAtlas } from "./entity-sprite-atlas.js";
+import {
+  ENTITY_SPRITE_RECTS_PX,
+  getEntitySpriteTextureForEnemy,
+  worldSizeForSpriteRect,
+} from "./entity-sprite-atlas.js";
 
 export interface EnemyVisualBuild {
   root: THREE.Group;
   /** Local Y for the HP bar (above the silhouette). */
   hpBarY: number;
+  /** Stoneclaw atlas visual (vertical plane; yaw-synced each frame in the render app). */
+  spriteBillboard?: THREE.Mesh;
 }
 
 function stdMat(
@@ -25,14 +33,45 @@ function stdMat(
   });
 }
 
+function makeStoneclawSprite(map: THREE.Texture): {
+  sprite: THREE.Mesh;
+  hpBarY: number;
+} {
+  const rect = ENTITY_SPRITE_RECTS_PX.stoneclaw;
+  const { width, height } = worldSizeForSpriteRect(rect);
+  const sprite = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({
+      map,
+      transparent: true,
+      alphaTest: 0.01,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  );
+  sprite.position.y = height * 0.5;
+  sprite.userData.kind = "enemy_sprite";
+  sprite.userData.enemyType = "stoneclaw";
+  return { sprite, hpBarY: height + 0.06 };
+}
+
 /**
  * Placeholder meshes per `EnemyTypeKey` (docs/map-schema.md + docs/style-bible.md colors).
- * Swap for sprites later without changing GameApp wiring.
+ * Pass `spriteAtlas` so Stoneclaw uses `public/textures/sprites.png` (see `entity-sprite-atlas.ts`).
  */
-export function createEnemyVisual(enemyType: EnemyTypeKey): EnemyVisualBuild {
+export function createEnemyVisual(
+  enemyType: EnemyTypeKey,
+  spriteAtlas?: EntitySpriteAtlas | null,
+): EnemyVisualBuild {
   const root = new THREE.Group();
   switch (enemyType) {
     case "stoneclaw": {
+      const tex = getEntitySpriteTextureForEnemy(spriteAtlas, enemyType);
+      if (tex) {
+        const { sprite, hpBarY } = makeStoneclawSprite(tex);
+        root.add(sprite);
+        return { root, hpBarY, spriteBillboard: sprite };
+      }
       const body = new THREE.Mesh(
         new THREE.BoxGeometry(0.45, 0.35, 0.45),
         stdMat(COLORS.stoneclaw),

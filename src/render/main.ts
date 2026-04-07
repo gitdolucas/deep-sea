@@ -2,16 +2,25 @@ import { MINIMAL_MAP_DOCUMENT } from "../game/minimal-map-document.js";
 import { validateMapDocument } from "../game/map-validation.js";
 import type { MapDocument } from "../game/map-types.js";
 import { GameApp, type MissionEndNavigation } from "./GameApp.js";
+import {
+  loadEntitySpriteAtlas,
+  type EntitySpriteAtlas,
+} from "./entity-sprite-atlas.js";
 import { LEVELS } from "./levels.js";
 import { createMapOverviewElement } from "./map-overview.js";
 import { shouldMountBubbleAttackFxLeva } from "./bubble-attack-fx-tuning.js";
 import { shouldMountCannonDnaHelixLeva } from "./cannon-dna-helix-tuning.js";
+import { shouldMountInkVeilLeva } from "./ink-veil-tuning.js";
 import { shouldMountVibrationDomeLeva } from "./vibration-dome-tuning.js";
 
 if (shouldMountVibrationDomeLeva()) {
   void import("./mount-vibration-dome-leva.js").then((m) =>
     m.mountVibrationDomeLeva(),
   );
+}
+
+if (shouldMountInkVeilLeva()) {
+  void import("./mount-ink-veil-leva.js").then((m) => m.mountInkVeilLeva());
 }
 
 if (shouldMountBubbleAttackFxLeva()) {
@@ -144,6 +153,17 @@ syncSkipLinkTarget();
 
 const playtestDocument = takePlaytestDocument();
 
+async function loadSpritesOrNull(): Promise<EntitySpriteAtlas | null> {
+  try {
+    return await loadEntitySpriteAtlas();
+  } catch {
+    console.warn(
+      "[deep-sea] Missing or invalid /textures/sprites.png — using primitive tower/enemy meshes.",
+    );
+    return null;
+  }
+}
+
 function buildMissionEndNav(): MissionEndNavigation {
   const doc = activeMissionDoc;
   if (!doc) {
@@ -158,20 +178,24 @@ function buildMissionEndNav(): MissionEndNavigation {
   const hasNext = idx >= 0 && idx < LEVELS.length - 1;
   return {
     retry: () => {
-      if (!gameMount || !activeMissionDoc) return;
-      app?.dispose();
-      app = new GameApp(
-        activeMissionDoc,
-        gameMount,
-        buildMissionEndNav(),
-      );
-      app.start();
+      void (async () => {
+        if (!gameMount || !activeMissionDoc) return;
+        app?.dispose();
+        const atlas = await loadSpritesOrNull();
+        app = new GameApp(
+          activeMissionDoc,
+          gameMount,
+          buildMissionEndNav(),
+          atlas,
+        );
+        app.start();
+      })();
     },
     nextMap: () => {
       if (!gameMount || idx < 0) return;
       const next = LEVELS[idx + 1];
       if (!next) return;
-      startMission(next.document);
+      void startMission(next.document);
     },
     menu: () => showMainMenu(),
     hasNextMap: hasNext,
@@ -203,7 +227,7 @@ function showQuitDialog(): void {
   quitConfirmNo?.focus();
 }
 
-function startMission(doc: MapDocument): void {
+async function startMission(doc: MapDocument): Promise<void> {
   if (!gameMount) return;
   activeMissionDoc = doc;
   selectedLevelId = doc.id;
@@ -213,13 +237,14 @@ function startMission(doc: MapDocument): void {
   gameScreen?.setAttribute("data-active-map", doc.id);
   syncSkipLinkTarget();
   app?.dispose();
-  app = new GameApp(doc, gameMount, buildMissionEndNav());
+  const atlas = await loadSpritesOrNull();
+  app = new GameApp(doc, gameMount, buildMissionEndNav(), atlas);
   app.start();
   btnPlay?.removeAttribute("disabled");
 }
 
 function startGame(): void {
-  startMission(getSelectedDocument());
+  void startMission(getSelectedDocument());
 }
 
 btnPlay?.addEventListener("click", () => {
@@ -259,6 +284,9 @@ if (playtestDocument && gameMount) {
   gameScreen?.setAttribute("data-active-map", playtestDocument.id);
   syncSkipLinkTarget();
   activeMissionDoc = playtestDocument;
-  app = new GameApp(playtestDocument, gameMount, buildMissionEndNav());
-  app.start();
+  void (async () => {
+    const atlas = await loadSpritesOrNull();
+    app = new GameApp(playtestDocument, gameMount, buildMissionEndNav(), atlas);
+    app.start();
+  })();
 }

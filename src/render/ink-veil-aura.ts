@@ -2,15 +2,31 @@ import * as THREE from "three";
 import type { MapDocument } from "../game/map-types.js";
 import { auraRadiusTiles } from "../game/damage-resolver.js";
 import type { DefenseLevel, DefenseSnapshot } from "../game/types.js";
-import { getVibrationDomeTuning } from "./vibration-dome-tuning.js";
+import {
+  getInkVeilTuning,
+  inkVeilGeometryKey,
+  type InkVeilSurfaceBlending,
+  type InkVeilTuning,
+} from "./ink-veil-tuning.js";
 import { worldFromGrid } from "./board.js";
 
 /** UserData tag for dispose / filtering. */
 export const INK_VEIL_AURA_USERDATA_KIND = "ink_veil_aura";
 
-const DISK_SEGMENTS = 64;
-const DOME_WIDTH_SEG = 48;
-const DOME_HEIGHT_SEG = 22;
+function tierIdx(level: DefenseLevel): number {
+  return level - 1;
+}
+
+function inkVeilBlending(mode: InkVeilSurfaceBlending): THREE.Blending {
+  switch (mode) {
+    case "additive":
+      return THREE.AdditiveBlending;
+    case "multiply":
+      return THREE.MultiplyBlending;
+    default:
+      return THREE.NormalBlending;
+  }
+}
 
 function hemisphereGeometry(
   radius: number,
@@ -80,6 +96,15 @@ uniform vec3 uInkRim;
 uniform float uIsDome;
 uniform float uOpacityMul;
 uniform float uRingHint;
+uniform float uFresnelPow;
+uniform float uNoiseTimeScale;
+uniform float uFbmStrength;
+uniform float uSwirlTierBase;
+uniform float uSwirlTierPerLevel;
+uniform float uStreakAngFreq;
+uniform float uStreakRadialFreq;
+uniform float uStreakTimeScale;
+uniform float uAlphaGlobal;
 
 varying vec3 vWorldPos;
 varying vec3 vNormal;
@@ -118,7 +143,7 @@ void main() {
 
   float aAng = atan(vLocalXZ.y, vLocalXZ.x);
   float tier = clamp(uLevel, 1.0, 3.0);
-  float swirl = uSwirlSpeed * (0.85 + 0.08 * tier);
+  float swirl = uSwirlSpeed * (uSwirlTierBase + uSwirlTierPerLevel * tier);
   float aSw = aAng + uTime * swirl;
   vec2 p = vLocalXZ * uNoiseScale * 0.12;
   p = vec2(
@@ -126,12 +151,12 @@ void main() {
     p.x * sin(aSw * 0.15) + p.y * cos(aSw * 0.15)
   );
   p += vec2(
-    fbm(p * 0.7 + uTime * 0.18),
-    fbm(p.yx * 0.85 - uTime * 0.12)
-  ) * (0.28 + 0.1 * tier);
+    fbm(p * 0.7 + uTime * 0.18 * uNoiseTimeScale),
+    fbm(p.yx * 0.85 - uTime * 0.12 * uNoiseTimeScale)
+  ) * (0.28 + 0.1 * tier) * uFbmStrength;
   float n = fbm(p + vec2(3.1, 7.7));
   float n2 = fbm(p * 1.7 + uTime * 0.25);
-  float streaks = smoothstep(0.2, 0.95, abs(sin(14.0 * aAng + r * 11.0 - uTime * 2.4))) * (0.35 + 0.45 * n2);
+  float streaks = smoothstep(0.2, 0.95, abs(sin(uStreakAngFreq * aAng + uStreakRadialFreq * r - uTime * uStreakTimeScale))) * (0.35 + 0.45 * n2);
 
   float edge = 1.0 - smoothstep(1.0 - uEdgeSoftness * 2.2, 1.0 + uEdgeSoftness * 0.6, r);
   float ring = uRingHint * smoothstep(0.04, 0.0, abs(r - 0.88)) * edge;
@@ -139,7 +164,7 @@ void main() {
   vec3 viewDir = normalize(cameraPosition - vWorldPos);
   vec3 N = normalize(vNormal);
   float ndv = max(0.0, dot(viewDir, N));
-  float fresnel = pow(1.0 - ndv, 2.8);
+  float fresnel = pow(1.0 - ndv, uFresnelPow);
 
   float domeW = uIsDome;
   float inkMix = mix(n * 0.55 + streaks * 0.35, fresnel * 0.85 + n * 0.25, domeW);
@@ -148,7 +173,7 @@ void main() {
   float alphaDisk = (0.38 + 0.1 * tier) * edge * (0.45 + 0.5 * n + streaks * 0.4);
   float alphaDome = (0.22 + 0.06 * tier) * edge * (0.5 + 0.45 * fresnel) + fresnel * 0.35 * edge;
   float alpha = mix(alphaDisk, alphaDome, domeW) * uOpacityMul;
-  alpha = clamp(alpha + ring * 0.35, 0.0, 0.98);
+  alpha = clamp((alpha + ring * 0.35) * uAlphaGlobal, 0.0, 0.98);
 
   gl_FragColor = vec4(base, alpha);
 }
@@ -161,6 +186,24 @@ attribute float aR;
 uniform float uTime;
 uniform float uRadius;
 uniform float uPointSizeMul;
+uniform float uPTimeLo;
+uniform float uPTimeRange;
+uniform float uPOrbitSpeed;
+uniform float uPRadTight;
+uniform float uPWobFreq;
+uniform float uPWobPhase;
+uniform float uPWobStr;
+uniform float uPLiftRate;
+uniform float uPLiftAmp;
+uniform float uPWobAlong;
+uniform float uPAlphaLo;
+uniform float uPAlphaRange;
+uniform float uPPxBase;
+uniform float uPPxSpread;
+uniform float uPPxDepthScale;
+uniform float uPPxDepthRef;
+uniform float uPPxMin;
+uniform float uPPxMax;
 
 varying float vAlpha;
 
@@ -169,22 +212,33 @@ float hash(float x) {
 }
 
 void main() {
-  float t = uTime * (0.35 + hash(aPhase) * 0.4);
-  float ang = aPhase * 6.2831853 + t * 1.7;
-  float rad = aR * uRadius * 0.92;
-  float wobble = sin(t * 2.1 + aPhase * 8.0) * 0.08 * uRadius;
-  vec3 pos = vec3(cos(ang) * rad + wobble, abs(sin(t * 1.3 + aPhase)) * uRadius * 0.55, sin(ang) * rad + wobble * 0.7);
+  float t = uTime * (uPTimeLo + hash(aPhase) * uPTimeRange);
+  float ang = aPhase * 6.2831853 + t * uPOrbitSpeed;
+  float rad = aR * uRadius * uPRadTight;
+  float wobble = sin(t * uPWobFreq + aPhase * uPWobPhase) * uPWobStr * uRadius;
+  vec3 pos = vec3(
+    cos(ang) * rad + wobble,
+    abs(sin(t * uPLiftRate + aPhase)) * uRadius * uPLiftAmp,
+    sin(ang) * rad + wobble * uPWobAlong
+  );
 
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mvPosition;
-  vAlpha = 0.35 + 0.45 * hash(aPhase * 3.17 + 2.0);
-  float ps = uPointSizeMul * (35.0 + 22.0 * hash(aPhase + 1.0));
-  gl_PointSize = clamp(ps * (180.0 / max(-mvPosition.z, 0.35)), 2.0, 64.0);
+  vAlpha = uPAlphaLo + uPAlphaRange * hash(aPhase * 3.17 + 2.0);
+  float ps = uPointSizeMul * (uPPxBase + uPPxSpread * hash(aPhase + 1.0));
+  gl_PointSize = clamp(
+    ps * (uPPxDepthScale / max(-mvPosition.z, uPPxDepthRef)),
+    uPPxMin,
+    uPPxMax
+  );
 }
 `;
 
 const inkParticleFragmentShader = `
 uniform vec3 uColor;
+uniform float uPSoftInner;
+uniform float uPSoftOuter;
+uniform float uPOpacityMul;
 
 varying float vAlpha;
 
@@ -192,68 +246,49 @@ void main() {
   vec2 c = gl_PointCoord - vec2(0.5);
   float d = length(c);
   if (d > 0.5) discard;
-  float soft = 1.0 - smoothstep(0.25, 0.5, d);
-  gl_FragColor = vec4(uColor, soft * vAlpha * 0.55);
+  float soft = 1.0 - smoothstep(uPSoftInner, uPSoftOuter, d);
+  gl_FragColor = vec4(uColor, soft * vAlpha * uPOpacityMul);
 }
 `;
 
-function tierOpacityMul(level: DefenseLevel): number {
-  switch (level) {
-    case 1:
-      return 0.85;
-    case 2:
-      return 0.95;
-    default:
-      return 1.05;
-  }
+function noiseScaleForLevel(level: DefenseLevel, t: InkVeilTuning): number {
+  return t.noiseScaleBase + level * t.noiseScalePerLevel;
 }
 
-function tierSwirl(level: DefenseLevel): number {
-  switch (level) {
-    case 1:
-      return 0.55;
-    case 2:
-      return 0.72;
-    default:
-      return 0.95;
-  }
-}
-
-function tierRingHint(level: DefenseLevel): number {
-  return level >= 2 ? 0.55 : 0.0;
-}
-
-function tierParticleCount(level: DefenseLevel): number {
-  switch (level) {
-    case 1:
-      return 28;
-    case 2:
-      return 44;
-    default:
-      return 64;
-  }
+function edgeSoftnessForLevel(level: DefenseLevel, t: InkVeilTuning): number {
+  return t.edgeSoftnessBase + level * t.edgeSoftnessPerLevel;
 }
 
 function createSharedInkUniforms(
   level: DefenseLevel,
   rTiles: number,
   isDome: number,
+  tune: InkVeilTuning,
 ): { [uniform: string]: THREE.IUniform } {
-  const core = new THREE.Color(0x050812);
-  const rim = new THREE.Color(0x7b2fff);
-  const tune = getVibrationDomeTuning();
+  const core = new THREE.Color(tune.inkCoreColor);
+  const rim = new THREE.Color(tune.inkRimColor);
+  const li = tierIdx(level);
   return {
     uTime: { value: 0 },
     uLevel: { value: level },
     uRadius: { value: rTiles },
-    uSwirlSpeed: { value: tierSwirl(level) },
-    uNoiseScale: { value: 1.15 + level * 0.12 },
-    uEdgeSoftness: { value: 0.08 + level * 0.02 },
+    uSwirlSpeed: { value: tune.swirlSpeed[li] },
+    uNoiseScale: { value: noiseScaleForLevel(level, tune) },
+    uEdgeSoftness: { value: edgeSoftnessForLevel(level, tune) },
     uInkCore: { value: core },
     uInkRim: { value: rim },
     uIsDome: { value: isDome },
-    uOpacityMul: { value: tierOpacityMul(level) },
-    uRingHint: { value: tierRingHint(level) },
+    uOpacityMul: { value: tune.opacityMul[li] },
+    uRingHint: { value: tune.ringHint[li] },
+    uFresnelPow: { value: tune.fresnelPow },
+    uNoiseTimeScale: { value: tune.noiseTimeScale },
+    uFbmStrength: { value: tune.fbmStrength },
+    uSwirlTierBase: { value: tune.swirlTierBase },
+    uSwirlTierPerLevel: { value: tune.swirlTierPerLevel },
+    uStreakAngFreq: { value: tune.streakAngFreq },
+    uStreakRadialFreq: { value: tune.streakRadialFreq },
+    uStreakTimeScale: { value: tune.streakTimeScale },
+    uAlphaGlobal: { value: tune.alphaGlobal },
     uWobbleTime: { value: 0 },
     uWobbleAmp: { value: tune.wobbleEnabled ? tune.wobbleAmp : 0 },
     uWobbleFreq: { value: tune.wobbleFreq },
@@ -261,35 +296,99 @@ function createSharedInkUniforms(
   };
 }
 
-function createSurfaceMaterial(shared: {
-  [uniform: string]: THREE.IUniform;
-}): THREE.ShaderMaterial {
+function createSurfaceMaterial(
+  shared: { [uniform: string]: THREE.IUniform },
+  tune: InkVeilTuning,
+): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     uniforms: shared,
     vertexShader: inkVeilVertexShader,
     fragmentShader: inkVeilFragmentShader,
     transparent: true,
-    depthWrite: false,
-    depthTest: true,
-    blending: THREE.NormalBlending,
+    depthWrite: tune.surfaceDepthWrite,
+    depthTest: tune.surfaceDepthTest,
+    blending: inkVeilBlending(tune.surfaceBlending),
     side: THREE.DoubleSide,
   });
 }
 
-function createParticleMaterial(): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uRadius: { value: 1 },
-      uPointSizeMul: { value: 1 },
-      uColor: { value: new THREE.Color(0x9d6fff) },
-    },
+function particleUniformsFromTuning(
+  tune: InkVeilTuning,
+): { [key: string]: THREE.IUniform } {
+  return {
+    uTime: { value: 0 },
+    uRadius: { value: 1 },
+    uPointSizeMul: { value: tune.particlePointSizeMul },
+    uColor: { value: new THREE.Color(tune.particleColor) },
+    uPTimeLo: { value: tune.particleTimeLo },
+    uPTimeRange: { value: tune.particleTimeRange },
+    uPOrbitSpeed: { value: tune.particleOrbitSpeed },
+    uPRadTight: { value: tune.particleRadialTightness },
+    uPWobFreq: { value: tune.particleWobbleFreq },
+    uPWobPhase: { value: tune.particleWobblePhaseMul },
+    uPWobStr: { value: tune.particleWobbleStr },
+    uPLiftRate: { value: tune.particleLiftRate },
+    uPLiftAmp: { value: tune.particleLiftAmp },
+    uPWobAlong: { value: tune.particleWobbleAlongOrbit },
+    uPAlphaLo: { value: tune.particleAlphaLo },
+    uPAlphaRange: { value: tune.particleAlphaRange },
+    uPPxBase: { value: tune.particlePxBase },
+    uPPxSpread: { value: tune.particlePxSpread },
+    uPPxDepthScale: { value: tune.particlePxDepthScale },
+    uPPxDepthRef: { value: tune.particlePxDepthRef },
+    uPPxMin: { value: tune.particlePxMin },
+    uPPxMax: { value: tune.particlePxMax },
+    uPSoftInner: { value: tune.particleSoftInner },
+    uPSoftOuter: { value: tune.particleSoftOuter },
+    uPOpacityMul: { value: tune.particleOpacityMul },
+  };
+}
+
+function pushParticleUniformsFromTuning(mat: THREE.ShaderMaterial, tune: InkVeilTuning): void {
+  const u = mat.uniforms;
+  if (!u) return;
+  if (u.uPointSizeMul) u.uPointSizeMul.value = tune.particlePointSizeMul;
+  if (u.uColor) u.uColor.value.set(tune.particleColor);
+  if (u.uPTimeLo) u.uPTimeLo.value = tune.particleTimeLo;
+  if (u.uPTimeRange) u.uPTimeRange.value = tune.particleTimeRange;
+  if (u.uPOrbitSpeed) u.uPOrbitSpeed.value = tune.particleOrbitSpeed;
+  if (u.uPRadTight) u.uPRadTight.value = tune.particleRadialTightness;
+  if (u.uPWobFreq) u.uPWobFreq.value = tune.particleWobbleFreq;
+  if (u.uPWobPhase) u.uPWobPhase.value = tune.particleWobblePhaseMul;
+  if (u.uPWobStr) u.uPWobStr.value = tune.particleWobbleStr;
+  if (u.uPLiftRate) u.uPLiftRate.value = tune.particleLiftRate;
+  if (u.uPLiftAmp) u.uPLiftAmp.value = tune.particleLiftAmp;
+  if (u.uPWobAlong) u.uPWobAlong.value = tune.particleWobbleAlongOrbit;
+  if (u.uPAlphaLo) u.uPAlphaLo.value = tune.particleAlphaLo;
+  if (u.uPAlphaRange) u.uPAlphaRange.value = tune.particleAlphaRange;
+  if (u.uPPxBase) u.uPPxBase.value = tune.particlePxBase;
+  if (u.uPPxSpread) u.uPPxSpread.value = tune.particlePxSpread;
+  if (u.uPPxDepthScale) u.uPPxDepthScale.value = tune.particlePxDepthScale;
+  if (u.uPPxDepthRef) u.uPPxDepthRef.value = tune.particlePxDepthRef;
+  if (u.uPPxMin) u.uPPxMin.value = tune.particlePxMin;
+  if (u.uPPxMax) u.uPPxMax.value = tune.particlePxMax;
+  if (u.uPSoftInner) u.uPSoftInner.value = tune.particleSoftInner;
+  if (u.uPSoftOuter) u.uPSoftOuter.value = tune.particleSoftOuter;
+  if (u.uPOpacityMul) u.uPOpacityMul.value = tune.particleOpacityMul;
+}
+
+function syncParticleMaterialOptions(mat: THREE.ShaderMaterial, tune: InkVeilTuning): void {
+  mat.depthWrite = tune.particleDepthWrite;
+  mat.depthTest = tune.particleDepthTest;
+  mat.blending = inkVeilBlending(tune.particleBlending);
+}
+
+function createParticleMaterial(tune: InkVeilTuning): THREE.ShaderMaterial {
+  const mat = new THREE.ShaderMaterial({
+    uniforms: particleUniformsFromTuning(tune),
     vertexShader: inkParticleVertexShader,
     fragmentShader: inkParticleFragmentShader,
     transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    depthWrite: tune.particleDepthWrite,
+    depthTest: tune.particleDepthTest,
+    blending: inkVeilBlending(tune.particleBlending),
   });
+  return mat;
 }
 
 function mulberry32(seed: number): () => number {
@@ -301,20 +400,85 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-function buildParticleGeometry(level: DefenseLevel, rTiles: number): THREE.BufferGeometry {
-  const n = tierParticleCount(level);
-    const rng = mulberry32(0x1eec0de + level * 997 + Math.floor(rTiles * 100));
+function buildParticleGeometry(
+  level: DefenseLevel,
+  rTiles: number,
+  tune: InkVeilTuning,
+): THREE.BufferGeometry {
+  const n = tune.particleCount[tierIdx(level)];
+  const rng = mulberry32(0x1eec0de + level * 997 + Math.floor(rTiles * 100));
   const phases = new Float32Array(n);
   const rs = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     phases[i] = rng();
-    rs[i] = 0.25 + rng() * 0.72;
+    rs[i] = tune.particleSpawnRMin + rng() * tune.particleSpawnRRange;
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
   g.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
   g.setAttribute("aR", new THREE.BufferAttribute(rs, 1));
   return g;
+}
+
+/** Full sync key when geometry, level, radius, or particle settings change. */
+export function inkVeilAuraSyncKey(
+  level: DefenseLevel,
+  rTiles: number,
+  tune: InkVeilTuning,
+): string {
+  const li = tierIdx(level);
+  return [
+    level,
+    rTiles,
+    inkVeilGeometryKey(tune),
+    tune.particleCount[li],
+    tune.particlePointSizeMul.toFixed(4),
+    tune.particleSpawnRMin.toFixed(4),
+    tune.particleSpawnRRange.toFixed(4),
+  ].join(":");
+}
+
+function pushSurfaceUniformsFromTuning(
+  mat: THREE.ShaderMaterial,
+  level: DefenseLevel,
+  rTiles: number,
+  tune: InkVeilTuning,
+): void {
+  const u = mat.uniforms;
+  if (!u) return;
+  const li = tierIdx(level);
+  if (u.uLevel) u.uLevel.value = level;
+  if (u.uRadius) u.uRadius.value = rTiles;
+  if (u.uSwirlSpeed) u.uSwirlSpeed.value = tune.swirlSpeed[li];
+  if (u.uNoiseScale) u.uNoiseScale.value = noiseScaleForLevel(level, tune);
+  if (u.uEdgeSoftness) u.uEdgeSoftness.value = edgeSoftnessForLevel(level, tune);
+  if (u.uInkCore) u.uInkCore.value.set(tune.inkCoreColor);
+  if (u.uInkRim) u.uInkRim.value.set(tune.inkRimColor);
+  if (u.uOpacityMul) u.uOpacityMul.value = tune.opacityMul[li];
+  if (u.uRingHint) u.uRingHint.value = tune.ringHint[li];
+  if (u.uFresnelPow) u.uFresnelPow.value = tune.fresnelPow;
+  if (u.uNoiseTimeScale) u.uNoiseTimeScale.value = tune.noiseTimeScale;
+  if (u.uFbmStrength) u.uFbmStrength.value = tune.fbmStrength;
+  if (u.uSwirlTierBase) u.uSwirlTierBase.value = tune.swirlTierBase;
+  if (u.uSwirlTierPerLevel) u.uSwirlTierPerLevel.value = tune.swirlTierPerLevel;
+  if (u.uStreakAngFreq) u.uStreakAngFreq.value = tune.streakAngFreq;
+  if (u.uStreakRadialFreq) u.uStreakRadialFreq.value = tune.streakRadialFreq;
+  if (u.uStreakTimeScale) u.uStreakTimeScale.value = tune.streakTimeScale;
+  if (u.uAlphaGlobal) u.uAlphaGlobal.value = tune.alphaGlobal;
+  if (u.uWobbleFreq) u.uWobbleFreq.value = tune.wobbleFreq;
+  if (u.uWobbleRadial) u.uWobbleRadial.value = tune.wobbleRadial;
+  if (u.uWobbleAmp) {
+    u.uWobbleAmp.value = tune.wobbleEnabled ? tune.wobbleAmp : 0;
+  }
+}
+
+function syncSurfaceMaterialOptions(
+  mat: THREE.ShaderMaterial,
+  tune: InkVeilTuning,
+): void {
+  mat.depthWrite = tune.surfaceDepthWrite;
+  mat.depthTest = tune.surfaceDepthTest;
+  mat.blending = inkVeilBlending(tune.surfaceBlending);
 }
 
 export type InkVeilAuraGroup = THREE.Group & {
@@ -329,11 +493,12 @@ export function createInkVeilAuraGroup(
   level: DefenseLevel,
   rTiles: number,
 ): InkVeilAuraGroup {
+  const tune = getInkVeilTuning();
   const group = new THREE.Group() as InkVeilAuraGroup;
   group.userData.kind = INK_VEIL_AURA_USERDATA_KIND;
 
-  const uDisk = createSharedInkUniforms(level, rTiles, 0);
-  const uDome = createSharedInkUniforms(level, rTiles, 1);
+  const uDisk = createSharedInkUniforms(level, rTiles, 0, tune);
+  const uDome = createSharedInkUniforms(level, rTiles, 1, tune);
   uDome.uTime = uDisk.uTime;
   uDome.uLevel = uDisk.uLevel;
   uDome.uRadius = uDisk.uRadius;
@@ -344,34 +509,47 @@ export function createInkVeilAuraGroup(
   uDome.uInkRim = uDisk.uInkRim;
   uDome.uOpacityMul = uDisk.uOpacityMul;
   uDome.uRingHint = uDisk.uRingHint;
+  uDome.uFresnelPow = uDisk.uFresnelPow;
+  uDome.uNoiseTimeScale = uDisk.uNoiseTimeScale;
+  uDome.uFbmStrength = uDisk.uFbmStrength;
+  uDome.uSwirlTierBase = uDisk.uSwirlTierBase;
+  uDome.uSwirlTierPerLevel = uDisk.uSwirlTierPerLevel;
+  uDome.uStreakAngFreq = uDisk.uStreakAngFreq;
+  uDome.uStreakRadialFreq = uDisk.uStreakRadialFreq;
+  uDome.uStreakTimeScale = uDisk.uStreakTimeScale;
+  uDome.uAlphaGlobal = uDisk.uAlphaGlobal;
   uDome.uWobbleTime = uDisk.uWobbleTime;
   uDome.uWobbleAmp = uDisk.uWobbleAmp;
   uDome.uWobbleFreq = uDisk.uWobbleFreq;
   uDome.uWobbleRadial = uDisk.uWobbleRadial;
 
-  const diskMat = createSurfaceMaterial(uDisk);
-  const domeMat = createSurfaceMaterial(uDome);
+  const diskMat = createSurfaceMaterial(uDisk, tune);
+  const domeMat = createSurfaceMaterial(uDome, tune);
 
-  const diskGeom = new THREE.CircleGeometry(rTiles, DISK_SEGMENTS);
+  const diskGeom = new THREE.CircleGeometry(rTiles, tune.diskSegments);
   const disk = new THREE.Mesh(diskGeom, diskMat);
   disk.rotation.x = -Math.PI / 2;
-  disk.renderOrder = 2;
+  disk.renderOrder = tune.renderOrderSurface;
   disk.frustumCulled = false;
   disk.userData.inkVeilPart = "disk";
   group.add(disk);
 
-  const domeGeom = hemisphereGeometry(rTiles, DOME_WIDTH_SEG, DOME_HEIGHT_SEG);
+  const domeGeom = hemisphereGeometry(
+    rTiles,
+    tune.domeWidthSegments,
+    tune.domeHeightSegments,
+  );
   const dome = new THREE.Mesh(domeGeom, domeMat);
-  dome.renderOrder = 2;
+  dome.renderOrder = tune.renderOrderSurface;
   dome.frustumCulled = false;
   dome.userData.inkVeilPart = "dome";
   group.add(dome);
 
-  const ptMat = createParticleMaterial();
+  const ptMat = createParticleMaterial(tune);
   ptMat.uniforms.uRadius.value = rTiles;
-  const ptGeom = buildParticleGeometry(level, rTiles);
+  const ptGeom = buildParticleGeometry(level, rTiles, tune);
   const points = new THREE.Points(ptGeom, ptMat);
-  points.renderOrder = 3;
+  points.renderOrder = tune.renderOrderParticles;
   points.frustumCulled = false;
   points.userData.inkVeilPart = "points";
   group.add(points);
@@ -387,18 +565,23 @@ export function applyInkVeilAuraRadius(
   level: DefenseLevel,
   rTiles: number,
 ): void {
+  const tune = getInkVeilTuning();
   for (const c of group.children) {
     if (c instanceof THREE.Mesh) {
       const part = c.userData.inkVeilPart as string | undefined;
       c.geometry.dispose();
       if (part === "disk") {
-        c.geometry = new THREE.CircleGeometry(rTiles, DISK_SEGMENTS);
+        c.geometry = new THREE.CircleGeometry(rTiles, tune.diskSegments);
       } else if (part === "dome") {
-        c.geometry = hemisphereGeometry(rTiles, DOME_WIDTH_SEG, DOME_HEIGHT_SEG);
+        c.geometry = hemisphereGeometry(
+          rTiles,
+          tune.domeWidthSegments,
+          tune.domeHeightSegments,
+        );
       }
     } else if (c instanceof THREE.Points) {
       c.geometry.dispose();
-      c.geometry = buildParticleGeometry(level, rTiles);
+      c.geometry = buildParticleGeometry(level, rTiles, tune);
     }
   }
 
@@ -407,38 +590,76 @@ export function applyInkVeilAuraRadius(
     if (!mat.uniforms) continue;
     if (mat.uniforms.uRadius) mat.uniforms.uRadius.value = rTiles;
     if (mat.uniforms.uLevel) mat.uniforms.uLevel.value = level;
-    if (mat.uniforms.uSwirlSpeed) mat.uniforms.uSwirlSpeed.value = tierSwirl(level);
-    if (mat.uniforms.uNoiseScale) mat.uniforms.uNoiseScale.value = 1.15 + level * 0.12;
-    if (mat.uniforms.uEdgeSoftness) mat.uniforms.uEdgeSoftness.value = 0.08 + level * 0.02;
-    if (mat.uniforms.uOpacityMul) mat.uniforms.uOpacityMul.value = tierOpacityMul(level);
-    if (mat.uniforms.uRingHint) mat.uniforms.uRingHint.value = tierRingHint(level);
-    if (mat.uniforms.uWobbleFreq) {
-      const tune = getVibrationDomeTuning();
-      mat.uniforms.uWobbleFreq.value = tune.wobbleFreq;
-      mat.uniforms.uWobbleRadial.value = tune.wobbleRadial;
-      mat.uniforms.uWobbleAmp.value = tune.wobbleEnabled ? tune.wobbleAmp : 0;
+    if (c instanceof THREE.Mesh) {
+      pushSurfaceUniformsFromTuning(mat, level, rTiles, tune);
+    } else if (mat.uniforms.uPointSizeMul) {
+      pushParticleUniformsFromTuning(mat, tune);
+      syncParticleMaterialOptions(mat, tune);
+    }
+  }
+}
+
+function syncGroupRenderAndMaterials(group: THREE.Group, tune: InkVeilTuning): void {
+  for (const c of group.children) {
+    if (c.userData.inkVeilPart === "disk" || c.userData.inkVeilPart === "dome") {
+      c.renderOrder = tune.renderOrderSurface;
+      syncSurfaceMaterialOptions(c.material as THREE.ShaderMaterial, tune);
+    } else if (c.userData.inkVeilPart === "points") {
+      c.renderOrder = tune.renderOrderParticles;
+      syncParticleMaterialOptions(c.material as THREE.ShaderMaterial, tune);
     }
   }
 }
 
 export function updateInkVeilAuraUniforms(group: THREE.Group, elapsedSec: number): void {
+  const tune = getInkVeilTuning();
   const uTime = group.userData.sharedTime as { value: number } | undefined;
   if (uTime) uTime.value = elapsedSec;
 
-  const tune = getVibrationDomeTuning();
+  for (const c of group.children) {
+    if (!(c instanceof THREE.Mesh)) continue;
+    const u = (c.material as THREE.ShaderMaterial).uniforms;
+    if (u?.uWobbleTime) {
+      u.uWobbleTime.value = elapsedSec * tune.wobbleTimeScale;
+    }
+  }
+
+  const ptMatEarly = group.userData.particleMaterial as THREE.ShaderMaterial | undefined;
+  if (ptMatEarly?.uniforms?.uTime) ptMatEarly.uniforms.uTime.value = elapsedSec;
+
+  syncGroupRenderAndMaterials(group, tune);
+
+  if (!tune.applyOverrides) {
+    return;
+  }
+
   for (const c of group.children) {
     if (!(c instanceof THREE.Mesh)) continue;
     const mat = c.material as THREE.ShaderMaterial;
     const u = mat.uniforms;
     if (!u?.uWobbleTime) continue;
-    u.uWobbleTime.value = elapsedSec * tune.wobbleTimeScale;
     u.uWobbleAmp.value = tune.wobbleEnabled ? tune.wobbleAmp : 0;
     u.uWobbleFreq.value = tune.wobbleFreq;
     u.uWobbleRadial.value = tune.wobbleRadial;
+    u.uFresnelPow.value = tune.fresnelPow;
+    u.uNoiseTimeScale.value = tune.noiseTimeScale;
+    u.uFbmStrength.value = tune.fbmStrength;
+    u.uSwirlTierBase.value = tune.swirlTierBase;
+    u.uSwirlTierPerLevel.value = tune.swirlTierPerLevel;
+    u.uStreakAngFreq.value = tune.streakAngFreq;
+    u.uStreakRadialFreq.value = tune.streakRadialFreq;
+    u.uStreakTimeScale.value = tune.streakTimeScale;
+    u.uAlphaGlobal.value = tune.alphaGlobal;
+    u.uInkCore.value.set(tune.inkCoreColor);
+    u.uInkRim.value.set(tune.inkRimColor);
   }
 
   const ptMat = group.userData.particleMaterial as THREE.ShaderMaterial | undefined;
   if (ptMat?.uniforms?.uTime) ptMat.uniforms.uTime.value = elapsedSec;
+  if (ptMat) {
+    pushParticleUniformsFromTuning(ptMat, tune);
+    syncParticleMaterialOptions(ptMat, tune);
+  }
 }
 
 /** Defense visual bag expected by {@link syncInkVeilAuraForDefense} (extends vibration dome vis). */
@@ -459,13 +680,13 @@ export function syncInkVeilAuraForDefense(
   elapsedSec: number,
 ): void {
   const w = worldFromGrid(d.position[0], d.position[1], doc, 0.35);
-  const tune = getVibrationDomeTuning();
+  const tune = getInkVeilTuning();
   const floorY = 0.06;
   const yLocal = floorY - w.y + tune.floorYOffset;
 
   if (d.type === "ink_veil") {
     const rTiles = auraRadiusTiles("ink_veil", d.level);
-    const auraKey = `${d.level}:${rTiles}`;
+    const auraKey = inkVeilAuraSyncKey(d.level, rTiles, tune);
 
     if (!vis.inkVeilAura) {
       vis.inkVeilAura = createInkVeilAuraGroup(d.level, rTiles);
@@ -477,12 +698,29 @@ export function syncInkVeilAuraForDefense(
     }
 
     vis.inkVeilAura.position.set(0, yLocal, 0);
-    const diskOff = 0.014;
+    const diskOff = tune.diskYOffset;
     for (const c of vis.inkVeilAura.children) {
       if (c.userData.inkVeilPart === "disk") {
         c.position.y = diskOff;
-      } else if (c.userData.inkVeilPart === "dome" || c.userData.inkVeilPart === "points") {
+      } else if (
+        c.userData.inkVeilPart === "dome" ||
+        c.userData.inkVeilPart === "points"
+      ) {
         c.position.y = 0;
+      }
+    }
+
+    if (tune.applyOverrides) {
+      const level = d.level;
+      for (const c of vis.inkVeilAura.children) {
+        if (c instanceof THREE.Mesh) {
+          pushSurfaceUniformsFromTuning(
+            c.material as THREE.ShaderMaterial,
+            level,
+            rTiles,
+            tune,
+          );
+        }
       }
     }
     updateInkVeilAuraUniforms(vis.inkVeilAura, elapsedSec);

@@ -14,18 +14,26 @@ const CELL_TOP_Y = 0.055;
 const CAUSTIC_PLANE_Y_OFFSET = 0.05;
 
 const VERT = `
+#include <common>
+#include <fog_pars_vertex>
+
 varying vec2 vWorldXZ;
 
 void main() {
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
   vWorldXZ = worldPos.xz;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
 }
 `;
 
 const FRAG = `
 #define TAU 6.28318530718
 #define MAX_ITER 5
+
+#include <common>
+#include <fog_pars_fragment>
 
 uniform float uTime;
 uniform float uTiling;
@@ -62,6 +70,17 @@ void main() {
   colour *= 0.5;
 
   gl_FragColor = vec4(colour, uOpacity);
+
+  // Scene fog (same as mesh materials): tint + drop alpha so caustics vanish in the distance.
+  #ifdef USE_FOG
+    #ifdef FOG_EXP2
+      float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
+    #else
+      float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
+    #endif
+    gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
+    gl_FragColor.a *= 1.0 - fogFactor;
+  #endif
 }
 `;
 
@@ -79,12 +98,17 @@ export function createSeabedOverlay(doc: MapDocument): SeabedOverlayResult {
   const span = worldGroundGridSpan(doc);
   const geo = new THREE.PlaneGeometry(span, span);
   const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uTiling: { value: 0.095 },
-      /** Lower = more see-through (translucent water layer). */
-      uOpacity: { value: 0.24 },
-    },
+    // Built-in materials clone ShaderLib uniforms (incl. fog). ShaderMaterial does not — without
+    // these, WebGLRenderer.refreshFogUniforms throws when scene.fog is set (fogColor undefined).
+    uniforms: THREE.UniformsUtils.merge([
+      THREE.UniformsLib.fog,
+      {
+        uTime: { value: 0 },
+        uTiling: { value: 0.095 },
+        /** Lower = more see-through (translucent water layer). */
+        uOpacity: { value: 0.24 },
+      },
+    ]),
     vertexShader: VERT,
     fragmentShader: FRAG,
     transparent: true,
@@ -95,6 +119,7 @@ export function createSeabedOverlay(doc: MapDocument): SeabedOverlayResult {
     polygonOffset: true,
     polygonOffsetFactor: 1,
     polygonOffsetUnits: 1,
+    fog: true,
   });
 
   const mesh = new THREE.Mesh(geo, mat);

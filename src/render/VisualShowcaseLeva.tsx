@@ -17,6 +17,8 @@ import {
   resetShowcaseFxLoopSeconds,
   setShowcaseFxLoopSeconds,
 } from "./visual-showcase-tuning.js";
+import { inkVeilLevaSchema } from "./InkVeilLeva.js";
+import { resetInkVeilTuning } from "./ink-veil-tuning.js";
 import { vibrationDomeLevaSchema } from "./VibrationDomeLeva.js";
 import { resetVibrationDomeTuning } from "./vibration-dome-tuning.js";
 
@@ -111,6 +113,7 @@ function VisualShowcaseLevaPanel({ onRemount }: { onRemount: () => void }) {
           resetCannonHitFxTuning();
           resetCannonBlastFxTuning();
           resetVibrationDomeTuning();
+          resetInkVeilTuning();
           resetShowcaseFxLoopSeconds();
           const m = getVisualShowcaseRuntime()?.getSeabedMaterial();
           if (m) {
@@ -130,6 +133,7 @@ function VisualShowcaseLevaPanel({ onRemount }: { onRemount: () => void }) {
         cannonDnaHelixLevaSchema(onRemount),
       ),
       "Vibration Zone dome": folder(vibrationDomeLevaSchema(onRemount)),
+      "Ink Veil aura": folder(inkVeilLevaSchema(onRemount)),
     }),
     [onRemount],
   );

@@ -1,4 +1,5 @@
 import { validateMapDocument } from "../game/map-validation.js";
+import { loadEntitySpriteAtlas } from "./entity-sprite-atlas.js";
 import { mountVisualShowcaseLeva } from "./mount-visual-showcase-leva.js";
 import { SHOWCASE_MAP_DOCUMENT } from "./showcase-map-document.js";
 import { VisualShowcaseApp } from "./visual-showcase-app.js";
@@ -13,5 +14,15 @@ if (!mount) {
   throw new Error("Missing #showcaseMount");
 }
 
-void new VisualShowcaseApp(SHOWCASE_MAP_DOCUMENT, mount);
+void (async () => {
+  let atlas = null;
+  try {
+    atlas = await loadEntitySpriteAtlas();
+  } catch {
+    console.warn(
+      "[visual-showcase] /textures/sprites.png missing — primitives for towers/enemies.",
+    );
+  }
+  new VisualShowcaseApp(SHOWCASE_MAP_DOCUMENT, mount, atlas);
+})();
 mountVisualShowcaseLeva();
